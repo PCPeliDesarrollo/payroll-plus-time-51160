@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Building2 } from "lucide-react";
-import { useAuthLocal as useAuth } from "@/hooks/useAuthLocal";
+import { useAuth } from "@/hooks/useAuth";
 
 interface LoginFormProps {
   // No props needed anymore as we use the auth hook directly
