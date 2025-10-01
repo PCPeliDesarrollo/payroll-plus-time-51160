@@ -2,8 +2,14 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.lovable.payrollplustime',
-  appName: 'payroll-plus-time',
+  appName: 'Sistema Fichajes',
   webDir: 'dist',
+  // IMPORTANT: server.url is ONLY for development hot-reload
+  // For production APK, this MUST be removed or commented out
+  // server: {
+  //   url: 'https://2b5297ed-d17f-40ce-8c1c-7fc0a8f396e9.lovableproject.com?forceHideBadge=true',
+  //   cleartext: true
+  // },
   plugins: {
     SplashScreen: {
       launchShowDuration: 3000,
