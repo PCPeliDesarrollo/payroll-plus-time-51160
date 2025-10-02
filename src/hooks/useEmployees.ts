@@ -50,25 +50,33 @@ export function useEmployees() {
         body: employee
       });
 
-      console.log('Edge function response:', { data, error });
+      console.log('Respuesta de la edge function:', { data, error });
 
       if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(error.message || 'Error desconocido');
+        console.error('Error en edge function:', error);
+        // El error puede contener información útil
+        throw new Error(error.message || 'Error al comunicarse con el servidor');
       }
       
-      if (data?.error) {
-        console.error('Edge function returned error:', data.error);
-        // Mejorar mensajes de error específicos
-        if (data.error.includes('duplicate key value violates unique constraint')) {
-          if (data.error.includes('employee_id')) {
-            throw new Error('El ID de empleado ya existe. Por favor usa un ID diferente.');
+      // Verificar si la respuesta contiene un error
+      if (data && typeof data === 'object' && 'error' in data) {
+        console.error('La edge function devolvió un error:', data.error);
+        const errorMsg = typeof data.error === 'string' ? data.error : JSON.stringify(data.error);
+        
+        // Manejar errores específicos
+        if (errorMsg.includes('duplicate key') || errorMsg.includes('already exists')) {
+          if (errorMsg.includes('employee_id')) {
+            throw new Error('El ID de empleado ya existe. Usa un ID diferente.');
           }
-          if (data.error.includes('email')) {
-            throw new Error('El email ya está registrado. Por favor usa un email diferente.');
+          if (errorMsg.includes('email')) {
+            throw new Error('El email ya está registrado. Usa un email diferente.');
           }
         }
-        throw new Error(data.error);
+        throw new Error(errorMsg);
+      }
+
+      if (!data || !data.success) {
+        throw new Error('No se recibió confirmación de éxito del servidor');
       }
 
       await fetchEmployees();

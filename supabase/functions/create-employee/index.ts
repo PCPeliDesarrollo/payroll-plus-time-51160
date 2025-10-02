@@ -52,42 +52,46 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Create user in auth system first
+    // Create user in auth system first with email already confirmed
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
-      password: password,
-      email_confirm: true, // Confirm email automatically
+      password,
+      email_confirm: true, // Auto-confirm email since confirmations are disabled
       user_metadata: {
         full_name,
         role
       }
     })
 
-    console.log('Auth user created:', { userId: authData?.user?.id, email: authData?.user?.email, emailConfirmed: authData?.user?.email_confirmed_at })
-
     if (authError) {
-      console.error('Auth error:', authError)
-      throw authError
+      console.error('Auth error details:', authError)
+      throw new Error(`Error al crear usuario: ${authError.message}`)
     }
 
-    // Wait a bit for the trigger to execute and create the profile
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    if (!authData.user) {
+      throw new Error('No se pudo crear el usuario')
+    }
+
+    console.log('Usuario creado exitosamente:', { userId: authData.user.id, email: authData.user.email })
+
+    // Wait for the trigger to create the profile
+    await new Promise(resolve => setTimeout(resolve, 1500))
     
     // Update the profile with additional details
-    if (authData.user) {
-      const { error: updateError } = await supabaseAdmin
-        .from('profiles')
-        .update({
-          department,
-          employee_id,
-        })
-        .eq('id', authData.user.id)
+    const { error: updateError } = await supabaseAdmin
+      .from('profiles')
+      .update({
+        department,
+        employee_id,
+      })
+      .eq('id', authData.user.id)
 
-      if (updateError) {
-        console.error('Profile update error:', updateError)
-        throw updateError
-      }
+    if (updateError) {
+      console.error('Error actualizando perfil:', updateError)
+      throw new Error(`Error al actualizar perfil: ${updateError.message}`)
     }
+
+    console.log('Perfil actualizado correctamente')
 
     return new Response(
       JSON.stringify({ success: true, user: authData.user }),
