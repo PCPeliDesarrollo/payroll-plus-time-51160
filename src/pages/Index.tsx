@@ -10,6 +10,7 @@ import { AdminAttendance } from "./AdminAttendance";
 import { AdminPayroll } from "./AdminPayroll";
 import { AdminVacations } from "./AdminVacations";
 import { AdminSettings } from "./AdminSettings";
+import { MyProfile } from "./MyProfile";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 
@@ -37,7 +38,7 @@ const Index = () => {
       case "vacations":
         return profile.role === "admin" ? <AdminVacations /> : <MyVacations />;
       case "settings":
-        return profile.role === "admin" ? <AdminSettings /> : <Dashboard userRole={profile.role as "admin" | "employee"} />;
+        return profile.role === "admin" ? <AdminSettings /> : <MyProfile />;
       case "my-attendance":
         return <MyAttendance />;
       case "my-payroll":

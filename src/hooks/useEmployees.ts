@@ -40,6 +40,7 @@ export function useEmployees() {
     role: string;
     department?: string;
     employee_id?: string;
+    password: string;
   }) => {
     if (!user) throw new Error('No user logged in');
 

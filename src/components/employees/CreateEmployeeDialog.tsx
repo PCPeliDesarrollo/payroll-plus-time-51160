@@ -20,6 +20,7 @@ export function CreateEmployeeDialog() {
     role: "employee",
     department: "",
     employee_id: "",
+    password: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -40,6 +41,7 @@ export function CreateEmployeeDialog() {
         role: "employee",
         department: "",
         employee_id: "",
+        password: "",
       });
     } catch (error) {
       console.error('Error creating employee:', error);
@@ -110,6 +112,19 @@ export function CreateEmployeeDialog() {
           </div>
 
           <div>
+            <Label htmlFor="password">Contraseña</Label>
+            <Input
+              id="password"
+              type="password"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              placeholder="Mínimo 6 caracteres"
+              required
+              minLength={6}
+            />
+          </div>
+
+          <div>
             <Label htmlFor="role">Rol</Label>
             <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
               <SelectTrigger>
@@ -127,7 +142,7 @@ export function CreateEmployeeDialog() {
             <Button type="button" variant="outline" onClick={() => setOpen(false)} className="flex-1">
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading || !formData.full_name || !formData.email} className="flex-1">
+            <Button type="submit" disabled={loading || !formData.full_name || !formData.email || !formData.password} className="flex-1">
               {loading ? "Creando..." : "Crear Empleado"}
             </Button>
           </div>

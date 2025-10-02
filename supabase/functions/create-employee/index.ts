@@ -39,7 +39,12 @@ serve(async (req) => {
     }
 
     // Get the employee data from the request
-    const { full_name, email, role = 'employee', department, employee_id } = await req.json()
+    const { full_name, email, role = 'employee', department, employee_id, password } = await req.json()
+    
+    // Validate password
+    if (!password || password.length < 6) {
+      throw new Error('Password must be at least 6 characters long')
+    }
 
     // Create a Supabase Admin client to create the auth user
     const supabaseAdmin = createClient(
@@ -50,7 +55,7 @@ serve(async (req) => {
     // Create user in auth system first
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
-      password: 'ChangeMe123!', // Default password
+      password: password, // Use the provided password
       email_confirm: true,
       user_metadata: {
         full_name,
