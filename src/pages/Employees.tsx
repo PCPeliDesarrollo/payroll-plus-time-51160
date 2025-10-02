@@ -17,6 +17,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { CreateEmployeeDialog } from "@/components/employees/CreateEmployeeDialog";
 import { EmployeeDetailsDialog } from "@/components/employees/EmployeeDetailsDialog";
@@ -24,6 +25,7 @@ import { useEmployees } from "@/hooks/useEmployees";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import type { Database } from "@/integrations/supabase/types";
+import { useToast } from "@/hooks/use-toast";
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -31,7 +33,8 @@ export function Employees() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState<Profile | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
-  const { employees, loading, deactivateEmployee } = useEmployees();
+  const { employees, loading, deactivateEmployee, deleteEmployee } = useEmployees();
+  const { toast } = useToast();
   
   const filteredEmployees = employees.filter(employee =>
     employee.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -44,8 +47,36 @@ export function Employees() {
     if (confirm('¿Estás seguro de que quieres desactivar este empleado?')) {
       try {
         await deactivateEmployee(employeeId);
+        toast({
+          title: "Empleado desactivado",
+          description: "El empleado ha sido desactivado correctamente.",
+        });
       } catch (error) {
         console.error('Error deactivating employee:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error instanceof Error ? error.message : "No se pudo desactivar el empleado",
+        });
+      }
+    }
+  };
+
+  const handleDelete = async (employeeId: string, employeeName: string) => {
+    if (confirm(`¿Estás seguro de que quieres ELIMINAR PERMANENTEMENTE a ${employeeName}? Esta acción no se puede deshacer.`)) {
+      try {
+        await deleteEmployee(employeeId);
+        toast({
+          title: "Empleado eliminado",
+          description: "El empleado ha sido eliminado permanentemente.",
+        });
+      } catch (error) {
+        console.error('Error deleting employee:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error instanceof Error ? error.message : "No se pudo eliminar el empleado",
+        });
       }
     }
   };
@@ -115,11 +146,18 @@ export function Employees() {
                           <DropdownMenuItem>Ver Perfil</DropdownMenuItem>
                           <DropdownMenuItem>Editar</DropdownMenuItem>
                           <DropdownMenuItem>Ver Fichajes</DropdownMenuItem>
+                          <DropdownMenuSeparator />
                           <DropdownMenuItem 
-                            className="text-destructive"
+                            className="text-orange-600"
                             onClick={() => handleDeactivate(employee.id)}
                           >
                             Desactivar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-destructive"
+                            onClick={() => handleDelete(employee.id, employee.full_name)}
+                          >
+                            Eliminar permanentemente
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

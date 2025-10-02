@@ -2,3 +2,6 @@ project_id = "srfigyjdkbwzkuddndvl"
 
 [functions.create-employee]
 verify_jwt = true
+
+[functions.delete-employee]
+verify_jwt = true

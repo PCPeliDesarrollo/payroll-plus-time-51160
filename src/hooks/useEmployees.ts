@@ -54,29 +54,24 @@ export function useEmployees() {
 
       if (error) {
         console.error('Error en edge function:', error);
-        // El error puede contener información útil
         throw new Error(error.message || 'Error al comunicarse con el servidor');
       }
       
-      // Verificar si la respuesta contiene un error
-      if (data && typeof data === 'object' && 'error' in data) {
-        console.error('La edge function devolvió un error:', data.error);
-        const errorMsg = typeof data.error === 'string' ? data.error : JSON.stringify(data.error);
+      // Ahora la edge function siempre devuelve 200, pero con success: false si hay error
+      if (!data || data.success === false) {
+        const errorMsg = data?.error || 'Error desconocido al crear el empleado';
+        console.error('Error en la creación:', errorMsg);
         
         // Manejar errores específicos
-        if (errorMsg.includes('duplicate key') || errorMsg.includes('already exists')) {
-          if (errorMsg.includes('employee_id')) {
+        if (errorMsg.includes('duplicate') || errorMsg.includes('already exists') || errorMsg.includes('ya existe')) {
+          if (errorMsg.includes('employee_id') || errorMsg.includes('ID')) {
             throw new Error('El ID de empleado ya existe. Usa un ID diferente.');
           }
-          if (errorMsg.includes('email')) {
+          if (errorMsg.includes('email') || errorMsg.includes('correo')) {
             throw new Error('El email ya está registrado. Usa un email diferente.');
           }
         }
         throw new Error(errorMsg);
-      }
-
-      if (!data || !data.success) {
-        throw new Error('No se recibió confirmación de éxito del servidor');
       }
 
       await fetchEmployees();
@@ -123,12 +118,42 @@ export function useEmployees() {
     }
   };
 
+  const deleteEmployee = async (id: string) => {
+    if (!user) throw new Error('No user logged in');
+
+    try {
+      // Llamar a la edge function para eliminar el empleado completamente
+      const { data, error } = await supabase.functions.invoke('delete-employee', {
+        body: { employee_id: id }
+      });
+
+      console.log('Respuesta de delete-employee:', { data, error });
+
+      if (error) {
+        console.error('Error en edge function:', error);
+        throw new Error(error.message || 'Error al eliminar el empleado');
+      }
+
+      if (!data || data.success === false) {
+        const errorMsg = data?.error || 'Error desconocido al eliminar el empleado';
+        throw new Error(errorMsg);
+      }
+
+      await fetchEmployees();
+      return data;
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+      throw error;
+    }
+  };
+
   return {
     employees,
     loading,
     createEmployee,
     updateEmployee,
     deactivateEmployee,
+    deleteEmployee,
     fetchEmployees,
   };
 }
