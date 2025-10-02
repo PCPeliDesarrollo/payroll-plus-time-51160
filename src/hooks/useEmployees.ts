@@ -50,8 +50,17 @@ export function useEmployees() {
         body: employee
       });
 
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      console.log('Edge function response:', { data, error });
+
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(`Error al crear empleado: ${error.message || 'Error desconocido'}`);
+      }
+      
+      if (data?.error) {
+        console.error('Edge function returned error:', data.error);
+        throw new Error(data.error);
+      }
 
       await fetchEmployees();
       return data;
