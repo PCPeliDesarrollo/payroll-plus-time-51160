@@ -54,11 +54,20 @@ export function useEmployees() {
 
       if (error) {
         console.error('Edge function error:', error);
-        throw new Error(`Error al crear empleado: ${error.message || 'Error desconocido'}`);
+        throw new Error(error.message || 'Error desconocido');
       }
       
       if (data?.error) {
         console.error('Edge function returned error:', data.error);
+        // Mejorar mensajes de error específicos
+        if (data.error.includes('duplicate key value violates unique constraint')) {
+          if (data.error.includes('employee_id')) {
+            throw new Error('El ID de empleado ya existe. Por favor usa un ID diferente.');
+          }
+          if (data.error.includes('email')) {
+            throw new Error('El email ya está registrado. Por favor usa un email diferente.');
+          }
+        }
         throw new Error(data.error);
       }
 
