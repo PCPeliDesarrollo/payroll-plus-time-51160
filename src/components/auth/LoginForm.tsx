@@ -26,7 +26,14 @@ export function LoginForm({}: LoginFormProps) {
     try {
       await signIn(email, password);
     } catch (err: any) {
-      setError(err.message || "Credenciales incorrectas. Por favor, inténtalo de nuevo.");
+      console.error('Login error:', err);
+      if (err.message?.includes('Email not confirmed')) {
+        setError("El email no ha sido confirmado. Contacta con el administrador.");
+      } else if (err.message?.includes('Invalid login credentials')) {
+        setError("Credenciales incorrectas. Verifica tu email y contraseña.");
+      } else {
+        setError(err.message || "Error al iniciar sesión. Por favor, inténtalo de nuevo.");
+      }
     } finally {
       setIsLoading(false);
     }

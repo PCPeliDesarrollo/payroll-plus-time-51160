@@ -55,13 +55,15 @@ serve(async (req) => {
     // Create user in auth system first
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
-      password: password, // Use the provided password
-      email_confirm: true,
+      password: password,
+      email_confirm: true, // Confirm email automatically
       user_metadata: {
         full_name,
         role
       }
     })
+
+    console.log('Auth user created:', { userId: authData?.user?.id, email: authData?.user?.email, emailConfirmed: authData?.user?.email_confirmed_at })
 
     if (authError) {
       console.error('Auth error:', authError)
