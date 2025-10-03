@@ -8,26 +8,27 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 248 250 252;
-    --foreground: 226 29% 15%;
+    --background: 250 250 252;
+    --foreground: 276 20% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 226 29% 15%;
+    --card-foreground: 276 20% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 226 29% 15%;
+    --popover-foreground: 276 20% 15%;
 
     --primary: 276 91% 68%;
     --primary-foreground: 0 0% 100%;
     --primary-hover: 276 91% 63%;
+    --primary-light: 276 91% 85%;
 
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 226 29% 15%;
+    --secondary: 280 60% 95%;
+    --secondary-foreground: 276 20% 15%;
 
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 280 30% 96%;
+    --muted-foreground: 276 10% 46%;
 
-    --accent: 276 91% 68%;
+    --accent: 270 80% 72%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -39,14 +40,16 @@ All colors MUST be HSL.
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
+    --border: 280 20% 91%;
+    --input: 280 20% 91%;
     --ring: 276 91% 68%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-hover)));
-    --gradient-card: linear-gradient(145deg, hsl(var(--card)), hsl(220 14% 98%));
-    --shadow-soft: 0 2px 8px -1px hsl(220 13% 91% / 0.3);
-    --shadow-hover: 0 8px 25px -5px hsl(var(--primary) / 0.2);
+    --gradient-primary: linear-gradient(135deg, hsl(276 91% 68%), hsl(270 80% 72%));
+    --gradient-secondary: linear-gradient(145deg, hsl(280 60% 95%), hsl(276 91% 85%));
+    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%), hsl(280 60% 98%));
+    --shadow-soft: 0 2px 8px -1px hsl(276 20% 80% / 0.3);
+    --shadow-hover: 0 8px 25px -5px hsl(276 91% 68% / 0.25);
+    --shadow-purple: 0 4px 20px -2px hsl(276 91% 68% / 0.3);
 
     --radius: 0.75rem;
 

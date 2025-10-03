@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Building2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 interface LoginFormProps {
@@ -41,18 +41,27 @@ export function LoginForm({}: LoginFormProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-secondary/30 p-4">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="space-y-1 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 bg-primary/10 rounded-full">
-              <Building2 className="h-8 w-8 text-primary" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-primary-light/10 to-secondary/40 p-4">
+      <Card className="w-full max-w-md shadow-[0_0_40px_rgba(176,98,248,0.15)] border-primary/20">
+        <CardHeader className="space-y-4 text-center">
+          <div className="flex justify-center mb-2">
+            <div className="relative">
+              <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-xl"></div>
+              <img 
+                src="/logo-peli.png" 
+                alt="Logo Sistema Fichajes" 
+                className="relative h-24 w-24 object-contain drop-shadow-lg"
+              />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Iniciar Sesión</CardTitle>
-          <CardDescription>
-            Sistema de Fichajes de Empleados
-          </CardDescription>
+          <div>
+            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              Iniciar Sesión
+            </CardTitle>
+            <CardDescription className="mt-2">
+              Sistema de Fichajes de Empleados
+            </CardDescription>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -120,8 +129,8 @@ export function LoginForm({}: LoginFormProps) {
             </Button>
           </form>
 
-          <div className="mt-4 p-4 bg-secondary/50 rounded-lg">
-            <h4 className="font-medium text-sm mb-2">Credenciales de Prueba:</h4>
+          <div className="mt-4 p-4 bg-secondary/60 rounded-lg border border-primary/10">
+            <h4 className="font-medium text-sm mb-2 text-foreground">Credenciales de Prueba:</h4>
             <div className="space-y-1 text-xs text-muted-foreground">
               <p><strong>Admin:</strong> admin@empresa.com / admin123</p>
               <p><strong>Empleado:</strong> empleado@empresa.com / empleado123</p>

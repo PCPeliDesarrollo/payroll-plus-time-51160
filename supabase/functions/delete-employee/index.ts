@@ -51,16 +51,24 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Delete the auth user first (this will cascade to profile via trigger)
+    // First delete the profile record directly
+    const { error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .delete()
+      .eq('id', employee_id)
+
+    if (profileError) {
+      console.error('Error eliminando perfil:', profileError)
+      // Continue anyway to try to delete the auth user
+    }
+
+    // Then delete the auth user
     const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(employee_id)
 
     if (authError) {
       console.error('Error eliminando usuario de auth:', authError)
       throw new Error(`Error al eliminar usuario: ${authError.message}`)
     }
-
-    // Wait a bit for the cascade to complete
-    await new Promise(resolve => setTimeout(resolve, 1000));
 
     console.log('Empleado eliminado exitosamente:', employee_id)
 
