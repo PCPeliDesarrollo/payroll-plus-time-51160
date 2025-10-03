@@ -229,16 +229,16 @@ export function AdminPayroll() {
   // Vista de lista de empleados
   if (!selectedEmployee) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-3xl font-bold text-foreground">Gestión de Nóminas</h2>
-          <p className="text-muted-foreground">Selecciona un empleado para ver sus nóminas</p>
+      <div className="space-y-4 md:space-y-6">
+        <div className="px-2 md:px-0">
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground">Gestión de Nóminas</h2>
+          <p className="text-sm md:text-base text-muted-foreground">Selecciona un empleado para ver sus nóminas</p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
+            <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+              <FileText className="h-4 w-4 md:h-5 md:w-5 text-primary" />
               Empleados
             </CardTitle>
           </CardHeader>
@@ -246,15 +246,15 @@ export function AdminPayroll() {
             {loading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-                <p className="mt-2 text-muted-foreground">Cargando empleados...</p>
+                <p className="mt-2 text-sm md:text-base text-muted-foreground">Cargando empleados...</p>
               </div>
             ) : employees.length === 0 ? (
               <div className="text-center py-8">
-                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No hay empleados registrados</p>
+                <FileText className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-sm md:text-base text-muted-foreground">No hay empleados registrados</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                 {employees.map((employee) => (
                   <Card 
                     key={employee.id} 
@@ -264,9 +264,9 @@ export function AdminPayroll() {
                       fetchPayrollRecords(employee.id);
                     }}
                   >
-                    <CardContent className="p-6">
-                      <p className="font-medium text-lg">{employee.full_name}</p>
-                      <p className="text-sm text-muted-foreground">{employee.department || 'Sin departamento'}</p>
+                    <CardContent className="p-4 md:p-6">
+                      <p className="font-medium text-base md:text-lg">{employee.full_name}</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">{employee.department || 'Sin departamento'}</p>
                     </CardContent>
                   </Card>
                 ))}
@@ -280,79 +280,83 @@ export function AdminPayroll() {
 
   // Vista de nóminas del empleado seleccionado
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              setSelectedEmployee(null);
-              setPayrollRecords([]);
-            }}
-            className="mb-2"
-          >
-            ← Volver a empleados
-          </Button>
-          <h2 className="text-3xl font-bold text-foreground">Nóminas de {selectedEmployee.full_name}</h2>
-          <p className="text-muted-foreground">{selectedEmployee.department || 'Sin departamento'}</p>
-        </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Nueva Nómina
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Crear Nueva Nómina para {selectedEmployee.full_name}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-800">
-                  <strong>Flujo simplificado:</strong> Selecciona el período y después sube el archivo PDF de la nómina.
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="month">Mes</Label>
-                  <Select value={newPayroll.month.toString()} onValueChange={(value) => setNewPayroll({...newPayroll, month: parseInt(value)})}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Array.from({length: 12}, (_, i) => (
-                        <SelectItem key={i + 1} value={(i + 1).toString()}>
-                          {getMonthName(i + 1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col gap-3 md:gap-4 px-2 md:px-0">
+        <Button 
+          variant="outline" 
+          onClick={() => {
+            setSelectedEmployee(null);
+            setPayrollRecords([]);
+          }}
+          className="w-fit text-sm md:text-base"
+          size="sm"
+        >
+          ← Volver a empleados
+        </Button>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl md:text-3xl font-bold text-foreground truncate">Nóminas de {selectedEmployee.full_name}</h2>
+            <p className="text-xs md:text-base text-muted-foreground">{selectedEmployee.department || 'Sin departamento'}</p>
+          </div>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="w-full sm:w-auto">
+                <Plus className="mr-2 h-3 w-3 md:h-4 md:w-4" />
+                <span className="text-xs md:text-sm">Nueva Nómina</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="w-[95vw] max-w-md mx-auto">
+              <DialogHeader>
+                <DialogTitle className="text-base md:text-lg">Crear Nueva Nómina para {selectedEmployee.full_name}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 md:p-4">
+                  <p className="text-xs md:text-sm text-blue-800">
+                    <strong>Flujo simplificado:</strong> Selecciona el período y después sube el archivo PDF de la nómina.
+                  </p>
                 </div>
                 
-                <div>
-                  <Label htmlFor="year">Año</Label>
-                  <Input
-                    type="number"
-                    value={newPayroll.year}
-                    onChange={(e) => setNewPayroll({...newPayroll, year: parseInt(e.target.value)})}
-                  />
+                <div className="grid grid-cols-2 gap-3 md:gap-4">
+                  <div>
+                    <Label htmlFor="month" className="text-xs md:text-sm">Mes</Label>
+                    <Select value={newPayroll.month.toString()} onValueChange={(value) => setNewPayroll({...newPayroll, month: parseInt(value)})}>
+                      <SelectTrigger className="h-9 md:h-10 text-xs md:text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({length: 12}, (_, i) => (
+                          <SelectItem key={i + 1} value={(i + 1).toString()} className="text-xs md:text-sm">
+                            {getMonthName(i + 1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="year" className="text-xs md:text-sm">Año</Label>
+                    <Input
+                      type="number"
+                      value={newPayroll.year}
+                      onChange={(e) => setNewPayroll({...newPayroll, year: parseInt(e.target.value)})}
+                      className="h-9 md:h-10 text-xs md:text-sm"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <Button onClick={createPayrollRecord} className="w-full">
-                Crear Nómina (después subir PDF)
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+                <Button onClick={createPayrollRecord} className="w-full text-xs md:text-sm h-9 md:h-10">
+                  Crear Nómina (después subir PDF)
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
+          <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+            <FileText className="h-4 w-4 md:h-5 md:w-5 text-primary" />
             Historial de Nóminas
           </CardTitle>
         </CardHeader>
@@ -360,29 +364,27 @@ export function AdminPayroll() {
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-2 text-muted-foreground">Cargando nóminas...</p>
+              <p className="mt-2 text-sm md:text-base text-muted-foreground">Cargando nóminas...</p>
             </div>
           ) : payrollRecords.length === 0 ? (
             <div className="text-center py-8">
-              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No hay nóminas registradas para este empleado</p>
+              <FileText className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-sm md:text-base text-muted-foreground">No hay nóminas registradas para este empleado</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {payrollRecords.map((record) => (
-                <div key={record.id} className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg border">
-                  <div className="flex items-center gap-4">
-                    <div>
-                      <p className="font-medium text-lg">{getMonthName(record.month)} {record.year}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {getStatusBadge(record.status)}
-                      </p>
+                <div key={record.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 md:p-4 bg-secondary/50 rounded-lg border">
+                  <div className="flex flex-col gap-1">
+                    <p className="font-medium text-base md:text-lg">{getMonthName(record.month)} {record.year}</p>
+                    <div className="text-xs md:text-sm">
+                      {getStatusBadge(record.status)}
                     </div>
                   </div>
                   
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {record.file_url ? (
-                      <div className="flex gap-2">
+                      <>
                          <Button
                            size="sm"
                            variant="outline"
@@ -391,8 +393,9 @@ export function AdminPayroll() {
                              const url = record.file_url + '?t=' + Date.now();
                              window.open(url, '_blank', 'noopener,noreferrer');
                            }}
+                           className="flex-1 sm:flex-none text-xs md:text-sm h-8 md:h-9"
                          >
-                           <Eye className="h-4 w-4 mr-1" />
+                           <Eye className="h-3 w-3 md:h-4 md:w-4 mr-1" />
                            Ver
                          </Button>
                          <Button
@@ -433,13 +436,14 @@ export function AdminPayroll() {
                                });
                              }
                            }}
+                           className="flex-1 sm:flex-none text-xs md:text-sm h-8 md:h-9"
                          >
-                           <Download className="h-4 w-4 mr-1" />
+                           <Download className="h-3 w-3 md:h-4 md:w-4 mr-1" />
                            Descargar
                          </Button>
-                      </div>
+                      </>
                     ) : (
-                      <div>
+                      <div className="w-full sm:w-auto">
                         <input
                           type="file"
                           id={`file-${record.id}`}
@@ -455,11 +459,12 @@ export function AdminPayroll() {
                           variant="outline"
                           onClick={() => document.getElementById(`file-${record.id}`)?.click()}
                           disabled={uploadingFile === record.id}
+                          className="w-full sm:w-auto text-xs md:text-sm h-8 md:h-9"
                         >
                           {uploadingFile === record.id ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-1" />
+                            <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-primary mr-1" />
                           ) : (
-                            <Upload className="h-4 w-4 mr-1" />
+                            <Upload className="h-3 w-3 md:h-4 md:w-4 mr-1" />
                           )}
                           Subir PDF
                         </Button>
