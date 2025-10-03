@@ -79,7 +79,7 @@ serve(async (req) => {
 
     console.log('Usuario creado exitosamente:', { userId: authData.user.id, email: authData.user.email })
 
-    // Wait for the trigger to create the profile
+    // Wait for the trigger to create the profile and user_roles entry
     await new Promise(resolve => setTimeout(resolve, 1500))
     
     // Update the profile with additional details
