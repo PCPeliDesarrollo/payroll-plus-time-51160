@@ -101,7 +101,7 @@ export function MyVacations() {
       case 'rejected':
         return <XCircle className="h-5 w-5 text-destructive" />;
       default:
-        return <Clock className="h-5 w-5 text-warning" />;
+        return <Clock className="h-5 w-5 text-primary" />;
     }
   };
 
@@ -205,7 +205,7 @@ export function MyVacations() {
               <Plane className="h-4 w-4 text-muted-foreground" />
               <div className="space-y-1">
                 <p className="text-sm font-medium leading-none">Días Usados</p>
-                <p className="text-2xl font-bold text-warning">{vacationBalance?.used_days || 0}</p>
+                <p className="text-2xl font-bold text-primary">{vacationBalance?.used_days || 0}</p>
               </div>
             </div>
           </CardContent>

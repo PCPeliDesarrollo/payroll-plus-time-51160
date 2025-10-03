@@ -8,7 +8,7 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 250 250 252;
+    --background: 20 8% 70%;
     --foreground: 276 20% 15%;
 
     --card: 0 0% 100%;
@@ -37,10 +37,10 @@ All colors MUST be HSL.
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 270 65% 75%;
+    --warning: 276 70% 65%;
     --warning-foreground: 0 0% 100%;
     
-    --pending: 270 65% 75%;
+    --pending: 276 70% 65%;
     --pending-foreground: 0 0% 100%;
 
     --border: 280 20% 91%;

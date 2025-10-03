@@ -14,17 +14,17 @@ import { useToast } from "@/hooks/use-toast";
 
 // Quick Check-In Component
 function QuickCheckInButton({ isCheckedIn, currentEntry }: { isCheckedIn: boolean; currentEntry: any }) {
-  const { checkIn, checkOut } = useTimeEntries();
+  const { checkIn, checkOut, loading } = useTimeEntries();
   const { toast } = useToast();
-  const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }));
+  const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
 
   // Update time every second
-  useMemo(() => {
+  useState(() => {
     const interval = setInterval(() => {
-      setCurrentTime(new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }));
+      setCurrentTime(new Date().toLocaleTimeString());
     }, 1000);
     return () => clearInterval(interval);
-  }, []);
+  });
 
   const handleCheckInOut = async () => {
     try {
@@ -51,45 +51,66 @@ function QuickCheckInButton({ isCheckedIn, currentEntry }: { isCheckedIn: boolea
   };
 
   return (
-    <div className="relative h-32 rounded-lg border-2 bg-gradient-to-br from-primary/10 to-accent/10 overflow-hidden hover:shadow-lg transition-all">
-      <div className="absolute inset-0 p-6 flex flex-col justify-between">
-        <div className="flex items-center justify-between">
-          <Clock className="h-6 w-6 text-primary" />
-          <Badge 
-            variant={isCheckedIn ? "default" : "outline"}
-            className={`${
-              isCheckedIn 
-                ? "bg-success text-success-foreground" 
-                : ""
-            }`}
-          >
-            {isCheckedIn ? "Fichado" : "No fichado"}
-          </Badge>
-        </div>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-bold text-2xl">{currentTime}</p>
-            <p className="text-sm text-muted-foreground">
-              {isCheckedIn ? "En el trabajo" : "Fichar ahora"}
-            </p>
-          </div>
-          <Button
-            onClick={handleCheckInOut}
-            size="lg"
-            className={`h-14 w-14 rounded-full ${
-              isCheckedIn 
-                ? "bg-destructive hover:bg-destructive/90" 
-                : "bg-success hover:bg-success/90"
-            }`}
-          >
-            {isCheckedIn ? (
-              <Square className="h-6 w-6" />
-            ) : (
-              <Play className="h-6 w-6" />
-            )}
-          </Button>
+    <div className="text-center space-y-6">
+      <div className="space-y-2">
+        <div className="text-4xl font-bold text-foreground">{currentTime}</div>
+        <div className="text-muted-foreground">
+          {new Date().toLocaleDateString('es-ES', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+          })}
         </div>
       </div>
+
+      <div className="space-y-4">
+        <div className="flex justify-center">
+          <Badge 
+            variant={isCheckedIn ? "default" : "outline"}
+            className={`px-4 py-2 text-sm ${
+              isCheckedIn 
+                ? "bg-success text-success-foreground" 
+                : "text-muted-foreground"
+            }`}
+          >
+            {isCheckedIn ? "Fichado - En el trabajo" : "No fichado"}
+          </Badge>
+        </div>
+
+        <Button
+          onClick={handleCheckInOut}
+          size="lg"
+          disabled={loading}
+          className={`h-16 px-8 text-lg font-semibold w-full ${
+            isCheckedIn 
+              ? "bg-destructive hover:bg-destructive/90 text-destructive-foreground" 
+              : "bg-success hover:bg-success/90 text-success-foreground"
+          }`}
+        >
+          {loading ? (
+            "Procesando..."
+          ) : isCheckedIn ? (
+            <>
+              <Square className="mr-2 h-6 w-6" />
+              Fichar Salida
+            </>
+          ) : (
+            <>
+              <Play className="mr-2 h-6 w-6" />
+              Fichar Entrada
+            </>
+          )}
+        </Button>
+      </div>
+
+      {isCheckedIn && currentEntry?.check_in_time && (
+        <div className="p-4 bg-success/10 rounded-lg">
+          <p className="text-sm text-success-foreground">
+            <strong>Entrada:</strong> {new Date(currentEntry.check_in_time).toLocaleTimeString('es-ES')}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

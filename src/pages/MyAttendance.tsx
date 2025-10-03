@@ -223,7 +223,7 @@ export function MyAttendance() {
                   <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1">
                     <div className={`w-2 h-2 rounded-full mt-2 sm:mt-0 flex-shrink-0 ${
                       entry.status === 'checked_out' ? 'bg-success' : 
-                      entry.status === 'checked_in' ? 'bg-warning' : 'bg-muted'
+                      entry.status === 'checked_in' ? 'bg-primary' : 'bg-muted'
                     }`}></div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm sm:text-base truncate">{formatDate(entry.date)}</p>
