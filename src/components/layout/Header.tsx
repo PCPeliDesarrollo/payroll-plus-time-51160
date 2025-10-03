@@ -8,7 +8,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { useVacations } from "@/hooks/useVacations";
+import { useEffect, useState } from "react";
 
 interface HeaderProps {
   user: {
@@ -22,11 +30,22 @@ interface HeaderProps {
 
 export function Header({ user, onLogout, onPageChange }: HeaderProps) {
   const { vacationRequests } = useVacations();
+  const [showNotificationDialog, setShowNotificationDialog] = useState(false);
   
-  // Contar solicitudes pendientes solo para admins
-  const pendingVacations = user.role === 'admin' 
-    ? vacationRequests.filter(req => req.status === 'pending').length 
-    : 0;
+  // Filtrar solicitudes pendientes
+  const pendingRequests = vacationRequests.filter(req => req.status === 'pending');
+  const pendingVacations = user.role === 'admin' ? pendingRequests.length : 0;
+  
+  // Mostrar pop-up automáticamente cuando hay solicitudes pendientes
+  useEffect(() => {
+    if (user.role === 'admin' && pendingRequests.length > 0) {
+      // Mostrar después de un pequeño delay para que no sea tan intrusivo
+      const timer = setTimeout(() => {
+        setShowNotificationDialog(true);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [pendingRequests.length, user.role]);
   
   return (
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 md:px-6">
@@ -43,7 +62,7 @@ export function Header({ user, onLogout, onPageChange }: HeaderProps) {
             variant="ghost" 
             size="icon" 
             className="relative hidden sm:flex"
-            onClick={() => onPageChange?.('admin-vacations')}
+            onClick={() => setShowNotificationDialog(true)}
           >
             <Bell className="h-5 w-5" />
             {pendingVacations > 0 && (
@@ -89,6 +108,62 @@ export function Header({ user, onLogout, onPageChange }: HeaderProps) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Pop-up de notificaciones */}
+      <Dialog open={showNotificationDialog} onOpenChange={setShowNotificationDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-primary" />
+              Solicitudes de Vacaciones Pendientes
+            </DialogTitle>
+            <DialogDescription>
+              Tienes {pendingRequests.length} {pendingRequests.length === 1 ? 'solicitud' : 'solicitudes'} de vacaciones pendiente{pendingRequests.length === 1 ? '' : 's'} de aprobación
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {pendingRequests.map((request) => (
+              <div 
+                key={request.id} 
+                className="p-3 bg-secondary/50 rounded-lg border hover:bg-secondary/70 transition-colors"
+              >
+                <p className="font-medium text-sm">Solicitud de vacaciones</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {new Date(request.start_date).toLocaleDateString('es-ES')} - {new Date(request.end_date).toLocaleDateString('es-ES')}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {request.total_days} {request.total_days === 1 ? 'día' : 'días'}
+                </p>
+                {request.reason && (
+                  <p className="text-xs mt-2 text-foreground/80">
+                    Motivo: {request.reason}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="flex gap-2 mt-4">
+            <Button 
+              variant="outline" 
+              className="flex-1"
+              onClick={() => setShowNotificationDialog(false)}
+            >
+              Cerrar
+            </Button>
+            <Button 
+              className="flex-1"
+              onClick={() => {
+                setShowNotificationDialog(false);
+                onPageChange?.('admin-vacations');
+              }}
+            >
+              Ver Todas
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }
