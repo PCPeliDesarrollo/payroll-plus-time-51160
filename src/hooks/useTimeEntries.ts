@@ -15,19 +15,14 @@ export function useTimeEntries() {
     if (user) {
       fetchTimeEntries();
       fetchTodayEntry();
-    }
-  }, [user]);
-
-  // Refresh today's entry whenever the component becomes visible
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden && user) {
+      
+      // Set up interval to refresh today's entry every 30 seconds
+      const intervalId = setInterval(() => {
         fetchTodayEntry();
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }, 30000);
+      
+      return () => clearInterval(intervalId);
+    }
   }, [user]);
 
   const fetchTimeEntries = async () => {
