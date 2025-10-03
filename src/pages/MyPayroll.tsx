@@ -11,11 +11,40 @@ import {
   ChevronRight
 } from "lucide-react";
 import { usePayroll } from "@/hooks/usePayroll";
+import { useTimeEntries } from "@/hooks/useTimeEntries";
 
 export function MyPayroll() {
   const { payrollRecords, loading } = usePayroll();
+  const { timeEntries } = useTimeEntries();
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
+
+  // Calculate company seniority from first time entry
+  const getCompanySeniority = () => {
+    if (timeEntries.length === 0) return '--';
+    
+    // Get the oldest time entry (last in the array since it's ordered desc)
+    const firstEntry = timeEntries[timeEntries.length - 1];
+    const firstDate = new Date(firstEntry.date);
+    const now = new Date();
+    
+    const years = now.getFullYear() - firstDate.getFullYear();
+    const months = now.getMonth() - firstDate.getMonth();
+    
+    let totalMonths = years * 12 + months;
+    if (totalMonths < 0) totalMonths = 0;
+    
+    const displayYears = Math.floor(totalMonths / 12);
+    const displayMonths = totalMonths % 12;
+    
+    if (displayYears === 0) {
+      return `${displayMonths} ${displayMonths === 1 ? 'mes' : 'meses'}`;
+    } else if (displayMonths === 0) {
+      return `${displayYears} ${displayYears === 1 ? 'año' : 'años'}`;
+    } else {
+      return `${displayYears} ${displayYears === 1 ? 'año' : 'años'} y ${displayMonths} ${displayMonths === 1 ? 'mes' : 'meses'}`;
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-ES', {
@@ -74,39 +103,22 @@ export function MyPayroll() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex items-center space-x-2">
-              <DollarSign className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <div className="space-y-1 min-w-0">
-                <p className="text-xs sm:text-sm font-medium leading-none">Último Salario</p>
-                <p className="text-xl sm:text-2xl font-bold truncate">
-                  {payrollRecords.length > 0 ? formatCurrency(payrollRecords[0].net_salary) : '--'}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <Card>
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center space-x-2">
               <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <div className="space-y-1 min-w-0">
-                <p className="text-xs sm:text-sm font-medium leading-none">Último Período</p>
-                <p className="text-base sm:text-2xl font-bold truncate">
-                  {payrollRecords.length > 0 
-                    ? `${getMonthName(payrollRecords[0].month)} ${payrollRecords[0].year}`
-                    : '--'
-                  }
+                <p className="text-xs sm:text-sm font-medium leading-none">Antigüedad en la Empresa</p>
+                <p className="text-base sm:text-xl font-bold truncate">
+                  {getCompanySeniority()}
                 </p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="sm:col-span-2 lg:col-span-1">
+        <Card>
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center space-x-2">
               <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -179,15 +191,11 @@ export function MyPayroll() {
                     <CardContent className="p-4 sm:p-6 pt-0">
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <span className="text-xs sm:text-sm text-muted-foreground">Salario Neto</span>
-                          <span className="font-bold text-sm sm:text-base">{formatCurrency(latestRecord.net_salary)}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
                           <span className="text-xs sm:text-sm text-muted-foreground">Estado</span>
                           {getStatusBadge(latestRecord.status)}
                         </div>
                         {hasMultiple && (
-                          <Badge variant="outline" className="text-xs w-full justify-center">
+                          <Badge variant="outline" className="text-xs w-full justify-center mt-2">
                             {monthRecords.length} nóminas
                           </Badge>
                         )}

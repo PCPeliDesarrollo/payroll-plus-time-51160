@@ -37,11 +37,11 @@ All colors MUST be HSL.
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 270 70% 85%;
-    --warning-foreground: 276 40% 25%;
+    --warning: 270 65% 75%;
+    --warning-foreground: 0 0% 100%;
     
-    --pending: 270 70% 85%;
-    --pending-foreground: 276 40% 30%;
+    --pending: 270 65% 75%;
+    --pending-foreground: 0 0% 100%;
 
     --border: 280 20% 91%;
     --input: 280 20% 91%;

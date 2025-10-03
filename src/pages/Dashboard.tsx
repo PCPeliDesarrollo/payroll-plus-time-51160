@@ -51,13 +51,13 @@ function QuickCheckInButton({ isCheckedIn, currentEntry }: { isCheckedIn: boolea
   };
 
   return (
-    <div className="relative h-20 rounded-lg border bg-card overflow-hidden">
-      <div className="absolute inset-0 p-4 flex flex-col justify-between">
+    <div className="relative h-32 rounded-lg border-2 bg-gradient-to-br from-primary/10 to-accent/10 overflow-hidden hover:shadow-lg transition-all">
+      <div className="absolute inset-0 p-6 flex flex-col justify-between">
         <div className="flex items-center justify-between">
-          <Clock className="h-5 w-5 text-primary" />
+          <Clock className="h-6 w-6 text-primary" />
           <Badge 
             variant={isCheckedIn ? "default" : "outline"}
-            className={`text-xs ${
+            className={`${
               isCheckedIn 
                 ? "bg-success text-success-foreground" 
                 : ""
@@ -68,24 +68,24 @@ function QuickCheckInButton({ isCheckedIn, currentEntry }: { isCheckedIn: boolea
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <p className="font-semibold text-sm">{currentTime}</p>
-            <p className="text-xs text-muted-foreground">
+            <p className="font-bold text-2xl">{currentTime}</p>
+            <p className="text-sm text-muted-foreground">
               {isCheckedIn ? "En el trabajo" : "Fichar ahora"}
             </p>
           </div>
           <Button
             onClick={handleCheckInOut}
-            size="sm"
-            className={`h-8 w-8 p-0 ${
+            size="lg"
+            className={`h-14 w-14 rounded-full ${
               isCheckedIn 
                 ? "bg-destructive hover:bg-destructive/90" 
                 : "bg-success hover:bg-success/90"
             }`}
           >
             {isCheckedIn ? (
-              <Square className="h-4 w-4" />
+              <Square className="h-6 w-6" />
             ) : (
-              <Play className="h-4 w-4" />
+              <Play className="h-6 w-6" />
             )}
           </Button>
         </div>
@@ -360,31 +360,19 @@ export function Dashboard({ userRole }: DashboardProps) {
         />
       </div>
 
-      {/* Quick Actions Section */}
+      {/* Quick Check-In Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
-            Acciones Rápidas
+            <Clock className="h-5 w-5 text-primary" />
+            Fichaje Rápido
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <QuickCheckInButton 
-              isCheckedIn={currentEntry?.status === 'checked_in'} 
-              currentEntry={currentEntry}
-            />
-            <Button className="h-20 text-left justify-start flex-col items-start p-4" variant="outline">
-              <Calendar className="h-5 w-5 mb-2" />
-              <span className="font-semibold">Solicitar Vacaciones</span>
-              <span className="text-xs text-muted-foreground">Gestiona tus días libres</span>
-            </Button>
-            <Button className="h-20 text-left justify-start flex-col items-start p-4" variant="outline">
-              <FileText className="h-5 w-5 mb-2" />
-              <span className="font-semibold">Ver Última Nómina</span>
-              <span className="text-xs text-muted-foreground">Consulta tu salario</span>
-            </Button>
-          </div>
+          <QuickCheckInButton 
+            isCheckedIn={currentEntry?.status === 'checked_in'} 
+            currentEntry={currentEntry}
+          />
         </CardContent>
       </Card>
 
