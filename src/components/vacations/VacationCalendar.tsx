@@ -46,11 +46,11 @@ export function VacationCalendar({ vacations }: VacationCalendarProps) {
   const getDateColor = (status: string) => {
     switch (status) {
       case 'pending':
-        return 'bg-orange-400/80 hover:bg-orange-500/90';
+        return 'bg-accent/80 hover:bg-accent/90';
       case 'approved':
-        return 'bg-green-400/80 hover:bg-green-500/90';
+        return 'bg-success/80 hover:bg-success/90';
       case 'rejected':
-        return 'bg-red-400/80 hover:bg-red-500/90';
+        return 'bg-destructive/80 hover:bg-destructive/90';
       default:
         return 'bg-secondary';
     }
@@ -131,9 +131,9 @@ export function VacationCalendar({ vacations }: VacationCalendarProps) {
           </div>
         </div>
         <div className="flex flex-wrap gap-2 mt-4">
-          <Badge className="bg-orange-400 text-white">Solicitadas</Badge>
-          <Badge className="bg-green-400 text-white">Aprobadas</Badge>
-          <Badge className="bg-red-400 text-white">Rechazadas</Badge>
+          <Badge className="bg-accent text-white">Solicitadas</Badge>
+          <Badge className="bg-success text-white">Aprobadas</Badge>
+          <Badge className="bg-destructive text-white">Rechazadas</Badge>
         </div>
       </CardHeader>
       <CardContent>

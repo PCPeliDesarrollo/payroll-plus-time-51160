@@ -39,7 +39,7 @@ export function EmployeeVacationList({
     const hasRejected = requests.some(req => req.status === 'rejected');
 
     if (hasPending) {
-      return <Clock className="h-5 w-5 text-orange-500" />;
+      return <Clock className="h-5 w-5 text-accent" />;
     }
     if (hasApproved && !hasPending) {
       return <CheckCircle className="h-5 w-5 text-green-500" />;
@@ -58,7 +58,7 @@ export function EmployeeVacationList({
     return (
       <div className="flex gap-1 flex-wrap">
         {pending > 0 && (
-          <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
+          <Badge variant="secondary" className="text-xs bg-pending text-pending-foreground">
             {pending} pendiente{pending > 1 ? 's' : ''}
           </Badge>
         )}

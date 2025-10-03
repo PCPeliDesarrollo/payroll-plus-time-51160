@@ -129,7 +129,7 @@ export function AdminSettings() {
           value={stats.pendingVacations.toString()}
           description="Requieren aprobación"
           icon={Calendar}
-          className={stats.pendingVacations > 0 ? "border-orange-200 bg-orange-50" : ""}
+          className={stats.pendingVacations > 0 ? "border-accent/30 bg-accent/10" : ""}
         />
       </div>
 

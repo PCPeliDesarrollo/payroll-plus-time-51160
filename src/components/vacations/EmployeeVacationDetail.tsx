@@ -1,10 +1,22 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Calendar, Clock, CheckCircle, XCircle } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, CheckCircle, XCircle, DollarSign, Download } from "lucide-react";
 import { VacationCalendar } from "./VacationCalendar";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+type PayrollRecord = {
+  id: string;
+  user_id: string;
+  month: number;
+  year: number;
+  base_salary: number | null;
+  file_url: string | null;
+  created_at: string;
+};
 
 interface Employee {
   id: string;
@@ -46,6 +58,38 @@ export function EmployeeVacationDetail({
   onApprove,
   onReject,
 }: EmployeeVacationDetailProps) {
+  const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
+  const [loadingPayroll, setLoadingPayroll] = useState(false);
+
+  useEffect(() => {
+    fetchPayrollRecords();
+  }, [employee.id]);
+
+  const fetchPayrollRecords = async () => {
+    setLoadingPayroll(true);
+    try {
+      const { data, error } = await supabase
+        .from('payroll_records')
+        .select('*')
+        .eq('user_id', employee.id)
+        .order('year', { ascending: false })
+        .order('month', { ascending: false })
+        .limit(6);
+
+      if (error) throw error;
+      setPayrollRecords(data || []);
+    } catch (error) {
+      console.error('Error fetching payroll records:', error);
+    } finally {
+      setLoadingPayroll(false);
+    }
+  };
+
+  const monthNames = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+
   const employeeRequests = vacationRequests.filter(
     (req) => req.user_id === employee.id
   );
@@ -54,7 +98,7 @@ export function EmployeeVacationDetail({
     switch (status) {
       case "pending":
         return (
-          <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400">
+          <Badge className="bg-pending text-pending-foreground">
             <Clock className="h-3 w-3 mr-1" />
             Pendiente
           </Badge>
@@ -124,7 +168,7 @@ export function EmployeeVacationDetail({
             <CardTitle className="text-lg">Días Usados</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-orange-500">
+            <p className="text-3xl font-bold text-accent">
               {vacationBalance?.used_days || 0}
             </p>
           </CardContent>
@@ -143,6 +187,62 @@ export function EmployeeVacationDetail({
       </div>
 
       <VacationCalendar vacations={calendarVacations} />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <DollarSign className="h-5 w-5 text-primary" />
+            Nóminas recientes
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingPayroll ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-2 text-sm text-muted-foreground">Cargando nóminas...</p>
+            </div>
+          ) : payrollRecords.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">
+              No hay nóminas registradas
+            </p>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {payrollRecords.map((record) => (
+                <Card key={record.id} className="border-muted">
+                  <CardContent className="pt-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-sm md:text-base">
+                          {monthNames[record.month - 1]} {record.year}
+                        </p>
+                        {record.base_salary && (
+                          <p className="text-xs md:text-sm text-muted-foreground">
+                            {record.base_salary.toLocaleString('es-ES', {
+                              style: 'currency',
+                              currency: 'EUR'
+                            })}
+                          </p>
+                        )}
+                      </div>
+                      {record.file_url && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          asChild
+                        >
+                          <a href={record.file_url} target="_blank" rel="noopener noreferrer">
+                            <Download className="h-3 w-3 md:h-4 md:w-4" />
+                          </a>
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

@@ -83,25 +83,25 @@ export function Employees() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-foreground">Gestión de Empleados</h2>
-          <p className="text-muted-foreground">Administra la información de todos los empleados</p>
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground">Gestión de Empleados</h2>
+          <p className="text-sm md:text-base text-muted-foreground">Administra la información de todos los empleados</p>
         </div>
         <CreateEmployeeDialog />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Lista de Empleados ({filteredEmployees.length})</span>
-            <div className="relative">
+          <CardTitle className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <span className="text-lg md:text-xl">Lista de Empleados ({filteredEmployees.length})</span>
+            <div className="relative w-full md:w-80">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar empleados..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-80"
+                className="pl-10"
               />
             </div>
           </CardTitle>
@@ -122,18 +122,18 @@ export function Employees() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredEmployees.map((employee) => (
                 <Card key={employee.id} className="transition-all duration-200 hover:shadow-md">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-12 w-12">
+                  <CardContent className="p-4 md:p-6">
+                    <div className="flex items-start justify-between mb-4 flex-wrap gap-2">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <Avatar className="h-10 w-10 md:h-12 md:w-12 flex-shrink-0">
                           <AvatarImage src="" />
-                          <AvatarFallback className="bg-primary text-primary-foreground">
+                          <AvatarFallback className="bg-primary text-primary-foreground text-xs md:text-sm">
                             {employee.full_name.split(' ').map(n => n[0]).join('')}
                           </AvatarFallback>
                         </Avatar>
-                        <div>
-                          <h3 className="font-semibold text-foreground">{employee.full_name}</h3>
-                          <p className="text-sm text-muted-foreground">{employee.role || 'Sin rol'}</p>
+                        <div className="min-w-0">
+                          <h3 className="font-semibold text-foreground text-sm md:text-base truncate">{employee.full_name}</h3>
+                          <p className="text-xs md:text-sm text-muted-foreground truncate">{employee.role || 'Sin rol'}</p>
                         </div>
                       </div>
                       <DropdownMenu>
@@ -148,7 +148,7 @@ export function Employees() {
                           <DropdownMenuItem>Ver Fichajes</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
-                            className="text-orange-600"
+                            className="text-warning-foreground"
                             onClick={() => handleDeactivate(employee.id)}
                           >
                             Desactivar
@@ -164,24 +164,24 @@ export function Employees() {
                     </div>
 
                     <div className="space-y-2 mb-4">
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Mail className="h-4 w-4" />
-                        {employee.email}
+                      <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+                        <Mail className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                        <span className="truncate">{employee.email}</span>
                       </div>
                       {employee.employee_id && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Phone className="h-4 w-4" />
-                          ID: {employee.employee_id}
+                        <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+                          <Phone className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                          <span>ID: {employee.employee_id}</span>
                         </div>
                       )}
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="h-4 w-4" />
-                        Desde {employee.hire_date ? format(new Date(employee.hire_date), 'dd/MM/yyyy', { locale: es }) : 'No especificado'}
+                      <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+                        <Calendar className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                        <span>Desde {employee.hire_date ? format(new Date(employee.hire_date), 'dd/MM/yyyy', { locale: es }) : 'No especificado'}</span>
                       </div>
                       {employee.department && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="h-4 w-4" />
-                          {employee.department}
+                        <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+                          <Clock className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                          <span>{employee.department}</span>
                         </div>
                       )}
                     </div>

@@ -117,12 +117,12 @@ export function AdminAttendance() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-foreground">Gestión de Fichajes</h2>
-          <p className="text-muted-foreground">Controla la asistencia de todos los empleados</p>
+          <h2 className="text-2xl md:text-3xl font-bold text-foreground">Gestión de Fichajes</h2>
+          <p className="text-sm md:text-base text-muted-foreground">Controla la asistencia de todos los empleados</p>
         </div>
-        <Button onClick={exportToCSV} variant="outline">
+        <Button onClick={exportToCSV} variant="outline" className="w-full md:w-auto">
           <Download className="mr-2 h-4 w-4" />
           Exportar CSV
         </Button>
@@ -136,7 +136,7 @@ export function AdminAttendance() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-4 mb-6">
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -148,12 +148,12 @@ export function AdminAttendance() {
                 />
               </div>
             </div>
-            <div>
+            <div className="w-full md:w-auto">
               <Input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-40"
+                className="w-full md:w-40"
               />
             </div>
           </div>
@@ -171,30 +171,30 @@ export function AdminAttendance() {
           ) : (
             <div className="space-y-4">
               {filteredEntries.map((entry) => (
-                <div key={entry.id} className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg border">
-                  <div className="flex items-center gap-4">
+                <div key={entry.id} className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-secondary/50 rounded-lg border gap-4">
+                  <div className="flex items-center gap-3">
                     <div className="flex flex-col">
-                      <p className="font-medium">{entry.profiles?.full_name}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-medium text-sm md:text-base">{entry.profiles?.full_name}</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">
                         {entry.profiles?.department || 'Sin departamento'}
                       </p>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-6">
+                  <div className="flex flex-wrap items-center gap-3 md:gap-6">
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Entrada</p>
-                      <p className="font-medium">{formatTime(entry.check_in_time)}</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">Entrada</p>
+                      <p className="font-medium text-sm md:text-base">{formatTime(entry.check_in_time)}</p>
                     </div>
                     
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Salida</p>
-                      <p className="font-medium">{formatTime(entry.check_out_time)}</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">Salida</p>
+                      <p className="font-medium text-sm md:text-base">{formatTime(entry.check_out_time)}</p>
                     </div>
                     
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Total</p>
-                      <p className="font-medium">{formatDuration(entry.total_hours)}</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">Total</p>
+                      <p className="font-medium text-sm md:text-base">{formatDuration(entry.total_hours)}</p>
                     </div>
                     
                     <div className="text-center">
