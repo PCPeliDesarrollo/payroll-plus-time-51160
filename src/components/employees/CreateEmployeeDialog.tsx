@@ -29,7 +29,8 @@ export function CreateEmployeeDialog() {
 
     try {
       console.log('Creating employee with data:', formData);
-      await createEmployee(formData);
+      const result = await createEmployee(formData);
+      console.log('Employee created successfully:', result);
       toast({
         title: "Empleado creado",
         description: "El empleado ha sido añadido correctamente",
@@ -45,9 +46,11 @@ export function CreateEmployeeDialog() {
       });
     } catch (error) {
       console.error('Error creating employee:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      console.error('Error details:', errorMessage);
       toast({
-        title: "Error",
-        description: `No se pudo crear el empleado: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        title: "Error al crear empleado",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

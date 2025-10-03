@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { FileText, Upload, Eye, Download, Plus } from "lucide-react";
+import { FileText, Upload, Eye, Download, Plus, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -40,6 +40,7 @@ export function AdminPayroll() {
   const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [uploadingFile, setUploadingFile] = useState<string | null>(null);
@@ -226,6 +227,12 @@ export function AdminPayroll() {
     return months[month - 1];
   };
 
+  // Filtrar empleados por búsqueda
+  const filteredEmployees = employees.filter(emp => 
+    emp.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (emp.department || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   // Vista de lista de empleados
   if (!selectedEmployee) {
     return (
@@ -237,9 +244,20 @@ export function AdminPayroll() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
-              <FileText className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-              Empleados
+            <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-lg md:text-xl">
+                <FileText className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                Empleados
+              </div>
+              <div className="relative w-full sm:w-80">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar empleado..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 h-9 md:h-10 text-xs md:text-sm"
+                />
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -248,14 +266,16 @@ export function AdminPayroll() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
                 <p className="mt-2 text-sm md:text-base text-muted-foreground">Cargando empleados...</p>
               </div>
-            ) : employees.length === 0 ? (
+            ) : filteredEmployees.length === 0 ? (
               <div className="text-center py-8">
                 <FileText className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-sm md:text-base text-muted-foreground">No hay empleados registrados</p>
+                <p className="text-sm md:text-base text-muted-foreground">
+                  {searchTerm ? 'No se encontraron empleados' : 'No hay empleados registrados'}
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                {employees.map((employee) => (
+                {filteredEmployees.map((employee) => (
                   <Card 
                     key={employee.id} 
                     className="cursor-pointer hover:bg-accent transition-colors"
@@ -398,49 +418,21 @@ export function AdminPayroll() {
                            <Eye className="h-3 w-3 md:h-4 md:w-4 mr-1" />
                            Ver
                          </Button>
-                         <Button
-                           size="sm"
-                           variant="outline"
-                           onClick={async () => {
-                             try {
-                               console.log('Downloading file:', record.file_url);
-                               const fileName = `nomina-${selectedEmployee.full_name}-${getMonthName(record.month)}-${record.year}.pdf`;
-                               
-                               const response = await fetch(record.file_url!, {
-                                 method: 'GET',
-                                 headers: {
-                                   'Content-Type': 'application/pdf',
-                                 },
-                               });
-                               
-                               if (!response.ok) {
-                                 throw new Error('Error al descargar el archivo');
-                               }
-                               
-                               const blob = await response.blob();
-                               const url = window.URL.createObjectURL(blob);
-                               
-                               const link = document.createElement('a');
-                               link.href = url;
-                               link.download = fileName;
-                               document.body.appendChild(link);
-                               link.click();
-                               document.body.removeChild(link);
-                               window.URL.revokeObjectURL(url);
-                             } catch (error) {
-                               console.error('Error downloading file:', error);
-                               toast({
-                                 title: "Error",
-                                 description: "No se pudo descargar el archivo",
-                                 variant: "destructive",
-                               });
-                             }
-                           }}
-                           className="flex-1 sm:flex-none text-xs md:text-sm h-8 md:h-9"
+                         <a
+                           href={record.file_url}
+                           download={`nomina-${selectedEmployee.full_name}-${getMonthName(record.month)}-${record.year}.pdf`}
+                           target="_blank"
+                           rel="noopener noreferrer"
                          >
-                           <Download className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-                           Descargar
-                         </Button>
+                           <Button
+                             size="sm"
+                             variant="outline"
+                             className="flex-1 sm:flex-none text-xs md:text-sm h-8 md:h-9"
+                           >
+                             <Download className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                             Descargar
+                           </Button>
+                         </a>
                       </>
                     ) : (
                       <div className="w-full sm:w-auto">
