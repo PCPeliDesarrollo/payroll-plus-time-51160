@@ -2,18 +2,21 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { 
   Calendar as CalendarIcon, 
   Plus,
   Clock,
   CheckCircle,
   XCircle,
-  Plane
+  Plane,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { useVacations } from "@/hooks/useVacations";
 import { useToast } from "@/hooks/use-toast";
@@ -23,8 +26,17 @@ export function MyVacations() {
   const [endDate, setEndDate] = useState<Date>();
   const [reason, setReason] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const { vacationRequests, vacationBalance, loading, createVacationRequest } = useVacations();
   const { toast } = useToast();
+
+  const months = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+
+  const daysOfWeek = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
   const handleSubmitRequest = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -102,6 +114,99 @@ export function MyVacations() {
         return <XCircle className="h-5 w-5 text-destructive" />;
       default:
         return <Clock className="h-5 w-5 text-primary" />;
+    }
+  };
+
+  // Group requests by month
+  const requestsByMonth = React.useMemo(() => {
+    const grouped: Record<string, typeof vacationRequests> = {};
+    vacationRequests.forEach(request => {
+      const date = new Date(request.start_date);
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      if (!grouped[monthKey]) grouped[monthKey] = [];
+      grouped[monthKey].push(request);
+    });
+    return Object.entries(grouped).sort((a, b) => b[0].localeCompare(a[0]));
+  }, [vacationRequests]);
+
+  // Calendar functions
+  const getDaysInMonth = (month: number, year: number) => {
+    return new Date(year, month + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (month: number, year: number) => {
+    const day = new Date(year, month, 1).getDay();
+    return day === 0 ? 6 : day - 1;
+  };
+
+  const getVacationForDate = (day: number) => {
+    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return vacationRequests.filter(request => {
+      const start = new Date(request.start_date);
+      const end = new Date(request.end_date);
+      const current = new Date(dateStr);
+      return current >= start && current <= end;
+    });
+  };
+
+  const getDateColor = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-accent/80';
+      case 'approved':
+        return 'bg-success/80';
+      case 'rejected':
+        return 'bg-destructive/80';
+      default:
+        return 'bg-secondary';
+    }
+  };
+
+  const renderCalendar = () => {
+    const daysInMonth = getDaysInMonth(currentMonth, currentYear);
+    const firstDay = getFirstDayOfMonth(currentMonth, currentYear);
+    const days = [];
+
+    for (let i = 0; i < firstDay; i++) {
+      days.push(<div key={`empty-${i}`} className="aspect-square" />);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayVacations = getVacationForDate(day);
+      const hasVacations = dayVacations.length > 0;
+
+      days.push(
+        <div
+          key={day}
+          className={`aspect-square flex flex-col items-center justify-center text-sm rounded-lg border ${
+            hasVacations
+              ? `${getDateColor(dayVacations[0].status)} text-white font-semibold`
+              : 'bg-background hover:bg-accent/20'
+          }`}
+        >
+          <span>{day}</span>
+        </div>
+      );
+    }
+
+    return days;
+  };
+
+  const previousMonth = () => {
+    if (currentMonth === 0) {
+      setCurrentMonth(11);
+      setCurrentYear(currentYear - 1);
+    } else {
+      setCurrentMonth(currentMonth - 1);
+    }
+  };
+
+  const nextMonth = () => {
+    if (currentMonth === 11) {
+      setCurrentMonth(0);
+      setCurrentYear(currentYear + 1);
+    } else {
+      setCurrentMonth(currentMonth + 1);
     }
   };
 
@@ -224,7 +329,45 @@ export function MyVacations() {
         </Card>
       </div>
 
-      {/* Vacation Requests */}
+      {/* Vacation Calendar */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <CalendarIcon className="h-5 w-5 text-primary" />
+              Calendario de Vacaciones
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon" onClick={previousMonth}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm font-medium min-w-[150px] text-center">
+                {months[currentMonth]} {currentYear}
+              </span>
+              <Button variant="outline" size="icon" onClick={nextMonth}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2 mt-4">
+            <Badge className="bg-accent text-white">Pendientes</Badge>
+            <Badge className="bg-success text-white">Aprobadas</Badge>
+            <Badge className="bg-destructive text-white">Rechazadas</Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-7 gap-1 md:gap-2">
+            {daysOfWeek.map(day => (
+              <div key={day} className="text-center font-semibold text-xs md:text-sm p-2">
+                {day}
+              </div>
+            ))}
+            {renderCalendar()}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Vacation Requests by Month */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -233,7 +376,7 @@ export function MyVacations() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className="space-y-4">
             {loading ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">Cargando solicitudes...</p>
@@ -247,30 +390,66 @@ export function MyVacations() {
                 </p>
               </div>
             ) : (
-              vacationRequests.map((request) => (
-                <div key={request.id} className="flex items-center justify-between p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors">
-                  <div className="flex items-center gap-4">
-                    {getStatusIcon(request.status)}
-                    <div>
-                      <p className="font-medium">
-                        {formatDate(request.start_date)} - {formatDate(request.end_date)}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {request.total_days} días • {request.reason || 'Sin motivo especificado'}
-                      </p>
-                      {request.comments && (
-                        <p className="text-sm text-muted-foreground italic mt-1">
-                          Comentarios: {request.comments}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-lg">{request.total_days} días</p>
-                    {getStatusBadge(request.status)}
-                  </div>
-                </div>
-              ))
+              requestsByMonth.map(([monthKey, requests]) => {
+                const [year, month] = monthKey.split('-');
+                const monthName = new Date(parseInt(year), parseInt(month) - 1).toLocaleDateString('es-ES', { 
+                  month: 'long', 
+                  year: 'numeric' 
+                });
+                
+                return (
+                  <Collapsible key={monthKey} defaultOpen={monthKey === requestsByMonth[0][0]}>
+                    <Card className="border-2 hover:border-primary/50 transition-colors">
+                      <CollapsibleTrigger className="w-full">
+                        <CardHeader className="cursor-pointer hover:bg-secondary/30 transition-colors">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <Plane className="h-5 w-5 text-primary" />
+                              <div className="text-left">
+                                <CardTitle className="text-lg capitalize">{monthName}</CardTitle>
+                                <p className="text-sm text-muted-foreground mt-1">
+                                  {requests.length} solicitud{requests.length !== 1 ? 'es' : ''}
+                                </p>
+                              </div>
+                            </div>
+                            <ChevronDown className="h-5 w-5 text-muted-foreground transition-transform duration-200" />
+                          </div>
+                        </CardHeader>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <CardContent className="pt-0">
+                          <div className="space-y-3">
+                            {requests.map((request) => (
+                              <div key={request.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors gap-3">
+                                <div className="flex items-center gap-4">
+                                  {getStatusIcon(request.status)}
+                                  <div>
+                                    <p className="font-medium">
+                                      {formatDate(request.start_date)} - {formatDate(request.end_date)}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {request.reason || 'Sin motivo especificado'}
+                                    </p>
+                                    {request.comments && (
+                                      <p className="text-sm text-muted-foreground italic mt-1">
+                                        Comentarios: {request.comments}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2 justify-between sm:justify-end">
+                                  <p className="font-semibold text-lg">{request.total_days} días</p>
+                                  {getStatusBadge(request.status)}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </CollapsibleContent>
+                    </Card>
+                  </Collapsible>
+                );
+              })
             )}
           </div>
         </CardContent>

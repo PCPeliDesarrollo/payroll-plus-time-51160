@@ -41,8 +41,8 @@ export function LoginForm({}: LoginFormProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md shadow-[0_8px_40px_rgba(176,98,248,0.2)] border-primary/20 backdrop-blur-sm bg-white">
+    <div className="min-h-screen flex items-center justify-center bg-primary p-4">
+      <Card className="w-full max-w-md shadow-[0_8px_40px_rgba(176,98,248,0.2)] border-white/20 backdrop-blur-sm bg-white">
         <CardHeader className="space-y-6 text-center pb-8">
           <div className="flex justify-center">
             <div className="relative group">
