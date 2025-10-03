@@ -93,6 +93,7 @@ export type Database = {
           hire_date: string | null
           id: string
           is_active: boolean | null
+          phone: string | null
           role: string
           updated_at: string | null
         }
@@ -105,6 +106,7 @@ export type Database = {
           hire_date?: string | null
           id: string
           is_active?: boolean | null
+          phone?: string | null
           role?: string
           updated_at?: string | null
         }
@@ -117,6 +119,7 @@ export type Database = {
           hire_date?: string | null
           id?: string
           is_active?: boolean | null
+          phone?: string | null
           role?: string
           updated_at?: string | null
         }
@@ -275,10 +278,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

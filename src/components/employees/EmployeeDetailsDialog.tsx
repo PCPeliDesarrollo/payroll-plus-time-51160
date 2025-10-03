@@ -22,7 +22,9 @@ import { useEmployees } from "@/hooks/useEmployees";
 import { useToast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
 
-type Profile = Database['public']['Tables']['profiles']['Row'];
+type Profile = Database['public']['Tables']['profiles']['Row'] & {
+  phone?: string | null;
+};
 
 interface EmployeeDetailsDialogProps {
   employee: Profile | null;
@@ -40,7 +42,8 @@ export function EmployeeDetailsDialog({ employee, open, onOpenChange }: Employee
     full_name: "",
     department: "",
     employee_id: "",
-    role: ""
+    role: "",
+    phone: ""
   });
   
   if (!employee) return null;
@@ -51,7 +54,8 @@ export function EmployeeDetailsDialog({ employee, open, onOpenChange }: Employee
       full_name: employee.full_name,
       department: employee.department || "",
       employee_id: employee.employee_id || "",
-      role: employee.role
+      role: employee.role,
+      phone: employee.phone || ""
     });
   }
   
@@ -81,7 +85,8 @@ export function EmployeeDetailsDialog({ employee, open, onOpenChange }: Employee
       full_name: employee.full_name,
       department: employee.department || "",
       employee_id: employee.employee_id || "",
-      role: employee.role
+      role: employee.role,
+      phone: employee.phone || ""
     });
     setIsEditing(false);
   };
@@ -169,14 +174,19 @@ export function EmployeeDetailsDialog({ employee, open, onOpenChange }: Employee
               <Phone className="h-4 w-4 text-muted-foreground" />
               {isEditing ? (
                 <Input
-                  value={editData.employee_id}
-                  onChange={(e) => setEditData({...editData, employee_id: e.target.value})}
-                  placeholder="ID del empleado"
+                  value={editData.phone}
+                  onChange={(e) => setEditData({...editData, phone: e.target.value})}
+                  placeholder="Teléfono de contacto"
                   className="text-sm"
                 />
               ) : (
-                <span className="text-sm">ID: {employee.employee_id || 'No asignado'}</span>
+                <span className="text-sm">{employee.phone || 'No especificado'}</span>
               )}
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm">ID: {employee.employee_id || 'No asignado'}</span>
             </div>
           </div>
 

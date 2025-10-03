@@ -20,6 +20,7 @@ export function CreateEmployeeDialog() {
     role: "employee",
     department: "",
     employee_id: "",
+    phone: "",
     password: "",
   });
 
@@ -42,6 +43,7 @@ export function CreateEmployeeDialog() {
         role: "employee",
         department: "",
         employee_id: "",
+        phone: "",
         password: "",
       });
     } catch (error) {
@@ -111,6 +113,17 @@ export function CreateEmployeeDialog() {
               value={formData.department}
               onChange={(e) => setFormData({ ...formData, department: e.target.value })}
               placeholder="Desarrollo, Marketing, RRHH..."
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="phone">Teléfono</Label>
+            <Input
+              id="phone"
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              placeholder="+34 600 000 000"
             />
           </div>
 

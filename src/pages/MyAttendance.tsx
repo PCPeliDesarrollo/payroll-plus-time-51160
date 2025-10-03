@@ -9,8 +9,16 @@ import {
   Calendar as CalendarIcon, 
   Download,
   Play,
-  Square
+  Square,
+  MoreVertical,
+  Flag
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useTimeEntries } from "@/hooks/useTimeEntries";
 import { useToast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -252,6 +260,26 @@ export function MyAttendance() {
                                       {entry.status === 'checked_out' ? 'Completo' : 
                                        entry.status === 'checked_in' ? 'En curso' : 'Incompleto'}
                                     </Badge>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                          <MoreVertical className="h-4 w-4" />
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end" className="w-56">
+                                        <DropdownMenuItem
+                                          onClick={() => {
+                                            toast({
+                                              title: "Solicitud enviada",
+                                              description: "El administrador revisará tu solicitud de cambio",
+                                            });
+                                          }}
+                                        >
+                                          <Flag className="mr-2 h-4 w-4" />
+                                          Solicitar cambio
+                                        </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
                                   </div>
                                 </div>
                               ))}
