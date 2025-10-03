@@ -1,12 +1,14 @@
 import { Bell, User, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useVacations } from "@/hooks/useVacations";
 
 interface HeaderProps {
   user: {
@@ -19,6 +21,12 @@ interface HeaderProps {
 }
 
 export function Header({ user, onLogout, onPageChange }: HeaderProps) {
+  const { vacationRequests } = useVacations();
+  
+  // Contar solicitudes pendientes solo para admins
+  const pendingVacations = user.role === 'admin' 
+    ? vacationRequests.filter(req => req.status === 'pending').length 
+    : 0;
   
   return (
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 md:px-6">
@@ -30,10 +38,24 @@ export function Header({ user, onLogout, onPageChange }: HeaderProps) {
       </div>
       
       <div className="flex items-center gap-2 md:gap-4">
-        <Button variant="ghost" size="icon" className="relative hidden sm:flex">
-          <Bell className="h-5 w-5" />
-          <span className="absolute -top-1 -right-1 h-3 w-3 bg-destructive rounded-full text-xs"></span>
-        </Button>
+        {user.role === 'admin' && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="relative hidden sm:flex"
+            onClick={() => onPageChange?.('admin-vacations')}
+          >
+            <Bell className="h-5 w-5" />
+            {pendingVacations > 0 && (
+              <Badge 
+                variant="destructive" 
+                className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+              >
+                {pendingVacations}
+              </Badge>
+            )}
+          </Button>
+        )}
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

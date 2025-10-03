@@ -340,13 +340,29 @@ export function Dashboard({ userRole }: DashboardProps) {
 
   // Employee Dashboard
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold text-foreground">Mi Dashboard</h2>
-        <p className="text-muted-foreground">Resumen de tu actividad</p>
+    <div className="max-w-4xl mx-auto space-y-6 px-4 md:px-6">
+      <div className="text-center">
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground">Mi Dashboard</h2>
+        <p className="text-sm md:text-base text-muted-foreground">Resumen de tu actividad</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Quick Check-In Section - PRIMERO */}
+      <Card className="shadow-lg">
+        <CardHeader className="text-center">
+          <CardTitle className="flex items-center justify-center gap-2 text-xl">
+            <Clock className="h-6 w-6 text-primary" />
+            Fichaje Rápido
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <QuickCheckInButton 
+            isCheckedIn={currentEntry?.status === 'checked_in'} 
+            currentEntry={currentEntry}
+          />
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
         <StatsCard
           title="Horas Este Mes"
           value={`${employeeStats.totalHours}h`}
@@ -381,33 +397,16 @@ export function Dashboard({ userRole }: DashboardProps) {
         />
       </div>
 
-      {/* Quick Check-In Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-primary" />
-            Fichaje Rápido
+            Mis Fichajes Esta Semana
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <QuickCheckInButton 
-            isCheckedIn={currentEntry?.status === 'checked_in'} 
-            currentEntry={currentEntry}
-          />
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" />
-              Mis Fichajes Esta Semana
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {employeeStats.thisWeekEntries.length > 0 ? employeeStats.thisWeekEntries.map((entry, index) => {
+          <div className="space-y-4">
+            {employeeStats.thisWeekEntries.length > 0 ? employeeStats.thisWeekEntries.map((entry, index) => {
                 const entryDate = new Date(entry.date);
                 const dayName = entryDate.toLocaleDateString('es-ES', { weekday: 'long' });
                 const checkInTime = entry.check_in_time 
@@ -451,11 +450,9 @@ export function Dashboard({ userRole }: DashboardProps) {
                   No hay fichajes recientes
                 </div>
               )}
-            </div>
-          </CardContent>
-        </Card>
-
-      </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

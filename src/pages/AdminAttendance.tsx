@@ -3,9 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Users, Search, Download } from "lucide-react";
+import { Clock, Search, Calendar, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface TimeEntry {
   id: string;
@@ -15,34 +17,69 @@ interface TimeEntry {
   check_out_time: string | null;
   total_hours: any;
   status: string;
-  profiles: {
-    full_name: string;
-    department: string | null;
-  };
+}
+
+interface Employee {
+  id: string;
+  full_name: string;
+  department: string | null;
 }
 
 export function AdminAttendance() {
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchTimeEntries();
-  }, [selectedDate]);
+    fetchEmployees();
+  }, []);
 
-  const fetchTimeEntries = async () => {
+  useEffect(() => {
+    if (selectedEmployee) {
+      fetchTimeEntries(selectedEmployee.id);
+    }
+  }, [selectedEmployee, selectedMonth]);
+
+  const fetchEmployees = async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, department')
+        .eq('is_active', true)
+        .order('full_name');
+
+      if (error) throw error;
+      setEmployees(data || []);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      toast({
+        title: "Error",
+        description: "No se pudieron cargar los empleados",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchTimeEntries = async (employeeId: string) => {
+    try {
+      setLoading(true);
+      const startDate = `${selectedMonth}-01`;
+      const endDate = `${selectedMonth}-31`;
+      
+      const { data, error } = await supabase
         .from('time_entries')
-        .select(`
-          *,
-          profiles!inner(full_name, department)
-        `)
-        .eq('date', selectedDate)
-        .order('check_in_time', { ascending: false });
+        .select('*')
+        .eq('user_id', employeeId)
+        .gte('date', startDate)
+        .lte('date', endDate)
+        .order('date', { ascending: false });
 
       if (error) throw error;
       setTimeEntries(data || []);
@@ -88,97 +125,143 @@ export function AdminAttendance() {
     return duration;
   };
 
-  const filteredEntries = timeEntries.filter(entry =>
-    entry.profiles?.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    entry.profiles?.department?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredEmployees = employees.filter(emp =>
+    emp.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (emp.department || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const exportToCSV = () => {
-    const csvContent = [
-      ['Empleado', 'Departamento', 'Entrada', 'Salida', 'Total Horas', 'Estado'].join(','),
-      ...filteredEntries.map(entry => [
-        entry.profiles?.full_name || '',
-        entry.profiles?.department || '',
-        formatTime(entry.check_in_time),
-        formatTime(entry.check_out_time),
-        formatDuration(entry.total_hours),
-        entry.status
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `fichajes_${selectedDate}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-        <div>
+  // Vista de lista de empleados
+  if (!selectedEmployee) {
+    return (
+      <div className="space-y-4 md:space-y-6">
+        <div className="px-2 md:px-0">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">Gestión de Fichajes</h2>
-          <p className="text-sm md:text-base text-muted-foreground">Controla la asistencia de todos los empleados</p>
+          <p className="text-sm md:text-base text-muted-foreground">Selecciona un empleado para ver sus fichajes</p>
         </div>
-        <Button onClick={exportToCSV} variant="outline" className="w-full md:w-auto">
-          <Download className="mr-2 h-4 w-4" />
-          Exportar CSV
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-lg md:text-xl">
+                <Clock className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                Empleados
+              </div>
+              <div className="relative w-full sm:w-80">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar empleado..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 h-9 md:h-10 text-xs md:text-sm"
+                />
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                <p className="mt-2 text-sm md:text-base text-muted-foreground">Cargando empleados...</p>
+              </div>
+            ) : filteredEmployees.length === 0 ? (
+              <div className="text-center py-8">
+                <Clock className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-sm md:text-base text-muted-foreground">
+                  {searchTerm ? 'No se encontraron empleados' : 'No hay empleados registrados'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                {filteredEmployees.map((employee) => (
+                  <Card 
+                    key={employee.id} 
+                    className="cursor-pointer hover:bg-accent transition-colors"
+                    onClick={() => setSelectedEmployee(employee)}
+                  >
+                    <CardContent className="p-4 md:p-6">
+                      <p className="font-medium text-base md:text-lg">{employee.full_name}</p>
+                      <p className="text-xs md:text-sm text-muted-foreground">{employee.department || 'Sin departamento'}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Vista de fichajes del empleado seleccionado
+  return (
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col gap-3 md:gap-4 px-2 md:px-0">
+        <Button 
+          variant="outline" 
+          onClick={() => {
+            setSelectedEmployee(null);
+            setTimeEntries([]);
+          }}
+          className="w-fit text-sm md:text-base"
+          size="sm"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Volver a empleados
         </Button>
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-xl md:text-3xl font-bold text-foreground truncate">
+              Fichajes de {selectedEmployee.full_name}
+            </h2>
+            <p className="text-xs md:text-base text-muted-foreground">
+              {selectedEmployee.department || 'Sin departamento'}
+            </p>
+          </div>
+          <div className="w-full sm:w-auto">
+            <Input
+              type="month"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="h-9 md:h-10 text-xs md:text-sm"
+            />
+          </div>
+        </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" />
-            Fichajes del {new Date(selectedDate).toLocaleDateString('es-ES')}
+          <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+            <Calendar className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+            Historial de Fichajes
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Buscar por empleado o departamento..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <div className="w-full md:w-auto">
-              <Input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full md:w-40"
-              />
-            </div>
-          </div>
-
           {loading ? (
             <div className="text-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-2 text-muted-foreground">Cargando fichajes...</p>
+              <p className="mt-2 text-sm md:text-base text-muted-foreground">Cargando fichajes...</p>
             </div>
-          ) : filteredEntries.length === 0 ? (
+          ) : timeEntries.length === 0 ? (
             <div className="text-center py-8">
-              <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">No se encontraron fichajes para esta fecha</p>
+              <Clock className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-sm md:text-base text-muted-foreground">
+                No hay fichajes registrados para este período
+              </p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {filteredEntries.map((entry) => (
-                <div key={entry.id} className="flex flex-col md:flex-row md:items-center justify-between p-4 bg-secondary/50 rounded-lg border gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex flex-col">
-                      <p className="font-medium text-sm md:text-base">{entry.profiles?.full_name}</p>
-                      <p className="text-xs md:text-sm text-muted-foreground">
-                        {entry.profiles?.department || 'Sin departamento'}
-                      </p>
-                    </div>
+            <div className="space-y-3 md:space-y-4">
+              {timeEntries.map((entry) => (
+                <div 
+                  key={entry.id} 
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3 md:p-4 bg-secondary/50 rounded-lg border gap-3"
+                >
+                  <div className="flex flex-col gap-1">
+                    <p className="font-medium text-base md:text-lg">
+                      {format(new Date(entry.date), "EEEE, d 'de' MMMM", { locale: es })}
+                    </p>
+                    <p className="text-xs md:text-sm text-muted-foreground">
+                      {format(new Date(entry.date), 'dd/MM/yyyy')}
+                    </p>
                   </div>
                   
                   <div className="flex flex-wrap items-center gap-3 md:gap-6">
