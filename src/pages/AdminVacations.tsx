@@ -4,10 +4,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Calendar, CheckCircle, XCircle, Clock, MessageSquare } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar, CheckCircle, XCircle, Clock, MessageSquare, List, CalendarDays, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useEmployees } from "@/hooks/useEmployees";
+import { VacationCalendar } from "@/components/vacations/VacationCalendar";
+import { EmployeeVacationList } from "@/components/vacations/EmployeeVacationList";
 
 interface VacationRequest {
   id: string;
@@ -36,6 +40,7 @@ export function AdminVacations() {
   const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { employees } = useEmployees();
 
   useEffect(() => {
     fetchVacationRequests();
@@ -135,21 +140,60 @@ export function AdminVacations() {
   const pendingRequests = vacationRequests.filter(req => req.status === 'pending');
   const processedRequests = vacationRequests.filter(req => req.status !== 'pending');
 
+  // Prepare vacation days for calendar
+  const vacationDays = vacationRequests.flatMap(req => {
+    const start = new Date(req.start_date);
+    const end = new Date(req.end_date);
+    const days = [];
+    
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      days.push({
+        date: new Date(d).toISOString(),
+        status: req.status as 'pending' | 'approved' | 'rejected',
+        employeeName: req.profiles?.full_name || 'Desconocido',
+        reason: req.reason || undefined
+      });
+    }
+    
+    return days;
+  });
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
-        <h2 className="text-3xl font-bold text-foreground">Gestión de Vacaciones</h2>
-        <p className="text-muted-foreground">Aprueba o rechaza las solicitudes de vacaciones</p>
+        <h2 className="text-2xl md:text-3xl font-bold text-foreground">Gestión de Vacaciones</h2>
+        <p className="text-sm md:text-base text-muted-foreground">Aprueba o rechaza las solicitudes de vacaciones</p>
       </div>
 
-      {/* Solicitudes Pendientes */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5 text-primary" />
-            Solicitudes Pendientes ({pendingRequests.length})
-          </CardTitle>
-        </CardHeader>
+      <Tabs defaultValue="requests" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="requests" className="text-xs md:text-sm">
+            <List className="h-4 w-4 mr-1 md:mr-2" />
+            <span className="hidden sm:inline">Solicitudes</span>
+            <span className="sm:hidden">Lista</span>
+          </TabsTrigger>
+          <TabsTrigger value="employees" className="text-xs md:text-sm">
+            <Users className="h-4 w-4 mr-1 md:mr-2" />
+            <span className="hidden sm:inline">Empleados</span>
+            <span className="sm:hidden">Empl.</span>
+          </TabsTrigger>
+          <TabsTrigger value="calendar" className="text-xs md:text-sm">
+            <CalendarDays className="h-4 w-4 mr-1 md:mr-2" />
+            <span className="hidden sm:inline">Calendario</span>
+            <span className="sm:hidden">Cal.</span>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="requests" className="space-y-4 mt-4">
+
+          {/* Solicitudes Pendientes */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+                <Clock className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                Pendientes ({pendingRequests.length})
+              </CardTitle>
+            </CardHeader>
         <CardContent>
           {loading ? (
             <div className="text-center py-8">
@@ -162,27 +206,25 @@ export function AdminVacations() {
               <p className="text-muted-foreground">No hay solicitudes pendientes</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {pendingRequests.map((request) => (
-                <div key={request.id} className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg border">
-                  <div className="flex items-center gap-4">
-                    <div>
-                      <p className="font-medium">{request.profiles?.full_name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {formatDate(request.start_date)} - {formatDate(request.end_date)}
+                <div key={request.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-3 md:p-4 bg-secondary/50 rounded-lg border">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm md:text-base truncate">{request.profiles?.full_name}</p>
+                    <p className="text-xs md:text-sm text-muted-foreground">
+                      {formatDate(request.start_date)} - {formatDate(request.end_date)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {request.total_days} días • {request.profiles?.department || 'Sin departamento'}
+                    </p>
+                    {request.reason && (
+                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                        Motivo: {request.reason}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {request.total_days} días • {request.profiles?.department || 'Sin departamento'}
-                      </p>
-                      {request.reason && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Motivo: {request.reason}
-                        </p>
-                      )}
-                    </div>
+                    )}
                   </div>
                   
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 self-end md:self-center">
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button
@@ -193,9 +235,10 @@ export function AdminVacations() {
                             setActionType('reject');
                           }}
                           disabled={actioningRequest === request.id}
+                          className="text-xs md:text-sm"
                         >
-                          <XCircle className="h-4 w-4 mr-1" />
-                          Rechazar
+                          <XCircle className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+                          <span className="hidden md:inline">Rechazar</span>
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
@@ -245,9 +288,10 @@ export function AdminVacations() {
                             setActionType('approve');
                           }}
                           disabled={actioningRequest === request.id}
+                          className="text-xs md:text-sm"
                         >
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Aprobar
+                          <CheckCircle className="h-3 w-3 md:h-4 md:w-4 md:mr-1" />
+                          <span className="hidden md:inline">Aprobar</span>
                         </Button>
                       </DialogTrigger>
                       <DialogContent>
@@ -294,55 +338,64 @@ export function AdminVacations() {
         </CardContent>
       </Card>
 
-      {/* Solicitudes Procesadas */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-primary" />
-            Historial de Solicitudes ({processedRequests.length})
-          </CardTitle>
-        </CardHeader>
+          {/* Solicitudes Procesadas */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
+                <Calendar className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                Historial ({processedRequests.length})
+              </CardTitle>
+            </CardHeader>
         <CardContent>
           {processedRequests.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">No hay solicitudes procesadas</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {processedRequests.map((request) => (
-                <div key={request.id} className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg border">
-                  <div className="flex items-center gap-4">
-                    <div>
-                      <p className="font-medium">{request.profiles?.full_name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {formatDate(request.start_date)} - {formatDate(request.end_date)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {request.total_days} días • {request.profiles?.department || 'Sin departamento'}
-                      </p>
-                      {request.comments && (
-                        <div className="flex items-center gap-1 mt-1">
-                          <MessageSquare className="h-3 w-3 text-muted-foreground" />
-                          <p className="text-xs text-muted-foreground">{request.comments}</p>
-                        </div>
-                      )}
-                    </div>
+                <div key={request.id} className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 p-3 md:p-4 bg-secondary/50 rounded-lg border">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm md:text-base truncate">{request.profiles?.full_name}</p>
+                    <p className="text-xs md:text-sm text-muted-foreground">
+                      {formatDate(request.start_date)} - {formatDate(request.end_date)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {request.total_days} días • {request.profiles?.department || 'Sin departamento'}
+                    </p>
+                    {request.comments && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <MessageSquare className="h-3 w-3 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground line-clamp-2">{request.comments}</p>
+                      </div>
+                    )}
                   </div>
                   
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <p className="text-sm text-muted-foreground">
-                        Procesada el {formatDate(request.approved_at!)}
-                      </p>
-                    </div>
+                  <div className="flex items-center justify-between md:flex-col md:items-end gap-2">
+                    <p className="text-xs md:text-sm text-muted-foreground">
+                      {formatDate(request.approved_at!)}
+                    </p>
                     {getStatusBadge(request.status)}
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+          </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="employees" className="mt-4">
+          <EmployeeVacationList 
+            employees={employees}
+            vacationRequests={vacationRequests}
+          />
+        </TabsContent>
+
+        <TabsContent value="calendar" className="mt-4">
+          <VacationCalendar vacations={vacationDays} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
