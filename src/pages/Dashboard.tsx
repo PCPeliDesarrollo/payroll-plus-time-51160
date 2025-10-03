@@ -7,7 +7,7 @@ import { useTimeEntries } from "@/hooks/useTimeEntries";
 import { useVacations } from "@/hooks/useVacations";
 import { useEmployees } from "@/hooks/useEmployees";
 import { usePayroll } from "@/hooks/usePayroll";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { format, isToday, isThisMonth } from "date-fns";
 import { es } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
@@ -19,12 +19,12 @@ function QuickCheckInButton({ isCheckedIn, currentEntry }: { isCheckedIn: boolea
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
 
   // Update time every second
-  useState(() => {
+  useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(new Date().toLocaleTimeString());
     }, 1000);
     return () => clearInterval(interval);
-  });
+  }, []);
 
   const handleCheckInOut = async () => {
     try {

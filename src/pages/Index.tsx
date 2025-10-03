@@ -45,6 +45,8 @@ const Index = () => {
         return <MyPayroll />;
       case "my-vacations":
         return <MyVacations />;
+      case "my-profile":
+        return <MyProfile />;
       default:
         return <Dashboard userRole={profile.role as "admin" | "employee"} />;
     }

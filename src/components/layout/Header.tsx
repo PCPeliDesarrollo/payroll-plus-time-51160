@@ -1,4 +1,4 @@
-import { Bell, User } from "lucide-react";
+import { Bell, User, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -15,9 +15,11 @@ interface HeaderProps {
     role: 'admin' | 'employee';
   };
   onLogout: () => void;
+  onPageChange?: (page: string) => void;
 }
 
-export function Header({ user, onLogout }: HeaderProps) {
+export function Header({ user, onLogout, onPageChange }: HeaderProps) {
+  
   return (
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 md:px-6">
       <div className="flex items-center gap-2 md:gap-3 md:ml-0 ml-14">
@@ -49,10 +51,16 @@ export function Header({ user, onLogout }: HeaderProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onPageChange?.('my-profile')}>
               <User className="mr-2 h-4 w-4" />
-              Perfil
+              Mi Perfil
             </DropdownMenuItem>
+            {user.role === 'employee' && (
+              <DropdownMenuItem onClick={() => onPageChange?.('my-profile')}>
+                <Settings className="mr-2 h-4 w-4" />
+                Configuración
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onClick={onLogout} className="text-destructive">
               Cerrar Sesión
             </DropdownMenuItem>

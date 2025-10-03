@@ -28,6 +28,7 @@ export function Sidebar({ userRole, currentPage, onPageChange, onLogout }: Sideb
     { id: 'my-attendance', label: 'Mis Fichajes', icon: Clock },
     { id: 'my-payroll', label: 'Mis Nóminas', icon: FileText },
     { id: 'my-vacations', label: 'Mis Vacaciones', icon: Calendar },
+    { id: 'my-profile', label: 'Mi Perfil', icon: Settings },
   ];
 
   const menuItems = userRole === 'admin' ? adminMenuItems : employeeMenuItems;
