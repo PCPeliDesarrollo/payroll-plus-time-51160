@@ -56,12 +56,16 @@ serve(async (req) => {
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      email_confirm: true, // Auto-confirm email since confirmations are disabled
+      email_confirm: true, // Auto-confirm email
       user_metadata: {
         full_name,
-        role
+        role,
+        department,
+        employee_id
       }
     })
+
+    console.log('Intentando crear usuario:', { email, role, full_name })
 
     if (authError) {
       console.error('Auth error details:', authError)

@@ -41,24 +41,26 @@ export function LoginForm({}: LoginFormProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-primary-light/10 to-secondary/40 p-4">
-      <Card className="w-full max-w-md shadow-[0_0_40px_rgba(176,98,248,0.15)] border-primary/20">
-        <CardHeader className="space-y-4 text-center">
-          <div className="flex justify-center mb-2">
-            <div className="relative">
-              <div className="absolute inset-0 bg-primary/20 rounded-2xl blur-xl"></div>
-              <img 
-                src="/logo-peli.png" 
-                alt="Logo Sistema Fichajes" 
-                className="relative h-24 w-24 object-contain drop-shadow-lg"
-              />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-primary/5 to-accent/10 p-4">
+      <Card className="w-full max-w-md shadow-[0_8px_40px_rgba(176,98,248,0.2)] border-primary/20 backdrop-blur-sm bg-card/95">
+        <CardHeader className="space-y-6 text-center pb-8">
+          <div className="flex justify-center">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-3xl blur-2xl opacity-30 group-hover:opacity-40 transition-opacity"></div>
+              <div className="relative bg-gradient-to-br from-primary/10 to-accent/10 rounded-3xl p-6 backdrop-blur-sm border border-primary/20">
+                <img 
+                  src="/logo-peli.png" 
+                  alt="Logo Sistema Fichajes" 
+                  className="h-28 w-28 object-contain drop-shadow-[0_0_15px_rgba(176,98,248,0.5)]"
+                />
+              </div>
             </div>
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Iniciar Sesión
+            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-2">
+              Bienvenido
             </CardTitle>
-            <CardDescription className="mt-2">
+            <CardDescription className="text-base">
               Sistema de Fichajes de Empleados
             </CardDescription>
           </div>
@@ -129,12 +131,17 @@ export function LoginForm({}: LoginFormProps) {
             </Button>
           </form>
 
-          <div className="mt-4 p-4 bg-secondary/60 rounded-lg border border-primary/10">
-            <h4 className="font-medium text-sm mb-2 text-foreground">Credenciales de Prueba:</h4>
-            <div className="space-y-1 text-xs text-muted-foreground">
-              <p><strong>Admin:</strong> admin@empresa.com / admin123</p>
-              <p><strong>Empleado:</strong> empleado@empresa.com / empleado123</p>
-              <p className="mt-2 text-xs">✅ Los usuarios ya están configurados y listos para usar</p>
+          <div className="mt-6 p-4 bg-gradient-to-br from-primary/5 to-accent/5 rounded-xl border border-primary/20 backdrop-blur-sm">
+            <h4 className="font-semibold text-sm mb-3 text-foreground flex items-center gap-2">
+              <span className="text-primary">🔑</span> Credenciales de Prueba
+            </h4>
+            <div className="space-y-2 text-xs">
+              <div className="bg-background/50 rounded-lg p-2 border border-primary/10">
+                <p className="text-muted-foreground"><strong className="text-foreground">Admin:</strong> admin@empresa.com / admin123</p>
+              </div>
+              <div className="bg-background/50 rounded-lg p-2 border border-primary/10">
+                <p className="text-muted-foreground"><strong className="text-foreground">Empleado:</strong> empleado@empresa.com / empleado123</p>
+              </div>
             </div>
           </div>
         </CardContent>
