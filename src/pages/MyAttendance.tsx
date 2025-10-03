@@ -19,6 +19,17 @@ export function MyAttendance() {
   const { timeEntries, currentEntry, loading, isCheckedIn, checkIn, checkOut } = useTimeEntries();
   const { toast } = useToast();
 
+  // Filter entries by selected date
+  const filteredEntries = React.useMemo(() => {
+    if (!selectedDate) return timeEntries;
+    
+    const selectedDateStr = selectedDate.toISOString().split('T')[0];
+    return timeEntries.filter(entry => {
+      const entryDateStr = new Date(entry.date).toISOString().split('T')[0];
+      return entryDateStr === selectedDateStr;
+    });
+  }, [timeEntries, selectedDate]);
+
   // Update time every second
   React.useEffect(() => {
     const interval = setInterval(() => {
@@ -73,14 +84,14 @@ export function MyAttendance() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-foreground">Mis Fichajes</h2>
-          <p className="text-muted-foreground">Registra tu entrada y salida, y consulta tu historial</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Mis Fichajes</h2>
+          <p className="text-sm sm:text-base text-muted-foreground">Registra tu entrada y salida, y consulta tu historial</p>
         </div>
-        <Button variant="outline" className="flex items-center gap-2">
+        <Button variant="outline" className="flex items-center gap-2 w-full sm:w-auto">
           <Download className="h-4 w-4" />
-          Exportar Datos
+          <span className="sm:inline">Exportar Datos</span>
         </Button>
       </div>
 
@@ -177,7 +188,19 @@ export function MyAttendance() {
       {/* Attendance History */}
       <Card>
         <CardHeader>
-          <CardTitle>Historial de Fichajes</CardTitle>
+          <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <span>Historial de Fichajes</span>
+            {selectedDate && (
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => setSelectedDate(undefined)}
+                className="text-xs"
+              >
+                Mostrar todos
+              </Button>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -185,31 +208,36 @@ export function MyAttendance() {
               <div className="text-center py-8">
                 <p className="text-muted-foreground">Cargando fichajes...</p>
               </div>
-            ) : timeEntries.length === 0 ? (
+            ) : filteredEntries.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-muted-foreground">No hay fichajes registrados</p>
+                <p className="text-muted-foreground">
+                  {selectedDate 
+                    ? "No hay fichajes para esta fecha" 
+                    : "No hay fichajes registrados"
+                  }
+                </p>
               </div>
             ) : (
-              timeEntries.map((entry) => (
-                <div key={entry.id} className="flex items-center justify-between p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-2 h-2 rounded-full ${
+              filteredEntries.map((entry) => (
+                <div key={entry.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors gap-3">
+                  <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1">
+                    <div className={`w-2 h-2 rounded-full mt-2 sm:mt-0 flex-shrink-0 ${
                       entry.status === 'checked_out' ? 'bg-success' : 
                       entry.status === 'checked_in' ? 'bg-warning' : 'bg-muted'
                     }`}></div>
-                    <div>
-                      <p className="font-medium">{formatDate(entry.date)}</p>
-                      <p className="text-sm text-muted-foreground">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm sm:text-base truncate">{formatDate(entry.date)}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">
                         Entrada: {entry.check_in_time ? new Date(entry.check_in_time).toLocaleTimeString('es-ES') : '--'} • 
                         Salida: {entry.check_out_time ? new Date(entry.check_out_time).toLocaleTimeString('es-ES') : '--'}
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-foreground">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 sm:text-right">
+                    <p className="font-semibold text-foreground text-sm sm:text-base">
                       {entry.total_hours ? formatDuration(String(entry.total_hours)) : '--'}
                     </p>
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="outline" className="text-xs flex-shrink-0">
                       {entry.status === 'checked_out' ? 'Completo' : 
                        entry.status === 'checked_in' ? 'En curso' : 'Incompleto'}
                     </Badge>

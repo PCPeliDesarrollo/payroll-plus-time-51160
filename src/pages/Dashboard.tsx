@@ -1,14 +1,98 @@
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Clock, Users, FileText, Calendar, CheckCircle, XCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Clock, Users, FileText, Calendar, CheckCircle, XCircle, Play, Square } from "lucide-react";
 import { useTimeEntries } from "@/hooks/useTimeEntries";
 import { useVacations } from "@/hooks/useVacations";
 import { useEmployees } from "@/hooks/useEmployees";
 import { usePayroll } from "@/hooks/usePayroll";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { format, isToday, isThisMonth } from "date-fns";
 import { es } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
+
+// Quick Check-In Component
+function QuickCheckInButton({ isCheckedIn, currentEntry }: { isCheckedIn: boolean; currentEntry: any }) {
+  const { checkIn, checkOut } = useTimeEntries();
+  const { toast } = useToast();
+  const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }));
+
+  // Update time every second
+  useMemo(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleCheckInOut = async () => {
+    try {
+      if (isCheckedIn) {
+        await checkOut();
+        toast({
+          title: "¡Fichaje de salida registrado!",
+          description: "Has fichado la salida correctamente.",
+        });
+      } else {
+        await checkIn();
+        toast({
+          title: "¡Fichaje de entrada registrado!",
+          description: "Has fichado la entrada correctamente.",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error al fichar",
+        description: error.message || "Hubo un problema al registrar el fichaje.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  return (
+    <div className="relative h-20 rounded-lg border bg-card overflow-hidden">
+      <div className="absolute inset-0 p-4 flex flex-col justify-between">
+        <div className="flex items-center justify-between">
+          <Clock className="h-5 w-5 text-primary" />
+          <Badge 
+            variant={isCheckedIn ? "default" : "outline"}
+            className={`text-xs ${
+              isCheckedIn 
+                ? "bg-success text-success-foreground" 
+                : ""
+            }`}
+          >
+            {isCheckedIn ? "Fichado" : "No fichado"}
+          </Badge>
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-semibold text-sm">{currentTime}</p>
+            <p className="text-xs text-muted-foreground">
+              {isCheckedIn ? "En el trabajo" : "Fichar ahora"}
+            </p>
+          </div>
+          <Button
+            onClick={handleCheckInOut}
+            size="sm"
+            className={`h-8 w-8 p-0 ${
+              isCheckedIn 
+                ? "bg-destructive hover:bg-destructive/90" 
+                : "bg-success hover:bg-success/90"
+            }`}
+          >
+            {isCheckedIn ? (
+              <Square className="h-4 w-4" />
+            ) : (
+              <Play className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface DashboardProps {
   userRole: 'admin' | 'employee';
@@ -276,6 +360,34 @@ export function Dashboard({ userRole }: DashboardProps) {
         />
       </div>
 
+      {/* Quick Actions Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            Acciones Rápidas
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <QuickCheckInButton 
+              isCheckedIn={currentEntry?.status === 'checked_in'} 
+              currentEntry={currentEntry}
+            />
+            <Button className="h-20 text-left justify-start flex-col items-start p-4" variant="outline">
+              <Calendar className="h-5 w-5 mb-2" />
+              <span className="font-semibold">Solicitar Vacaciones</span>
+              <span className="text-xs text-muted-foreground">Gestiona tus días libres</span>
+            </Button>
+            <Button className="h-20 text-left justify-start flex-col items-start p-4" variant="outline">
+              <FileText className="h-5 w-5 mb-2" />
+              <span className="font-semibold">Ver Última Nómina</span>
+              <span className="text-xs text-muted-foreground">Consulta tu salario</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -334,28 +446,6 @@ export function Dashboard({ userRole }: DashboardProps) {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              Acciones Rápidas
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Button className="w-full h-12 text-left justify-start" variant="outline">
-              <Clock className="mr-3 h-5 w-5" />
-              Fichar Entrada/Salida
-            </Button>
-            <Button className="w-full h-12 text-left justify-start" variant="outline">
-              <Calendar className="mr-3 h-5 w-5" />
-              Solicitar Vacaciones
-            </Button>
-            <Button className="w-full h-12 text-left justify-start" variant="outline">
-              <FileText className="mr-3 h-5 w-5" />
-              Ver Última Nómina
-            </Button>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
