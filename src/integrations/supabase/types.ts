@@ -14,7 +14,265 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      payroll_records: {
+        Row: {
+          base_salary: number
+          bonuses: number | null
+          created_at: string | null
+          created_by: string | null
+          deductions: number | null
+          file_url: string | null
+          id: string
+          month: number
+          net_salary: number
+          overtime_hours: number | null
+          overtime_rate: number | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+          year: number
+        }
+        Insert: {
+          base_salary: number
+          bonuses?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          deductions?: number | null
+          file_url?: string | null
+          id?: string
+          month: number
+          net_salary: number
+          overtime_hours?: number | null
+          overtime_rate?: number | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+          year: number
+        }
+        Update: {
+          base_salary?: number
+          bonuses?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          deductions?: number | null
+          file_url?: string | null
+          id?: string
+          month?: number
+          net_salary?: number
+          overtime_hours?: number | null
+          overtime_rate?: number | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_records_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_records_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          department: string | null
+          email: string
+          employee_id: string | null
+          full_name: string
+          hire_date: string | null
+          id: string
+          is_active: boolean | null
+          phone: string | null
+          role: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department?: string | null
+          email: string
+          employee_id?: string | null
+          full_name: string
+          hire_date?: string | null
+          id: string
+          is_active?: boolean | null
+          phone?: string | null
+          role?: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department?: string | null
+          email?: string
+          employee_id?: string | null
+          full_name?: string
+          hire_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          phone?: string | null
+          role?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      time_entries: {
+        Row: {
+          check_in_time: string | null
+          check_out_time: string | null
+          created_at: string | null
+          date: string
+          id: string
+          notes: string | null
+          status: string | null
+          total_hours: unknown | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          check_in_time?: string | null
+          check_out_time?: string | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          status?: string | null
+          total_hours?: unknown | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          check_in_time?: string | null
+          check_out_time?: string | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          notes?: string | null
+          status?: string | null
+          total_hours?: unknown | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vacation_balance: {
+        Row: {
+          created_at: string | null
+          id: string
+          remaining_days: number
+          total_days: number
+          updated_at: string | null
+          used_days: number
+          user_id: string
+          year: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          remaining_days?: number
+          total_days?: number
+          updated_at?: string | null
+          used_days?: number
+          user_id: string
+          year?: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          remaining_days?: number
+          total_days?: number
+          updated_at?: string | null
+          used_days?: number
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vacation_balance_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vacation_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          comments: string | null
+          created_at: string | null
+          end_date: string
+          id: string
+          reason: string | null
+          start_date: string
+          status: string | null
+          total_days: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          comments?: string | null
+          created_at?: string | null
+          end_date: string
+          id?: string
+          reason?: string | null
+          start_date: string
+          status?: string | null
+          total_days: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          comments?: string | null
+          created_at?: string | null
+          end_date?: string
+          id?: string
+          reason?: string | null
+          start_date?: string
+          status?: string | null
+          total_days?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vacation_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vacation_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
