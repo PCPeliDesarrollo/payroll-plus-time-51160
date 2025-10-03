@@ -168,6 +168,22 @@ export function useVacations() {
     });
   };
 
+  const getVacationBalanceForUser = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('vacation_balance')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching vacation balance:', error);
+      return null;
+    }
+  };
+
   return {
     vacationRequests,
     vacationBalance,
@@ -179,5 +195,6 @@ export function useVacations() {
     rejectVacationRequest,
     fetchVacationRequests,
     fetchVacationBalance,
+    getVacationBalanceForUser,
   };
 }

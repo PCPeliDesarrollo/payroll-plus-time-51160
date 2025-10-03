@@ -8,7 +8,7 @@ import { MyPayroll } from "./MyPayroll";
 import { MyVacations } from "./MyVacations";
 import { AdminAttendance } from "./AdminAttendance";
 import { AdminPayroll } from "./AdminPayroll";
-import { AdminVacations } from "./AdminVacations";
+import AdminVacations from "./AdminVacations";
 import { AdminSettings } from "./AdminSettings";
 import { MyProfile } from "./MyProfile";
 import { useAuth } from "@/hooks/useAuth";
