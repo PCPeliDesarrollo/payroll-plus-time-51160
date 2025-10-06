@@ -15,7 +15,11 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 
-export default function AdminScheduleChanges() {
+interface AdminScheduleChangesProps {
+  onBack?: () => void;
+}
+
+export default function AdminScheduleChanges({ onBack }: AdminScheduleChangesProps = {}) {
   const { scheduleChanges, loading, updateScheduleChange } = useScheduleChanges();
   const [selectedChange, setSelectedChange] = useState<string | null>(null);
   const [adminComments, setAdminComments] = useState('');
@@ -75,6 +79,11 @@ export default function AdminScheduleChanges() {
 
   return (
     <div className="space-y-6 p-6">
+      {onBack && (
+        <Button variant="outline" onClick={onBack} size="sm">
+          ← Volver al Dashboard
+        </Button>
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Cambios de Horario</h1>

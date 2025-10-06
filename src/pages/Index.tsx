@@ -31,15 +31,15 @@ const Index = () => {
       case "dashboard":
         return <Dashboard userRole={profile.role as "admin" | "employee"} onPageChange={setCurrentPage} />;
       case "employees":
-        return profile.role === "admin" ? <Employees /> : <Dashboard userRole={profile.role as "admin" | "employee"} />;
+        return profile.role === "admin" ? <Employees onBack={() => setCurrentPage('dashboard')} /> : <Dashboard userRole={profile.role as "admin" | "employee"} onPageChange={setCurrentPage} />;
       case "attendance":
-        return profile.role === "admin" ? <AdminAttendance /> : <MyAttendance />;
+        return profile.role === "admin" ? <AdminAttendance onBack={() => setCurrentPage('dashboard')} /> : <MyAttendance />;
       case "payroll":
-        return profile.role === "admin" ? <AdminPayroll /> : <MyPayroll />;
+        return profile.role === "admin" ? <AdminPayroll onBack={() => setCurrentPage('dashboard')} /> : <MyPayroll />;
       case "vacations":
-        return profile.role === "admin" ? <AdminVacations /> : <MyVacations />;
+        return profile.role === "admin" ? <AdminVacations onBack={() => setCurrentPage('dashboard')} /> : <MyVacations />;
       case "schedule-changes":
-        return profile.role === "admin" ? <AdminScheduleChanges /> : <Dashboard userRole={profile.role as "admin" | "employee"} />;
+        return profile.role === "admin" ? <AdminScheduleChanges onBack={() => setCurrentPage('dashboard')} /> : <Dashboard userRole={profile.role as "admin" | "employee"} onPageChange={setCurrentPage} />;
       case "settings":
         return profile.role === "admin" ? <AdminSettings /> : <MyProfile />;
       case "my-attendance":

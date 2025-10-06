@@ -2,13 +2,18 @@ import { useState } from "react";
 import { useVacations } from "@/hooks/useVacations";
 import { useEmployees } from "@/hooks/useEmployees";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { EmployeeVacationList } from "@/components/vacations/EmployeeVacationList";
 import { EmployeeVacationDetail } from "@/components/vacations/EmployeeVacationDetail";
 import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-export default function AdminVacations() {
+interface AdminVacationsProps {
+  onBack?: () => void;
+}
+
+export default function AdminVacations({ onBack }: AdminVacationsProps = {}) {
   const { vacationRequests, approveVacationRequest, rejectVacationRequest, loading } = useVacations();
   const { employees } = useEmployees();
   const { toast } = useToast();
@@ -115,6 +120,11 @@ export default function AdminVacations() {
 
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6">
+      {onBack && (
+        <Button variant="outline" onClick={onBack} size="sm">
+          ← Volver al Dashboard
+        </Button>
+      )}
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl md:text-3xl font-bold">Gestión de Vacaciones</h1>
         <p className="text-sm md:text-base text-muted-foreground">

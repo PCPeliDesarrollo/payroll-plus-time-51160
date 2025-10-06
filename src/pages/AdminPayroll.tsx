@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { FileText, Upload, Eye, Download, Plus, Search } from "lucide-react";
+import { FileText, Upload, Eye, Download, Plus, Search, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -36,7 +36,11 @@ interface Employee {
   department: string | null;
 }
 
-export function AdminPayroll() {
+interface AdminPayrollProps {
+  onBack?: () => void;
+}
+
+export function AdminPayroll({ onBack }: AdminPayrollProps = {}) {
   const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
@@ -44,6 +48,7 @@ export function AdminPayroll() {
   const [loading, setLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [uploadingFile, setUploadingFile] = useState<string | null>(null);
+  const [pendingPayrollByEmployee, setPendingPayrollByEmployee] = useState<Record<string, number>>({});
   const { toast } = useToast();
 
   const [newPayroll, setNewPayroll] = useState({
@@ -55,6 +60,32 @@ export function AdminPayroll() {
     fetchPayrollRecords();
     fetchEmployees();
   }, []);
+
+  useEffect(() => {
+    if (employees.length > 0) {
+      fetchPendingPayrollCounts();
+    }
+  }, [employees]);
+
+  const fetchPendingPayrollCounts = async () => {
+    try {
+      const counts: Record<string, number> = {};
+      for (const employee of employees) {
+        const { data, error } = await supabase
+          .from('payroll_records')
+          .select('id')
+          .eq('user_id', employee.id)
+          .eq('status', 'draft');
+
+        if (!error && data) {
+          counts[employee.id] = data.length;
+        }
+      }
+      setPendingPayrollByEmployee(counts);
+    } catch (error) {
+      console.error('Error fetching pending payroll counts:', error);
+    }
+  };
 
   const fetchPayrollRecords = async (employeeId?: string) => {
     try {
@@ -99,6 +130,50 @@ export function AdminPayroll() {
       setEmployees(data || []);
     } catch (error) {
       console.error('Error fetching employees:', error);
+    }
+  };
+
+  const deletePayrollRecord = async (recordId: string) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta nómina? Esta acción no se puede deshacer.')) {
+      return;
+    }
+
+    try {
+      // Primero eliminar el archivo del storage si existe
+      const record = payrollRecords.find(r => r.id === recordId);
+      if (record?.file_url) {
+        const fileName = record.file_url.split('/').pop();
+        if (fileName) {
+          await supabase.storage
+            .from('payroll-files')
+            .remove([fileName]);
+        }
+      }
+
+      // Eliminar el registro de la base de datos
+      const { error } = await supabase
+        .from('payroll_records')
+        .delete()
+        .eq('id', recordId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Éxito",
+        description: "Nómina eliminada correctamente",
+      });
+
+      fetchPayrollRecords(selectedEmployee?.id);
+      if (selectedEmployee) {
+        fetchPendingPayrollCounts();
+      }
+    } catch (error: any) {
+      console.error('Error deleting payroll:', error);
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo eliminar la nómina",
+        variant: "destructive",
+      });
     }
   };
 
@@ -152,6 +227,9 @@ export function AdminPayroll() {
         year: new Date().getFullYear(),
       });
       fetchPayrollRecords(selectedEmployee.id);
+      if (selectedEmployee) {
+        fetchPendingPayrollCounts();
+      }
     } catch (error) {
       console.error('Error creating payroll record:', error);
       toast({
@@ -221,6 +299,7 @@ export function AdminPayroll() {
       });
 
       fetchPayrollRecords(selectedEmployee?.id);
+      fetchPendingPayrollCounts();
     } catch (error: any) {
       console.error('Error uploading file:', error);
       toast({
@@ -264,6 +343,11 @@ export function AdminPayroll() {
   if (!selectedEmployee) {
     return (
       <div className="space-y-4 md:space-y-6">
+        {onBack && (
+          <Button variant="outline" onClick={onBack} size="sm">
+            ← Volver al Dashboard
+          </Button>
+        )}
         <div className="px-2 md:px-0">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">Gestión de Nóminas</h2>
           <p className="text-sm md:text-base text-muted-foreground">Selecciona un empleado para ver sus nóminas</p>
@@ -302,21 +386,33 @@ export function AdminPayroll() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                {filteredEmployees.map((employee) => (
-                  <Card 
-                    key={employee.id} 
-                    className="cursor-pointer hover:bg-accent transition-colors"
-                    onClick={() => {
-                      setSelectedEmployee(employee);
-                      fetchPayrollRecords(employee.id);
-                    }}
-                  >
-                    <CardContent className="p-4 md:p-6">
-                      <p className="font-medium text-base md:text-lg">{employee.full_name}</p>
-                      <p className="text-xs md:text-sm text-muted-foreground">{employee.department || 'Sin departamento'}</p>
-                    </CardContent>
-                  </Card>
-                ))}
+                {filteredEmployees.map((employee) => {
+                  const pendingCount = pendingPayrollByEmployee[employee.id] || 0;
+                  return (
+                    <Card 
+                      key={employee.id} 
+                      className="cursor-pointer hover:bg-accent transition-colors relative"
+                      onClick={() => {
+                        setSelectedEmployee(employee);
+                        fetchPayrollRecords(employee.id);
+                      }}
+                    >
+                      <CardContent className="p-4 md:p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-base md:text-lg">{employee.full_name}</p>
+                            <p className="text-xs md:text-sm text-muted-foreground">{employee.department || 'Sin departamento'}</p>
+                          </div>
+                          {pendingCount > 0 && (
+                            <Badge variant="secondary" className="bg-warning/20 text-warning-foreground ml-2">
+                              {pendingCount} pendiente{pendingCount > 1 ? 's' : ''}
+                            </Badge>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </CardContent>
@@ -429,7 +525,7 @@ export function AdminPayroll() {
                     </div>
                   </div>
                   
-                  <div className="flex flex-wrap gap-2">
+                   <div className="flex flex-wrap gap-2">
                     {record.file_url ? (
                       <>
                          <Button
@@ -460,6 +556,15 @@ export function AdminPayroll() {
                              Descargar
                            </Button>
                          </a>
+                         <Button
+                           size="sm"
+                           variant="destructive"
+                           onClick={() => deletePayrollRecord(record.id)}
+                           className="flex-1 sm:flex-none text-xs md:text-sm h-8 md:h-9"
+                         >
+                           <Trash2 className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                           Eliminar
+                         </Button>
                       </>
                     ) : (
                       <div className="w-full sm:w-auto">

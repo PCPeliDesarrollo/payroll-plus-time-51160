@@ -29,7 +29,11 @@ import { useToast } from "@/hooks/use-toast";
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
-export function Employees() {
+interface EmployeesProps {
+  onBack?: () => void;
+}
+
+export function Employees({ onBack }: EmployeesProps = {}) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState<Profile | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
@@ -83,6 +87,11 @@ export function Employees() {
 
   return (
     <div className="space-y-6">
+      {onBack && (
+        <Button variant="outline" onClick={onBack} size="sm" className="mb-4">
+          ← Volver al Dashboard
+        </Button>
+      )}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">Gestión de Empleados</h2>

@@ -63,11 +63,11 @@ export function EmployeeDetailsDialog({ employee, open, onOpenChange }: Employee
     try {
       setLoading(true);
       await updateEmployee(employee.id, editData);
+      setIsEditing(false);
       toast({
         title: "Empleado actualizado",
         description: "Los datos han sido guardados correctamente",
       });
-      setIsEditing(false);
     } catch (error) {
       console.error('Error updating employee:', error);
       toast({

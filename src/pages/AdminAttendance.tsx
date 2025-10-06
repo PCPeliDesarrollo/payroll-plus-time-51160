@@ -25,7 +25,11 @@ interface Employee {
   department: string | null;
 }
 
-export function AdminAttendance() {
+interface AdminAttendanceProps {
+  onBack?: () => void;
+}
+
+export function AdminAttendance({ onBack }: AdminAttendanceProps = {}) {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
@@ -134,6 +138,11 @@ export function AdminAttendance() {
   if (!selectedEmployee) {
     return (
       <div className="space-y-4 md:space-y-6">
+        {onBack && (
+          <Button variant="outline" onClick={onBack} size="sm">
+            ← Volver al Dashboard
+          </Button>
+        )}
         <div className="px-2 md:px-0">
           <h2 className="text-2xl md:text-3xl font-bold text-foreground">Gestión de Fichajes</h2>
           <p className="text-sm md:text-base text-muted-foreground">Selecciona un empleado para ver sus fichajes</p>
