@@ -125,6 +125,57 @@ export type Database = {
         }
         Relationships: []
       }
+      schedule_changes: {
+        Row: {
+          admin_comments: string | null
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          current_check_in: string | null
+          current_check_out: string | null
+          id: string
+          reason: string | null
+          requested_check_in: string | null
+          requested_check_out: string | null
+          requested_date: string
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          admin_comments?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          current_check_in?: string | null
+          current_check_out?: string | null
+          id?: string
+          reason?: string | null
+          requested_check_in?: string | null
+          requested_check_out?: string | null
+          requested_date: string
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          admin_comments?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          current_check_in?: string | null
+          current_check_out?: string | null
+          id?: string
+          reason?: string | null
+          requested_check_in?: string | null
+          requested_check_out?: string | null
+          requested_date?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       time_entries: {
         Row: {
           check_in_time: string | null

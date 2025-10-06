@@ -20,6 +20,7 @@ export function Sidebar({ userRole, currentPage, onPageChange, onLogout }: Sideb
     { id: 'attendance', label: 'Fichajes', icon: Clock },
     { id: 'payroll', label: 'Nóminas', icon: FileText },
     { id: 'vacations', label: 'Vacaciones', icon: Calendar },
+    { id: 'schedule-changes', label: 'Cambios Horario', icon: Clock },
     { id: 'settings', label: 'Configuración', icon: Settings },
   ];
 

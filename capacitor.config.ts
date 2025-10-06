@@ -4,9 +4,10 @@ const config: CapacitorConfig = {
   appId: 'com.lovable.payrollplustime',
   appName: 'Sistema Fichajes',
   webDir: 'dist',
-  // Logo configuration - For native builds, you'll need to run:
-  // npx @capacitor/assets generate --iconBackgroundColor '#b062f8' --iconBackgroundColorDark '#b062f8' --splashBackgroundColor '#b062f8' --splashBackgroundColorDark '#b062f8' --ios --android
-  // This will use public/logo-peli.png as source
+  // Logo configuration
+  // The icon will use public/logo-peli.png as source
+  // To regenerate native assets, run:
+  // npx @capacitor/assets generate --iconBackgroundColor '#ffffff' --iconBackgroundColorDark '#ffffff' --splashBackgroundColor '#b062f8' --splashBackgroundColorDark '#b062f8' --ios --android
   // IMPORTANT: server.url is ONLY for development hot-reload
   // For production APK, this MUST be removed or commented out
   // server: {

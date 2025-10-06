@@ -9,6 +9,7 @@ import { MyVacations } from "./MyVacations";
 import { AdminAttendance } from "./AdminAttendance";
 import { AdminPayroll } from "./AdminPayroll";
 import AdminVacations from "./AdminVacations";
+import AdminScheduleChanges from "./AdminScheduleChanges";
 import { AdminSettings } from "./AdminSettings";
 import { MyProfile } from "./MyProfile";
 import { useAuth } from "@/hooks/useAuth";
@@ -37,6 +38,8 @@ const Index = () => {
         return profile.role === "admin" ? <AdminPayroll /> : <MyPayroll />;
       case "vacations":
         return profile.role === "admin" ? <AdminVacations /> : <MyVacations />;
+      case "schedule-changes":
+        return profile.role === "admin" ? <AdminScheduleChanges /> : <Dashboard userRole={profile.role as "admin" | "employee"} />;
       case "settings":
         return profile.role === "admin" ? <AdminSettings /> : <MyProfile />;
       case "my-attendance":
