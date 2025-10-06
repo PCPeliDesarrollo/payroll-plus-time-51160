@@ -29,17 +29,43 @@ function QuickCheckInButton({ isCheckedIn, currentEntry }: { isCheckedIn: boolea
 
   const handleCheckInOut = async () => {
     try {
+      // Get geolocation
+      let location = null;
+      if (navigator.geolocation) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              timeout: 5000,
+              maximumAge: 0
+            });
+          });
+          location = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy
+          };
+        } catch (geoError) {
+          console.warn('Geolocation error:', geoError);
+          // Continue without location
+        }
+      }
+
       if (isCheckedIn) {
         await checkOut();
         toast({
           title: "¡Fichaje de salida registrado!",
-          description: "Has fichado la salida correctamente.",
+          description: location 
+            ? `Has fichado la salida correctamente en ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`
+            : "Has fichado la salida correctamente.",
         });
       } else {
         await checkIn();
         toast({
           title: "¡Fichaje de entrada registrado!",
-          description: "Has fichado la entrada correctamente.",
+          description: location 
+            ? `Has fichado la entrada correctamente en ${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`
+            : "Has fichado la entrada correctamente.",
         });
       }
     } catch (error: any) {

@@ -93,17 +93,32 @@ export function EmployeeVacationList({
             return (
               <div
                 key={employee.id}
-                className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                  onEmployeeClick ? 'cursor-pointer hover:bg-accent' : ''
-                }`}
+                className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
+                  employeeVacations.some(req => req.status === 'pending')
+                    ? 'border-accent border-2 bg-accent/10 shadow-md'
+                    : ''
+                } ${onEmployeeClick ? 'cursor-pointer hover:bg-accent/20' : ''}`}
                 onClick={() => onEmployeeClick?.(employee.id)}
               >
                 <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="flex-shrink-0">
+                  <div className="flex-shrink-0 relative">
                     {icon || <Users className="h-5 w-5 text-muted-foreground" />}
+                    {employeeVacations.some(req => req.status === 'pending') && (
+                      <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-accent"></span>
+                      </span>
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{employee.full_name}</p>
+                    <p className={`font-medium truncate ${
+                      employeeVacations.some(req => req.status === 'pending')
+                        ? 'text-accent font-bold'
+                        : ''
+                    }`}>
+                      {employee.full_name}
+                      {employeeVacations.some(req => req.status === 'pending') && ' 🔔'}
+                    </p>
                     <p className="text-sm text-muted-foreground truncate">
                       {employee.department || 'Sin departamento'}
                     </p>

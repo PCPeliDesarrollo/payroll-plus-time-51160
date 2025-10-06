@@ -37,14 +37,7 @@ export function useScheduleChanges() {
       setLoading(true);
       let query = supabase
         .from('schedule_changes')
-        .select(`
-          *,
-          profiles (
-            full_name,
-            email,
-            department
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       // Si es empleado, solo ver sus propias solicitudes
@@ -52,20 +45,33 @@ export function useScheduleChanges() {
         query = query.eq('user_id', user.id);
       }
 
-      const { data, error } = await query;
+      const { data: scheduleData, error: scheduleError } = await query;
+      if (scheduleError) throw scheduleError;
 
-      if (error) throw error;
-      setScheduleChanges((data || []) as any);
+      // Fetch profiles separately
+      if (scheduleData && scheduleData.length > 0) {
+        const userIds = [...new Set(scheduleData.map(s => s.user_id))];
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, full_name, email, department')
+          .in('id', userIds);
+
+        if (profilesError) throw profilesError;
+
+        // Merge data
+        const profilesMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+        const mergedData = scheduleData.map(schedule => ({
+          ...schedule,
+          profiles: profilesMap.get(schedule.user_id)
+        }));
+
+        setScheduleChanges(mergedData as any);
+      } else {
+        setScheduleChanges([]);
+      }
     } catch (error) {
       console.error('Error fetching schedule changes:', error);
-      // No mostrar toast de error al cargar inicialmente
-      if (scheduleChanges.length > 0) {
-        toast({
-          title: 'Error',
-          description: 'No se pudieron cargar los cambios de horario',
-          variant: 'destructive',
-        });
-      }
+      setScheduleChanges([]);
     } finally {
       setLoading(false);
     }

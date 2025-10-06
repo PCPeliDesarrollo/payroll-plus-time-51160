@@ -234,36 +234,28 @@ export function MyPayroll() {
                           <p className="font-medium text-sm sm:text-base">
                             Nómina {monthsInYear[selectedMonth].length > 1 ? `#${index + 1}` : ''}
                           </p>
-                          <div className="space-y-1">
-                            <p className="text-xs sm:text-sm text-muted-foreground">
-                              Salario Base: {formatCurrency(payroll.base_salary)}
-                            </p>
-                            <p className="text-xs sm:text-sm text-muted-foreground">
-                              Neto: {formatCurrency(payroll.net_salary)}
-                            </p>
-                            {payroll.overtime_hours > 0 && (
-                              <p className="text-xs sm:text-sm text-muted-foreground">
-                                Horas extra: {payroll.overtime_hours}h
-                              </p>
-                            )}
-                          </div>
+                          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                            {getMonthName(payroll.month)} {payroll.year}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            Para ver los detalles de salario, descarga el PDF
+                          </p>
                         </div>
                       </div>
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-                        <div className="text-left sm:text-right">
-                          <p className="font-semibold text-xl sm:text-2xl">{formatCurrency(payroll.net_salary)}</p>
+                      <div className="flex flex-col items-start gap-3">
+                        <div className="text-left">
                           {getStatusBadge(payroll.status)}
                         </div>
                         {payroll.file_url ? (
-                          <div className="flex gap-2 w-full sm:w-auto">
+                          <div className="flex gap-2 w-full">
                             <Button
                               variant="outline"
                               size="sm"
                               onClick={() => window.open(payroll.file_url, '_blank')}
-                              className="flex-1 sm:flex-none"
+                              className="flex-1"
                             >
-                              <Eye className="h-4 w-4 sm:mr-1" />
-                              <span className="sm:inline">Ver</span>
+                              <Eye className="h-4 w-4 mr-2" />
+                              Ver PDF
                             </Button>
                             <Button
                               variant="outline"
@@ -274,14 +266,14 @@ export function MyPayroll() {
                                 link.download = `nomina-${getMonthName(payroll.month)}-${payroll.year}.pdf`;
                                 link.click();
                               }}
-                              className="flex-1 sm:flex-none"
+                              className="flex-1"
                             >
-                              <Download className="h-4 w-4 sm:mr-1" />
-                              <span className="sm:inline">Descargar</span>
+                              <Download className="h-4 w-4 mr-2" />
+                              Descargar
                             </Button>
                           </div>
                         ) : (
-                          <div className="text-left sm:text-center">
+                          <div className="text-left">
                             <p className="text-xs text-muted-foreground">Archivo no disponible</p>
                           </div>
                         )}
