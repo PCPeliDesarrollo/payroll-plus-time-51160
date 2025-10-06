@@ -8,16 +8,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { useVacations } from "@/hooks/useVacations";
-import { useScheduleChanges } from "@/hooks/useScheduleChanges";
-import { useEffect, useState } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { useNotifications } from "@/hooks/useNotifications";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface HeaderProps {
   user: {
@@ -30,25 +25,12 @@ interface HeaderProps {
 }
 
 export function Header({ user, onLogout, onPageChange }: HeaderProps) {
-  const { vacationRequests } = useVacations();
-  const { scheduleChanges } = useScheduleChanges();
-  const [showNotificationDialog, setShowNotificationDialog] = useState(false);
-  
-  // Filtrar solicitudes pendientes
-  const pendingRequests = vacationRequests.filter(req => req.status === 'pending');
-  const pendingScheduleChanges = scheduleChanges.filter(change => change.status === 'pending');
-  const totalPending = user.role === 'admin' ? (pendingRequests.length + pendingScheduleChanges.length) : 0;
-  
-  // Mostrar pop-up automáticamente cuando hay solicitudes pendientes
-  useEffect(() => {
-    if (user.role === 'admin' && totalPending > 0) {
-      // Mostrar después de un pequeño delay para que no sea tan intrusivo
-      const timer = setTimeout(() => {
-        setShowNotificationDialog(true);
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [totalPending, user.role]);
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+
+  const getNotificationMessage = (notification: any) => {
+    const date = format(new Date(notification.created_at), "dd MMM, HH:mm", { locale: es });
+    return `${notification.message} - ${date}`;
+  };
   
   return (
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 md:px-6">
@@ -60,24 +42,54 @@ export function Header({ user, onLogout, onPageChange }: HeaderProps) {
       </div>
       
       <div className="flex items-center gap-2 md:gap-4">
-        {user.role === 'admin' && (
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="relative hidden sm:flex"
-            onClick={() => setShowNotificationDialog(true)}
-          >
-            <Bell className="h-5 w-5" />
-            {totalPending > 0 && (
-              <Badge 
-                variant="destructive" 
-                className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-              >
-                {totalPending}
-              </Badge>
-            )}
-          </Button>
-        )}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <Badge
+                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-destructive"
+                >
+                  {unreadCount}
+                </Badge>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80" align="end">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">Notificaciones</h3>
+              {unreadCount > 0 && (
+                <Button variant="ghost" size="sm" onClick={markAllAsRead}>
+                  Marcar como leídas
+                </Button>
+              )}
+            </div>
+            <ScrollArea className="h-[400px]">
+              {notifications.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4">No tienes notificaciones</p>
+              ) : (
+                <div className="space-y-2">
+                  {notifications.map((notification) => (
+                    <div
+                      key={notification.id}
+                      className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                        notification.is_read
+                          ? "bg-secondary/30 hover:bg-secondary/50"
+                          : "bg-primary/10 hover:bg-primary/20"
+                      }`}
+                      onClick={() => !notification.is_read && markAsRead(notification.id)}
+                    >
+                      <p className="font-medium text-sm">{notification.title}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {getNotificationMessage(notification)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </PopoverContent>
+        </Popover>
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -88,14 +100,6 @@ export function Header({ user, onLogout, onPageChange }: HeaderProps) {
                   {user.name.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              {user.role === 'admin' && totalPending > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs sm:hidden"
-                >
-                  {totalPending}
-                </Badge>
-              )}
               <div className="text-left hidden sm:block">
                 <p className="text-sm font-medium">{user.name}</p>
                 <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
@@ -120,88 +124,6 @@ export function Header({ user, onLogout, onPageChange }: HeaderProps) {
         </DropdownMenu>
       </div>
 
-      {/* Pop-up de notificaciones */}
-      <Dialog open={showNotificationDialog} onOpenChange={setShowNotificationDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-primary" />
-              Solicitudes Pendientes
-            </DialogTitle>
-            <DialogDescription>
-              Tienes {totalPending} {totalPending === 1 ? 'solicitud pendiente' : 'solicitudes pendientes'} de aprobación
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {pendingRequests.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="font-semibold text-sm">Vacaciones ({pendingRequests.length})</h4>
-                {pendingRequests.map((request) => (
-                  <div 
-                    key={request.id} 
-                    className="p-3 bg-secondary/50 rounded-lg border hover:bg-secondary/70 transition-colors"
-                  >
-                    <p className="font-medium text-sm">Solicitud de vacaciones</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(request.start_date).toLocaleDateString('es-ES')} - {new Date(request.end_date).toLocaleDateString('es-ES')}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {request.total_days} {request.total_days === 1 ? 'día' : 'días'}
-                    </p>
-                    {request.reason && (
-                      <p className="text-xs mt-2 text-foreground/80">
-                        Motivo: {request.reason}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {pendingScheduleChanges.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="font-semibold text-sm">Cambios de Horario ({pendingScheduleChanges.length})</h4>
-                {pendingScheduleChanges.map((change) => (
-                  <div 
-                    key={change.id} 
-                    className="p-3 bg-secondary/50 rounded-lg border hover:bg-secondary/70 transition-colors"
-                  >
-                    <p className="font-medium text-sm">{change.profiles?.full_name || 'Empleado'}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Fecha: {new Date(change.requested_date).toLocaleDateString('es-ES')}
-                    </p>
-                    {change.reason && (
-                      <p className="text-xs mt-2 text-foreground/80">
-                        Motivo: {change.reason}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="flex gap-2 mt-4">
-            <Button 
-              variant="outline" 
-              className="flex-1"
-              onClick={() => setShowNotificationDialog(false)}
-            >
-              Cerrar
-            </Button>
-            <Button 
-              className="flex-1"
-              onClick={() => {
-                setShowNotificationDialog(false);
-                onPageChange?.('admin-vacations');
-              }}
-            >
-              Ver Todas
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </header>
   );
 }

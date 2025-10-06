@@ -27,8 +27,9 @@ export function Sidebar({ userRole, currentPage, onPageChange, onLogout }: Sideb
   const employeeMenuItems = [
     { id: 'dashboard', label: 'Mi Dashboard', icon: Home },
     { id: 'my-attendance', label: 'Mis Fichajes', icon: Clock },
-    { id: 'my-payroll', label: 'Mis Nóminas', icon: FileText },
     { id: 'my-vacations', label: 'Mis Vacaciones', icon: Calendar },
+    { id: 'my-schedule-changes', label: 'Cambios de Horario', icon: Clock },
+    { id: 'my-payroll', label: 'Mis Nóminas', icon: FileText },
     { id: 'my-profile', label: 'Mi Perfil', icon: Settings },
   ];
 

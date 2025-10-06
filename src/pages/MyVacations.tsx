@@ -356,13 +356,15 @@ export function MyVacations() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-7 gap-1 md:gap-2">
-            {daysOfWeek.map(day => (
-              <div key={day} className="text-center font-semibold text-xs md:text-sm p-2">
-                {day}
-              </div>
-            ))}
-            {renderCalendar()}
+          <div className="overflow-x-auto">
+            <div className="grid grid-cols-7 gap-1 md:gap-2 min-w-[280px]">
+              {daysOfWeek.map(day => (
+                <div key={day} className="text-center font-semibold text-xs md:text-sm p-2">
+                  {day}
+                </div>
+              ))}
+              {renderCalendar()}
+            </div>
           </div>
         </CardContent>
       </Card>

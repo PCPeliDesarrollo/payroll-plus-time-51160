@@ -6,6 +6,7 @@ import { Employees } from "./Employees";
 import { MyAttendance } from "./MyAttendance";
 import { MyPayroll } from "./MyPayroll";
 import { MyVacations } from "./MyVacations";
+import { MyScheduleChanges } from "./MyScheduleChanges";
 import { AdminAttendance } from "./AdminAttendance";
 import { AdminPayroll } from "./AdminPayroll";
 import AdminVacations from "./AdminVacations";
@@ -48,6 +49,8 @@ const Index = () => {
         return <MyPayroll />;
       case "my-vacations":
         return <MyVacations />;
+      case "my-schedule-changes":
+        return <MyScheduleChanges />;
       case "my-profile":
         return <MyProfile />;
       default:

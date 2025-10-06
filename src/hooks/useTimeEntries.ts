@@ -80,8 +80,15 @@ export function useTimeEntries() {
         .eq('date', today)
         .maybeSingle();
       
-      if (existingEntry && existingEntry.status === 'checked_in') {
-        throw new Error('Ya tienes un fichaje de entrada activo para hoy');
+      // Prevent double check-in
+      if (existingEntry) {
+        if (existingEntry.status === 'checked_in') {
+          throw new Error('Ya tienes un fichaje de entrada activo para hoy');
+        }
+        // If already checked out, don't allow check-in again
+        if (existingEntry.status === 'checked_out') {
+          throw new Error('Ya has completado el fichaje de hoy');
+        }
       }
 
       const now = new Date().toISOString();
@@ -98,8 +105,16 @@ export function useTimeEntries() {
         .single();
 
       if (error) throw error;
+      
+      // Update state immediately
       setCurrentEntry(data);
+      
+      // Fetch all entries to update the list
       await fetchTimeEntries();
+      
+      // Force refresh today's entry
+      await fetchTodayEntry();
+      
       return data;
     } catch (error) {
       console.error('Error checking in:', error);
@@ -112,7 +127,7 @@ export function useTimeEntries() {
       throw new Error('Debes iniciar sesión para fichar');
     }
     
-    if (!currentEntry) {
+    if (!currentEntry || currentEntry.status !== 'checked_in') {
       throw new Error('No tienes un fichaje de entrada activo');
     }
 
@@ -130,8 +145,16 @@ export function useTimeEntries() {
         .single();
 
       if (error) throw error;
+      
+      // Update state immediately
       setCurrentEntry(data);
+      
+      // Fetch all entries
       await fetchTimeEntries();
+      
+      // Force refresh today's entry
+      await fetchTodayEntry();
+      
       return data;
     } catch (error) {
       console.error('Error checking out:', error);
