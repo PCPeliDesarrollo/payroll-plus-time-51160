@@ -39,7 +39,7 @@ export function useScheduleChanges() {
         .from('schedule_changes')
         .select(`
           *,
-          profiles:user_id (
+          profiles!schedule_changes_user_id_fkey (
             full_name,
             email,
             department
@@ -55,7 +55,7 @@ export function useScheduleChanges() {
       const { data, error } = await query;
 
       if (error) throw error;
-      setScheduleChanges((data as any) || []);
+      setScheduleChanges((data || []) as any);
     } catch (error) {
       console.error('Error fetching schedule changes:', error);
       toast({

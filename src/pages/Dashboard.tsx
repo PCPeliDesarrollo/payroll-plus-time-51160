@@ -234,7 +234,7 @@ export function Dashboard({ userRole }: DashboardProps) {
           <StatsCard
             title="Fichajes Hoy"
             value={adminStats.todayEntries.toString()}
-            description="Registros de hoy"
+            description="Registros de empleados"
             icon={Clock}
           />
           <StatsCard
@@ -253,57 +253,12 @@ export function Dashboard({ userRole }: DashboardProps) {
           />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary" />
-                Fichajes Recientes
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {adminStats.recentClockIns.length > 0 ? adminStats.recentClockIns.map((entry) => {
-                  const employee = employees.find(emp => emp.id === entry.user_id);
-                  const isClockIn = entry.check_in_time && !entry.check_out_time;
-                  const displayTime = isClockIn 
-                    ? new Date(entry.check_in_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-                    : entry.check_out_time 
-                      ? new Date(entry.check_out_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })
-                      : "Sin hora";
-                  
-                  return (
-                    <div key={entry.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-2 h-2 rounded-full ${
-                          entry.status === 'checked_out' ? 'bg-success' : 'bg-primary'
-                        }`} />
-                        <div>
-                          <p className="font-medium">{employee?.full_name || 'Empleado desconocido'}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {isClockIn ? 'Entrada' : 'Salida'} - {displayTime}
-                          </p>
-                        </div>
-                      </div>
-                      {entry.status === 'checked_out' ? (
-                        <CheckCircle className="h-4 w-4 text-success" />
-                      ) : (
-                        <Clock className="h-4 w-4 text-primary" />
-                      )}
-                    </div>
-                  );
-                }) : (
-                  <p className="text-center text-muted-foreground py-4">No hay fichajes recientes</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
+        <div className="grid grid-cols-1 gap-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-primary" />
-                Solicitudes Pendientes
+                Solicitudes Pendientes de Vacaciones
               </CardTitle>
             </CardHeader>
             <CardContent>

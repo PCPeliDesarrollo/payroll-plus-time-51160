@@ -166,15 +166,37 @@ export function AdminPayroll() {
     try {
       setUploadingFile(recordId);
 
-      const fileExt = file.name.split('.').pop();
+      // Validar que sea un PDF
+      if (file.type !== 'application/pdf') {
+        throw new Error('Solo se permiten archivos PDF');
+      }
+
+      const fileExt = 'pdf';
       const fileName = `${recordId}-${Date.now()}.${fileExt}`;
-      const filePath = `payroll/${fileName}`;
+      const filePath = `${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
+      // Primero eliminar archivo anterior si existe
+      const record = payrollRecords.find(r => r.id === recordId);
+      if (record?.file_url) {
+        const oldPath = record.file_url.split('/').pop();
+        if (oldPath) {
+          await supabase.storage
+            .from('payroll-files')
+            .remove([oldPath]);
+        }
+      }
+
+      const { error: uploadError, data: uploadData } = await supabase.storage
         .from('payroll-files')
-        .upload(filePath, file);
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('payroll-files')
@@ -188,19 +210,22 @@ export function AdminPayroll() {
         })
         .eq('id', recordId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Update error:', updateError);
+        throw updateError;
+      }
 
       toast({
         title: "Éxito",
-        description: "Archivo subido correctamente",
+        description: "Nómina subida correctamente",
       });
 
       fetchPayrollRecords(selectedEmployee?.id);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading file:', error);
       toast({
         title: "Error",
-        description: "No se pudo subir el archivo",
+        description: error.message || "No se pudo subir el archivo. Verifica que sea un PDF válido.",
         variant: "destructive",
       });
     } finally {

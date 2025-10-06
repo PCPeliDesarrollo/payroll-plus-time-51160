@@ -5,9 +5,9 @@ const config: CapacitorConfig = {
   appName: 'Sistema Fichajes',
   webDir: 'dist',
   // Logo configuration
-  // The icon will use public/logo-peli.png as source
-  // To regenerate native assets, run:
-  // npx @capacitor/assets generate --iconBackgroundColor '#ffffff' --iconBackgroundColorDark '#ffffff' --splashBackgroundColor '#b062f8' --splashBackgroundColorDark '#b062f8' --ios --android
+  // Using logo-peli.png as source for app icon
+  // To regenerate native assets after changing logo-peli.png, run:
+  // npx @capacitor/assets generate --iconBackgroundColor '#ffffff' --iconBackgroundColorDark '#ffffff' --splashBackgroundColor '#b062f8' --splashBackgroundColorDark '#b062f8' --android --assetPath public/logo-peli.png
   // IMPORTANT: server.url is ONLY for development hot-reload
   // For production APK, this MUST be removed or commented out
   // server: {

@@ -1,217 +1,168 @@
-import { useState, useEffect, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   Settings, 
-  Users, 
-  Clock, 
-  Calendar, 
-  FileText, 
-  TrendingUp, 
-  CheckCircle, 
-  XCircle,
-  Eye
+  Lock,
+  User,
+  Mail,
+  Shield,
+  CheckCircle
 } from "lucide-react";
-import { StatsCard } from "@/components/dashboard/StatsCard";
-import { useEmployees } from "@/hooks/useEmployees";
-import { useTimeEntries } from "@/hooks/useTimeEntries";
-import { useVacations } from "@/hooks/useVacations";
-import { usePayroll } from "@/hooks/usePayroll";
-import { format, isThisMonth, isToday } from "date-fns";
-import { es } from "date-fns/locale";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export function AdminSettings() {
-  const { employees } = useEmployees();
-  const { timeEntries } = useTimeEntries();
-  const { vacationRequests } = useVacations();
-  const { payrollRecords } = usePayroll();
+  const { user, profile } = useAuth();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    newPassword: '',
+    confirmPassword: '',
+  });
 
-  // Cálculos en tiempo real
-  const stats = useMemo(() => {
-    const totalEmployees = employees.filter(emp => emp.is_active).length;
-    
-    // Fichajes de hoy
-    const todayEntries = timeEntries.filter(entry => 
-      isToday(new Date(entry.date))
-    );
-    
-    // Fichajes del mes actual
-    const monthEntries = timeEntries.filter(entry => 
-      isThisMonth(new Date(entry.date))
-    );
+  const handlePasswordChange = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Las contraseñas no coinciden",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    // Solicitudes de vacaciones pendientes
-    const pendingVacations = vacationRequests.filter(req => req.status === 'pending');
-    
-    // Nóminas completadas este mes
-    const currentMonth = new Date().getMonth() + 1;
-    const currentYear = new Date().getFullYear();
-    const completedPayrolls = payrollRecords.filter(record => 
-      record.month === currentMonth && 
-      record.year === currentYear && 
-      record.status === 'completed'
-    );
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "La contraseña debe tener al menos 6 caracteres",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    return {
-      totalEmployees,
-      todayEntries: todayEntries.length,
-      monthEntries: monthEntries.length,
-      pendingVacations: pendingVacations.length,
-      completedPayrolls: completedPayrolls.length,
-    };
-  }, [employees, timeEntries, vacationRequests, payrollRecords]);
+    try {
+      setLoading(true);
+      const { error } = await supabase.auth.updateUser({
+        password: passwordData.newPassword
+      });
 
-  // Últimos fichajes (5 más recientes)
-  const recentTimeEntries = useMemo(() => {
-    return timeEntries
-      .slice()
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 5);
-  }, [timeEntries]);
+      if (error) throw error;
 
-  // Últimas solicitudes de vacaciones (5 más recientes)
-  const recentVacationRequests = useMemo(() => {
-    return vacationRequests
-      .slice()
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 5);
-  }, [vacationRequests]);
+      toast({
+        title: "Éxito",
+        description: "Contraseña actualizada correctamente",
+      });
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="secondary">Pendiente</Badge>;
-      case 'approved':
-        return <Badge className="bg-success text-success-foreground">Aprobado</Badge>;
-      case 'rejected':
-        return <Badge variant="destructive">Rechazado</Badge>;
-      case 'checked_in':
-        return <Badge className="bg-primary text-primary-foreground">Presente</Badge>;
-      case 'checked_out':
-        return <Badge className="bg-success text-success-foreground">Completado</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+      setPasswordData({ newPassword: '', confirmPassword: '' });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "No se pudo actualizar la contraseña",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-foreground">Panel de Configuración</h2>
-          <p className="text-muted-foreground">Vista general del sistema y actividad reciente</p>
+          <h2 className="text-3xl font-bold text-foreground">Configuración</h2>
+          <p className="text-muted-foreground">Gestiona tu cuenta y preferencias</p>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard
-          title="Total Empleados"
-          value={stats.totalEmployees.toString()}
-          description="Empleados activos"
-          icon={Users}
-        />
-        <StatsCard
-          title="Fichajes Hoy"
-          value={stats.todayEntries.toString()}
-          description="Registros de hoy"
-          icon={Clock}
-        />
-        <StatsCard
-          title="Fichajes del Mes"
-          value={stats.monthEntries.toString()}
-          description="Total este mes"
-          icon={TrendingUp}
-        />
-        <StatsCard
-          title="Vacaciones Pendientes"
-          value={stats.pendingVacations.toString()}
-          description="Requieren aprobación"
-          icon={Calendar}
-          className={stats.pendingVacations > 0 ? "border-accent/30 bg-accent/10" : ""}
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Últimos Fichajes */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" />
-              Últimos Fichajes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentTimeEntries.length > 0 ? recentTimeEntries.map((entry) => {
-                // Buscar el empleado correspondiente
-                const employee = employees.find(emp => emp.id === entry.user_id);
-                return (
-                  <div key={entry.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-primary"></div>
-                      <div>
-                        <p className="font-medium">{employee?.full_name || 'Empleado desconocido'}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(entry.date), 'dd/MM/yyyy', { locale: es })}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      {getStatusBadge(entry.status)}
-                      <p className="text-sm text-muted-foreground">
-                        {entry.check_in_time && new Date(entry.check_in_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                        {entry.check_out_time && ` - ${new Date(entry.check_out_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`}
-                      </p>
-                    </div>
-                  </div>
-                );
-              }) : (
-                <p className="text-center text-muted-foreground py-4">No hay fichajes recientes</p>
-              )}
+      {/* Información del Perfil */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <User className="h-5 w-5 text-primary" />
+            Información del Perfil
+          </CardTitle>
+          <CardDescription>
+            Tu información personal y rol en el sistema
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Nombre Completo</Label>
+              <div className="p-3 bg-secondary/50 rounded-lg">
+                <p className="font-medium">{profile?.full_name || 'No disponible'}</p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Últimas Solicitudes de Vacaciones */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
-              Últimas Solicitudes de Vacaciones
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentVacationRequests.length > 0 ? recentVacationRequests.map((request) => {
-                const employee = employees.find(emp => emp.id === request.user_id);
-                return (
-                  <div key={request.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-primary"></div>
-                      <div>
-                        <p className="font-medium">{employee?.full_name || 'Empleado desconocido'}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {format(new Date(request.start_date), 'dd/MM', { locale: es })} - {format(new Date(request.end_date), 'dd/MM/yyyy', { locale: es })}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      {getStatusBadge(request.status)}
-                      <p className="text-sm text-muted-foreground">
-                        {request.total_days} días
-                      </p>
-                    </div>
-                  </div>
-                );
-              }) : (
-                <p className="text-center text-muted-foreground py-4">No hay solicitudes recientes</p>
-              )}
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Email</Label>
+              <div className="p-3 bg-secondary/50 rounded-lg flex items-center gap-2">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <p className="font-medium">{user?.email || 'No disponible'}</p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Rol</Label>
+              <div className="p-3 bg-secondary/50 rounded-lg flex items-center gap-2">
+                <Shield className="h-4 w-4 text-primary" />
+                <p className="font-medium capitalize">{profile?.role || 'No disponible'}</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-muted-foreground">Departamento</Label>
+              <div className="p-3 bg-secondary/50 rounded-lg">
+                <p className="font-medium">{profile?.department || 'Sin asignar'}</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Cambiar Contraseña */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Lock className="h-5 w-5 text-primary" />
+            Cambiar Contraseña
+          </CardTitle>
+          <CardDescription>
+            Actualiza tu contraseña para mantener tu cuenta segura
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">Nueva Contraseña</Label>
+              <Input
+                id="newPassword"
+                type="password"
+                placeholder="Mínimo 6 caracteres"
+                value={passwordData.newPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                placeholder="Repite la nueva contraseña"
+                value={passwordData.confirmPassword}
+                onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+              />
+            </div>
+            <Button 
+              onClick={handlePasswordChange}
+              disabled={loading || !passwordData.newPassword || !passwordData.confirmPassword}
+              className="w-full md:w-auto"
+            >
+              {loading ? "Actualizando..." : "Cambiar Contraseña"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Estado del Sistema */}
       <Card>
@@ -220,6 +171,9 @@ export function AdminSettings() {
             <Settings className="h-5 w-5 text-primary" />
             Estado del Sistema
           </CardTitle>
+          <CardDescription>
+            Servicios conectados y funcionando
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -228,21 +182,21 @@ export function AdminSettings() {
                 <CheckCircle className="h-5 w-5 text-success" />
                 <span>Base de Datos</span>
               </div>
-              <Badge className="bg-success text-success-foreground">Conectada</Badge>
+              <div className="text-sm text-success font-medium">Conectada</div>
             </div>
             <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg">
               <div className="flex items-center gap-3">
                 <CheckCircle className="h-5 w-5 text-success" />
                 <span>Almacenamiento</span>
               </div>
-              <Badge className="bg-success text-success-foreground">Disponible</Badge>
+              <div className="text-sm text-success font-medium">Disponible</div>
             </div>
             <div className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg">
               <div className="flex items-center gap-3">
                 <CheckCircle className="h-5 w-5 text-success" />
                 <span>Autenticación</span>
               </div>
-              <Badge className="bg-success text-success-foreground">Activa</Badge>
+              <div className="text-sm text-success font-medium">Activa</div>
             </div>
           </div>
         </CardContent>
