@@ -39,7 +39,7 @@ export function useScheduleChanges() {
         .from('schedule_changes')
         .select(`
           *,
-          profiles!schedule_changes_user_id_fkey (
+          profiles (
             full_name,
             email,
             department
@@ -58,11 +58,14 @@ export function useScheduleChanges() {
       setScheduleChanges((data || []) as any);
     } catch (error) {
       console.error('Error fetching schedule changes:', error);
-      toast({
-        title: 'Error',
-        description: 'No se pudieron cargar los cambios de horario',
-        variant: 'destructive',
-      });
+      // No mostrar toast de error al cargar inicialmente
+      if (scheduleChanges.length > 0) {
+        toast({
+          title: 'Error',
+          description: 'No se pudieron cargar los cambios de horario',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setLoading(false);
     }

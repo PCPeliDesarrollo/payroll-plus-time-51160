@@ -12,7 +12,6 @@ import { format, isToday, isThisMonth } from "date-fns";
 import { es } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { RequestScheduleChangeDialog } from "@/components/dashboard/RequestScheduleChangeDialog";
-import { useNavigate } from "react-router-dom";
 
 // Quick Check-In Component
 function QuickCheckInButton({ isCheckedIn, currentEntry }: { isCheckedIn: boolean; currentEntry: any }) {
@@ -119,10 +118,10 @@ function QuickCheckInButton({ isCheckedIn, currentEntry }: { isCheckedIn: boolea
 
 interface DashboardProps {
   userRole: 'admin' | 'employee';
+  onPageChange?: (page: string) => void;
 }
 
-export function Dashboard({ userRole }: DashboardProps) {
-  const navigate = useNavigate();
+export function Dashboard({ userRole, onPageChange }: DashboardProps) {
   const { timeEntries, currentEntry } = useTimeEntries();
   const { vacationBalance, vacationRequests } = useVacations();
   const { employees } = useEmployees();
@@ -227,7 +226,7 @@ export function Dashboard({ userRole }: DashboardProps) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div onClick={() => navigate('/employees')} className="cursor-pointer">
+          <div onClick={() => onPageChange?.('employees')} className="cursor-pointer">
             <StatsCard
               title="Total Empleados"
               value={adminStats.totalEmployees.toString()}
@@ -235,7 +234,7 @@ export function Dashboard({ userRole }: DashboardProps) {
               icon={Users}
             />
           </div>
-          <div onClick={() => navigate('/admin-attendance')} className="cursor-pointer">
+          <div onClick={() => onPageChange?.('attendance')} className="cursor-pointer">
             <StatsCard
               title="Fichajes Hoy"
               value={adminStats.todayEntries.toString()}
@@ -243,7 +242,7 @@ export function Dashboard({ userRole }: DashboardProps) {
               icon={Clock}
             />
           </div>
-          <div onClick={() => navigate('/admin-payroll')} className="cursor-pointer">
+          <div onClick={() => onPageChange?.('payroll')} className="cursor-pointer">
             <StatsCard
               title="Nóminas Pendientes"
               value={adminStats.pendingPayroll.toString()}
@@ -252,7 +251,7 @@ export function Dashboard({ userRole }: DashboardProps) {
               trend={{ value: adminStats.pendingPayroll.toString(), isPositive: false }}
             />
           </div>
-          <div onClick={() => navigate('/admin-vacations')} className="cursor-pointer">
+          <div onClick={() => onPageChange?.('vacations')} className="cursor-pointer">
             <StatsCard
               title="Solicitudes Vacaciones"
               value={adminStats.pendingVacations.toString()}

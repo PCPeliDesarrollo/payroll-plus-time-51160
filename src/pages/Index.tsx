@@ -29,7 +29,7 @@ const Index = () => {
 
     switch (currentPage) {
       case "dashboard":
-        return <Dashboard userRole={profile.role as "admin" | "employee"} />;
+        return <Dashboard userRole={profile.role as "admin" | "employee"} onPageChange={setCurrentPage} />;
       case "employees":
         return profile.role === "admin" ? <Employees /> : <Dashboard userRole={profile.role as "admin" | "employee"} />;
       case "attendance":

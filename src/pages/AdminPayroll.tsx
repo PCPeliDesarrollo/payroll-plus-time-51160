@@ -206,7 +206,7 @@ export function AdminPayroll() {
         .from('payroll_records')
         .update({ 
           file_url: publicUrl,
-          status: 'completed' 
+          status: 'approved' 
         })
         .eq('id', recordId);
 
@@ -235,12 +235,14 @@ export function AdminPayroll() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'completed':
-        return <Badge variant="default">Completada</Badge>;
+      case 'approved':
+        return <Badge variant="default">Aprobada</Badge>;
+      case 'paid':
+        return <Badge className="bg-success text-success-foreground">Pagada</Badge>;
       case 'draft':
-        return <Badge variant="secondary">Borrador</Badge>;
+        return <Badge variant="outline">Borrador</Badge>;
       default:
-        return <Badge variant="outline">Pendiente</Badge>;
+        return <Badge variant="secondary">{status}</Badge>;
     }
   };
 
