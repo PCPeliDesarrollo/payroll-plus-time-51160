@@ -12,6 +12,7 @@ import { format, isToday, isThisMonth } from "date-fns";
 import { es } from "date-fns/locale";
 import { useToast } from "@/hooks/use-toast";
 import { RequestScheduleChangeDialog } from "@/components/dashboard/RequestScheduleChangeDialog";
+import { useNavigate } from "react-router-dom";
 
 // Quick Check-In Component
 function QuickCheckInButton({ isCheckedIn, currentEntry }: { isCheckedIn: boolean; currentEntry: any }) {
@@ -121,6 +122,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ userRole }: DashboardProps) {
+  const navigate = useNavigate();
   const { timeEntries, currentEntry } = useTimeEntries();
   const { vacationBalance, vacationRequests } = useVacations();
   const { employees } = useEmployees();
@@ -225,32 +227,40 @@ export function Dashboard({ userRole }: DashboardProps) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatsCard
-            title="Total Empleados"
-            value={adminStats.totalEmployees.toString()}
-            description="Empleados activos"
-            icon={Users}
-          />
-          <StatsCard
-            title="Fichajes Hoy"
-            value={adminStats.todayEntries.toString()}
-            description="Registros de empleados"
-            icon={Clock}
-          />
-          <StatsCard
-            title="Nóminas Pendientes"
-            value={adminStats.pendingPayroll.toString()}
-            description="Para completar"
-            icon={FileText}
-            trend={{ value: adminStats.pendingPayroll.toString(), isPositive: false }}
-          />
-          <StatsCard
-            title="Solicitudes Vacaciones"
-            value={adminStats.pendingVacations.toString()}
-            description="Pendientes de aprobar"
-            icon={Calendar}
-            trend={{ value: adminStats.pendingVacations.toString(), isPositive: false }}
-          />
+          <div onClick={() => navigate('/employees')} className="cursor-pointer">
+            <StatsCard
+              title="Total Empleados"
+              value={adminStats.totalEmployees.toString()}
+              description="Empleados activos"
+              icon={Users}
+            />
+          </div>
+          <div onClick={() => navigate('/admin-attendance')} className="cursor-pointer">
+            <StatsCard
+              title="Fichajes Hoy"
+              value={adminStats.todayEntries.toString()}
+              description="Registros de empleados"
+              icon={Clock}
+            />
+          </div>
+          <div onClick={() => navigate('/admin-payroll')} className="cursor-pointer">
+            <StatsCard
+              title="Nóminas Pendientes"
+              value={adminStats.pendingPayroll.toString()}
+              description="Para completar"
+              icon={FileText}
+              trend={{ value: adminStats.pendingPayroll.toString(), isPositive: false }}
+            />
+          </div>
+          <div onClick={() => navigate('/admin-vacations')} className="cursor-pointer">
+            <StatsCard
+              title="Solicitudes Vacaciones"
+              value={adminStats.pendingVacations.toString()}
+              description="Pendientes de aprobar"
+              icon={Calendar}
+              trend={{ value: adminStats.pendingVacations.toString(), isPositive: false }}
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-6">

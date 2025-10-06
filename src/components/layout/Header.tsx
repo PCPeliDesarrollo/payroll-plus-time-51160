@@ -16,6 +16,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { useVacations } from "@/hooks/useVacations";
+import { useScheduleChanges } from "@/hooks/useScheduleChanges";
 import { useEffect, useState } from "react";
 
 interface HeaderProps {
@@ -30,22 +31,24 @@ interface HeaderProps {
 
 export function Header({ user, onLogout, onPageChange }: HeaderProps) {
   const { vacationRequests } = useVacations();
+  const { scheduleChanges } = useScheduleChanges();
   const [showNotificationDialog, setShowNotificationDialog] = useState(false);
   
   // Filtrar solicitudes pendientes
   const pendingRequests = vacationRequests.filter(req => req.status === 'pending');
-  const pendingVacations = user.role === 'admin' ? pendingRequests.length : 0;
+  const pendingScheduleChanges = scheduleChanges.filter(change => change.status === 'pending');
+  const totalPending = user.role === 'admin' ? (pendingRequests.length + pendingScheduleChanges.length) : 0;
   
   // Mostrar pop-up automáticamente cuando hay solicitudes pendientes
   useEffect(() => {
-    if (user.role === 'admin' && pendingRequests.length > 0) {
+    if (user.role === 'admin' && totalPending > 0) {
       // Mostrar después de un pequeño delay para que no sea tan intrusivo
       const timer = setTimeout(() => {
         setShowNotificationDialog(true);
       }, 2000);
       return () => clearTimeout(timer);
     }
-  }, [pendingRequests.length, user.role]);
+  }, [totalPending, user.role]);
   
   return (
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 md:px-6">
@@ -65,12 +68,12 @@ export function Header({ user, onLogout, onPageChange }: HeaderProps) {
             onClick={() => setShowNotificationDialog(true)}
           >
             <Bell className="h-5 w-5" />
-            {pendingVacations > 0 && (
+            {totalPending > 0 && (
               <Badge 
                 variant="destructive" 
                 className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
               >
-                {pendingVacations}
+                {totalPending}
               </Badge>
             )}
           </Button>
@@ -78,13 +81,21 @@ export function Header({ user, onLogout, onPageChange }: HeaderProps) {
         
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-2 h-10 px-2 md:px-3">
+            <Button variant="ghost" className="flex items-center gap-2 h-10 px-2 md:px-3 relative">
               <Avatar className="h-8 w-8">
                 <AvatarImage src="" />
                 <AvatarFallback className="bg-primary text-primary-foreground">
                   {user.name.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
+              {user.role === 'admin' && totalPending > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs sm:hidden"
+                >
+                  {totalPending}
+                </Badge>
+              )}
               <div className="text-left hidden sm:block">
                 <p className="text-sm font-medium">{user.name}</p>
                 <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
@@ -115,33 +126,60 @@ export function Header({ user, onLogout, onPageChange }: HeaderProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Bell className="h-5 w-5 text-primary" />
-              Solicitudes de Vacaciones Pendientes
+              Solicitudes Pendientes
             </DialogTitle>
             <DialogDescription>
-              Tienes {pendingRequests.length} {pendingRequests.length === 1 ? 'solicitud' : 'solicitudes'} de vacaciones pendiente{pendingRequests.length === 1 ? '' : 's'} de aprobación
+              Tienes {totalPending} {totalPending === 1 ? 'solicitud pendiente' : 'solicitudes pendientes'} de aprobación
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-3 max-h-96 overflow-y-auto">
-            {pendingRequests.map((request) => (
-              <div 
-                key={request.id} 
-                className="p-3 bg-secondary/50 rounded-lg border hover:bg-secondary/70 transition-colors"
-              >
-                <p className="font-medium text-sm">Solicitud de vacaciones</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {new Date(request.start_date).toLocaleDateString('es-ES')} - {new Date(request.end_date).toLocaleDateString('es-ES')}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {request.total_days} {request.total_days === 1 ? 'día' : 'días'}
-                </p>
-                {request.reason && (
-                  <p className="text-xs mt-2 text-foreground/80">
-                    Motivo: {request.reason}
-                  </p>
-                )}
+            {pendingRequests.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">Vacaciones ({pendingRequests.length})</h4>
+                {pendingRequests.map((request) => (
+                  <div 
+                    key={request.id} 
+                    className="p-3 bg-secondary/50 rounded-lg border hover:bg-secondary/70 transition-colors"
+                  >
+                    <p className="font-medium text-sm">Solicitud de vacaciones</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {new Date(request.start_date).toLocaleDateString('es-ES')} - {new Date(request.end_date).toLocaleDateString('es-ES')}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {request.total_days} {request.total_days === 1 ? 'día' : 'días'}
+                    </p>
+                    {request.reason && (
+                      <p className="text-xs mt-2 text-foreground/80">
+                        Motivo: {request.reason}
+                      </p>
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
+            )}
+            
+            {pendingScheduleChanges.length > 0 && (
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">Cambios de Horario ({pendingScheduleChanges.length})</h4>
+                {pendingScheduleChanges.map((change) => (
+                  <div 
+                    key={change.id} 
+                    className="p-3 bg-secondary/50 rounded-lg border hover:bg-secondary/70 transition-colors"
+                  >
+                    <p className="font-medium text-sm">{change.profiles?.full_name || 'Empleado'}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Fecha: {new Date(change.requested_date).toLocaleDateString('es-ES')}
+                    </p>
+                    {change.reason && (
+                      <p className="text-xs mt-2 text-foreground/80">
+                        Motivo: {change.reason}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2 mt-4">
