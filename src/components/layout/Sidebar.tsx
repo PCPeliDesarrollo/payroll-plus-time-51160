@@ -1,4 +1,4 @@
-import { Home, Clock, Users, FileText, Calendar, Settings, LogOut } from "lucide-react";
+import { Home, Clock, Users, FileText, Calendar, Settings, LogOut, ClipboardCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -22,6 +22,7 @@ export function Sidebar({ userRole, currentPage, onPageChange, onLogout }: Sideb
     { id: 'vacations', label: 'Vacaciones', icon: Calendar },
     { id: 'schedule-changes', label: 'Cambios Horario', icon: Clock },
     { id: 'settings', label: 'Configuración', icon: Settings },
+    { id: 'regularization', label: 'Regularización', icon: ClipboardCheck },
   ];
 
   const employeeMenuItems = [

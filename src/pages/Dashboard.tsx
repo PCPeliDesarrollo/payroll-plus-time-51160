@@ -14,8 +14,19 @@ import { useToast } from "@/hooks/use-toast";
 import { RequestScheduleChangeDialog } from "@/components/dashboard/RequestScheduleChangeDialog";
 
 // Quick Check-In Component
-function QuickCheckInButton({ isCheckedIn, currentEntry }: { isCheckedIn: boolean; currentEntry: any }) {
-  const { checkIn, checkOut, loading } = useTimeEntries();
+function QuickCheckInButton({ 
+  isCheckedIn, 
+  currentEntry, 
+  onCheckIn, 
+  onCheckOut,
+  loading 
+}: { 
+  isCheckedIn: boolean; 
+  currentEntry: any;
+  onCheckIn: () => void;
+  onCheckOut: () => void;
+  loading: boolean;
+}) {
   const { toast } = useToast();
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
 
@@ -52,7 +63,7 @@ function QuickCheckInButton({ isCheckedIn, currentEntry }: { isCheckedIn: boolea
       }
 
       if (isCheckedIn) {
-        await checkOut();
+        await onCheckOut();
         toast({
           title: "¡Fichaje de salida registrado!",
           description: location 
@@ -60,7 +71,7 @@ function QuickCheckInButton({ isCheckedIn, currentEntry }: { isCheckedIn: boolea
             : "Has fichado la salida correctamente.",
         });
       } else {
-        await checkIn();
+        await onCheckIn();
         toast({
           title: "¡Fichaje de entrada registrado!",
           description: location 
@@ -148,7 +159,7 @@ interface DashboardProps {
 }
 
 export function Dashboard({ userRole, onPageChange }: DashboardProps) {
-  const { timeEntries, currentEntry } = useTimeEntries();
+  const { timeEntries, currentEntry, checkIn, checkOut, loading } = useTimeEntries();
   const { vacationBalance, vacationRequests } = useVacations();
   const { employees } = useEmployees();
   const { payrollRecords } = usePayroll();
@@ -349,6 +360,9 @@ export function Dashboard({ userRole, onPageChange }: DashboardProps) {
           <QuickCheckInButton 
             isCheckedIn={currentEntry?.status === 'checked_in'} 
             currentEntry={currentEntry}
+            onCheckIn={checkIn}
+            onCheckOut={checkOut}
+            loading={loading}
           />
         </CardContent>
       </Card>

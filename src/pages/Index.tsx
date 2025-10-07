@@ -12,6 +12,7 @@ import { AdminPayroll } from "./AdminPayroll";
 import AdminVacations from "./AdminVacations";
 import AdminScheduleChanges from "./AdminScheduleChanges";
 import { AdminSettings } from "./AdminSettings";
+import { AdminRegularization } from "./AdminRegularization";
 import { MyProfile } from "./MyProfile";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
@@ -43,6 +44,8 @@ const Index = () => {
         return profile.role === "admin" ? <AdminScheduleChanges onBack={() => setCurrentPage('dashboard')} /> : <Dashboard userRole={profile.role as "admin" | "employee"} onPageChange={setCurrentPage} />;
       case "settings":
         return profile.role === "admin" ? <AdminSettings /> : <MyProfile />;
+      case "regularization":
+        return profile.role === "admin" ? <AdminRegularization /> : <Dashboard userRole={profile.role as "admin" | "employee"} onPageChange={setCurrentPage} />;
       case "my-attendance":
         return <MyAttendance />;
       case "my-payroll":
