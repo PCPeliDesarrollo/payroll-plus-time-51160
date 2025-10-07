@@ -225,7 +225,7 @@ export function MyAttendance() {
                               <div className="flex items-center gap-3">
                                 <CalendarIcon className="h-5 w-5 text-primary" />
                                 <div className="text-left">
-                                  <CardTitle className="text-lg capitalize">{monthName}</CardTitle>
+                                  <CardTitle className="text-lg capitalize text-primary">{monthName}</CardTitle>
                                   <p className="text-sm text-muted-foreground mt-1">
                                     {entries.length} fichaje{entries.length !== 1 ? 's' : ''}
                                   </p>

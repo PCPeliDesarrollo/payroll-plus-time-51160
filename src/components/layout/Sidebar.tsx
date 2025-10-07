@@ -94,11 +94,11 @@ export function Sidebar({ userRole, currentPage, onPageChange, onLogout }: Sideb
       {/* Mobile Sidebar */}
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetTrigger asChild className="md:hidden fixed top-4 left-4 z-50">
-          <Button variant="outline" size="icon" className="bg-card shadow-lg">
-            <Menu className="h-5 w-5" />
+          <Button variant="outline" size="icon" className="bg-card shadow-lg border-primary/20">
+            <Menu className="h-5 w-5 text-primary" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="p-0 w-64">
+        <SheetContent side="left" className="p-0 w-64 bg-secondary/30">
           <SidebarContent />
         </SheetContent>
       </Sheet>

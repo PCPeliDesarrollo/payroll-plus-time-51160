@@ -159,10 +159,18 @@ interface DashboardProps {
 }
 
 export function Dashboard({ userRole, onPageChange }: DashboardProps) {
-  const { timeEntries, currentEntry, checkIn, checkOut, loading } = useTimeEntries();
+  const { timeEntries, currentEntry, checkIn, checkOut, loading, fetchTimeEntries } = useTimeEntries();
   const { vacationBalance, vacationRequests } = useVacations();
   const { employees } = useEmployees();
   const { payrollRecords } = usePayroll();
+
+  // Refresh data every 30 seconds to keep dashboard updated
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchTimeEntries();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [fetchTimeEntries]);
 
   // Calculate employee stats from real data
   const employeeStats = useMemo(() => {

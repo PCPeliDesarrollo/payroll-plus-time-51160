@@ -80,15 +80,9 @@ export function useTimeEntries() {
         .eq('date', today)
         .maybeSingle();
       
-      // Prevent double check-in
+      // Prevent double check-in or re-entry after complete day
       if (existingEntry) {
-        if (existingEntry.status === 'checked_in') {
-          throw new Error('Ya tienes un fichaje de entrada activo para hoy');
-        }
-        // If already checked out, don't allow check-in again
-        if (existingEntry.status === 'checked_out') {
-          throw new Error('Ya has completado el fichaje de hoy');
-        }
+        throw new Error('Ya tienes un fichaje para hoy. Para fichar salida, usa el botón de Fichar Salida');
       }
 
       const now = new Date().toISOString();

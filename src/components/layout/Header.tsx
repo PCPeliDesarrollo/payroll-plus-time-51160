@@ -69,22 +69,40 @@ export function Header({ user, onLogout, onPageChange }: HeaderProps) {
                 <p className="text-center text-muted-foreground py-4">No tienes notificaciones</p>
               ) : (
                 <div className="space-y-2">
-                  {notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                        notification.is_read
-                          ? "bg-secondary/30 hover:bg-secondary/50"
-                          : "bg-primary/10 hover:bg-primary/20"
-                      }`}
-                      onClick={() => !notification.is_read && markAsRead(notification.id)}
-                    >
-                      <p className="font-medium text-sm">{notification.title}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {getNotificationMessage(notification)}
-                      </p>
-                    </div>
-                  ))}
+                  {notifications.map((notification) => {
+                    const getNavigationPage = (type: string) => {
+                      if (type === 'vacation_request') return 'vacations';
+                      if (type === 'schedule_change') return 'schedule-changes';
+                      return null;
+                    };
+
+                    const handleNotificationClick = () => {
+                      if (!notification.is_read) {
+                        markAsRead(notification.id);
+                      }
+                      const page = getNavigationPage(notification.type);
+                      if (page && onPageChange) {
+                        onPageChange(page);
+                      }
+                    };
+
+                    return (
+                      <div
+                        key={notification.id}
+                        className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                          notification.is_read
+                            ? "bg-secondary/30 hover:bg-secondary/50"
+                            : "bg-primary/10 hover:bg-primary/20"
+                        }`}
+                        onClick={handleNotificationClick}
+                      >
+                        <p className="font-medium text-sm">{notification.title}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {getNotificationMessage(notification)}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </ScrollArea>
