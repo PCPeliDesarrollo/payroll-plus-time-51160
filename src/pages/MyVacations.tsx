@@ -102,7 +102,7 @@ export function MyVacations() {
       case 'rejected':
         return <Badge variant="destructive">Rechazada</Badge>;
       default:
-        return <Badge variant="outline">Pendiente</Badge>;
+        return <Badge variant="default" className="bg-success text-success-foreground">Pendiente</Badge>;
     }
   };
 

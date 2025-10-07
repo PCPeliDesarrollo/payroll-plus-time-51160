@@ -153,20 +153,6 @@ export function LoginForm({}: LoginFormProps) {
               )}
             </Button>
           </form>
-
-          <div className="mt-6 p-4 bg-gradient-to-br from-primary/5 to-accent/5 rounded-xl border border-primary/20 backdrop-blur-sm">
-            <h4 className="font-semibold text-sm mb-3 text-foreground flex items-center gap-2">
-              <span className="text-primary">🔑</span> Credenciales de Prueba
-            </h4>
-            <div className="space-y-2 text-xs">
-              <div className="bg-background/50 rounded-lg p-2 border border-primary/10">
-                <p className="text-muted-foreground"><strong className="text-foreground">Admin:</strong> admin@empresa.com / admin123</p>
-              </div>
-              <div className="bg-background/50 rounded-lg p-2 border border-primary/10">
-                <p className="text-muted-foreground"><strong className="text-foreground">Empleado:</strong> empleado@empresa.com / empleado123</p>
-              </div>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

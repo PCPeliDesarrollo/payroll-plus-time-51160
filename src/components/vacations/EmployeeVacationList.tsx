@@ -58,7 +58,7 @@ export function EmployeeVacationList({
     return (
       <div className="flex gap-1 flex-wrap">
         {pending > 0 && (
-          <Badge variant="secondary" className="text-xs bg-pending text-pending-foreground">
+          <Badge variant="default" className="text-xs bg-success text-success-foreground">
             {pending} pendiente{pending > 1 ? 's' : ''}
           </Badge>
         )}

@@ -80,9 +80,14 @@ export function useTimeEntries() {
         .eq('date', today)
         .maybeSingle();
       
-      // Prevent double check-in or re-entry after complete day
-      if (existingEntry) {
-        throw new Error('Ya tienes un fichaje para hoy. Para fichar salida, usa el botón de Fichar Salida');
+      // If entry exists and is checked_out, can't check in again
+      if (existingEntry && existingEntry.status === 'checked_out') {
+        throw new Error('Ya has completado tu fichaje para hoy');
+      }
+      
+      // If entry exists and is checked_in, they should check out instead
+      if (existingEntry && existingEntry.status === 'checked_in') {
+        throw new Error('Ya tienes un fichaje de entrada. Por favor, ficha la salida');
       }
 
       const now = new Date().toISOString();

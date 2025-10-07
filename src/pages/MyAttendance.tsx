@@ -256,7 +256,7 @@ export function MyAttendance() {
                                     <p className="font-semibold text-sm">
                                       {entry.total_hours ? formatDuration(String(entry.total_hours)) : '--'}
                                     </p>
-                                    <Badge variant="outline" className="text-xs">
+                                    <Badge variant={entry.status === 'checked_out' ? 'default' : 'outline'} className={`text-xs ${entry.status === 'checked_out' ? 'bg-success text-success-foreground' : ''}`}>
                                       {entry.status === 'checked_out' ? 'Completo' : 
                                        entry.status === 'checked_in' ? 'En curso' : 'Incompleto'}
                                     </Badge>
