@@ -36,7 +36,7 @@ export function Header({ user, onLogout, onPageChange }: HeaderProps) {
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 md:px-6">
       <div className="flex items-center gap-2 md:gap-3 md:ml-0 ml-14">
         <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl p-2 backdrop-blur-sm border border-primary/20">
-          <img src="/logo-peli.png" alt="Peli Soluciones Informáticas" className="h-10 md:h-12 w-auto drop-shadow-[0_0_8px_rgba(176,98,248,0.4)]" />
+          <img src="/logo.png" alt="Peli Soluciones Informáticas" className="h-10 md:h-12 w-auto drop-shadow-[0_0_8px_rgba(176,98,248,0.4)]" />
         </div>
         <h1 className="text-base md:text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent hidden sm:block">Sistema de Fichajes</h1>
       </div>
@@ -45,7 +45,7 @@ export function Header({ user, onLogout, onPageChange }: HeaderProps) {
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5 text-foreground" />
+              <Bell className="h-5 w-5" style={{ color: '#000000' }} />
               {unreadCount > 0 && (
                 <Badge
                   className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-destructive"
@@ -65,11 +65,11 @@ export function Header({ user, onLogout, onPageChange }: HeaderProps) {
               )}
             </div>
             <ScrollArea className="h-[400px]">
-              {notifications.length === 0 ? (
+              {notifications.filter(n => !n.is_read).length === 0 ? (
                 <p className="text-center text-muted-foreground py-4">No tienes notificaciones</p>
               ) : (
                 <div className="space-y-2">
-                  {notifications.map((notification) => {
+                  {notifications.filter(n => !n.is_read).map((notification) => {
                     const getNavigationPage = (type: string) => {
                       if (type === 'vacation_request') return 'vacations';
                       if (type === 'schedule_change') return 'schedule-changes';

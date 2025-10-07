@@ -59,7 +59,7 @@ export function LoginForm({}: LoginFormProps) {
               <div className="absolute inset-0 bg-gradient-to-br from-primary to-accent rounded-3xl blur-2xl opacity-30 group-hover:opacity-40 transition-opacity"></div>
               <div className="relative bg-gradient-to-br from-primary/10 to-accent/10 rounded-3xl p-6 backdrop-blur-sm border border-primary/20">
                 <img 
-                  src="/logo-peli.png" 
+                  src="/logo.png" 
                   alt="Logo Sistema Fichajes" 
                   className="h-28 w-28 object-contain drop-shadow-[0_0_15px_rgba(176,98,248,0.5)]"
                 />

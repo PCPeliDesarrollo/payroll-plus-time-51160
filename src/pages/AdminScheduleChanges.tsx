@@ -147,7 +147,7 @@ export default function AdminScheduleChanges({ onBack }: AdminScheduleChangesPro
                     <Clock className="h-4 w-4 text-primary" />
                     <div>
                       <p className="text-sm font-medium">Horario solicitado</p>
-                      <p className="text-sm text-primary font-semibold">
+                      <p className="text-sm font-semibold" style={{ color: '#b062f8' }}>
                         {formatTime(change.requested_check_in)} - {formatTime(change.requested_check_out)}
                       </p>
                     </div>

@@ -166,11 +166,13 @@ export function Dashboard({ userRole, onPageChange }: DashboardProps) {
 
   // Refresh data every 30 seconds to keep dashboard updated
   useEffect(() => {
-    const interval = setInterval(() => {
-      fetchTimeEntries();
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [fetchTimeEntries]);
+    if (fetchTimeEntries) {
+      const interval = setInterval(() => {
+        fetchTimeEntries();
+      }, 30000);
+      return () => clearInterval(interval);
+    }
+  }, []);
 
   // Calculate employee stats from real data
   const employeeStats = useMemo(() => {

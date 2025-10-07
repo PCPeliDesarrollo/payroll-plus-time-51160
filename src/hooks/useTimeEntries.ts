@@ -55,6 +55,7 @@ export function useTimeEntries() {
         .select('*')
         .eq('user_id', user.id)
         .eq('date', today)
+        .eq('status', 'checked_in')
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') throw error;
@@ -72,22 +73,18 @@ export function useTimeEntries() {
     const today = new Date().toISOString().split('T')[0];
     
     try {
-      // Check if there's already an entry for today
+      // Check if there's already an entry for today that is checked_in
       const { data: existingEntry } = await supabase
         .from('time_entries')
         .select('*')
         .eq('user_id', user.id)
         .eq('date', today)
+        .eq('status', 'checked_in')
         .maybeSingle();
       
-      // If entry exists and is checked_out, can't check in again
-      if (existingEntry && existingEntry.status === 'checked_out') {
-        throw new Error('Ya has completado tu fichaje para hoy');
-      }
-      
-      // If entry exists and is checked_in, they should check out instead
-      if (existingEntry && existingEntry.status === 'checked_in') {
-        throw new Error('Ya tienes un fichaje de entrada. Por favor, ficha la salida');
+      // If there's an active check-in, they should check out instead
+      if (existingEntry) {
+        throw new Error('Ya tienes un fichaje de entrada activo. Por favor, ficha la salida');
       }
 
       const now = new Date().toISOString();
