@@ -4,9 +4,30 @@ import { Calendar, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react
 import { useScheduleChanges } from "@/hooks/useScheduleChanges";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { useMemo } from "react";
 
 export function MyScheduleChanges() {
   const { scheduleChanges, loading } = useScheduleChanges();
+
+  // Group changes by month
+  const groupedChanges = useMemo(() => {
+    const groups: Record<string, typeof scheduleChanges> = {};
+    
+    scheduleChanges.forEach((change) => {
+      const monthKey = format(new Date(change.requested_date), 'MMMM yyyy', { locale: es });
+      if (!groups[monthKey]) {
+        groups[monthKey] = [];
+      }
+      groups[monthKey].push(change);
+    });
+    
+    // Sort groups by date (most recent first)
+    return Object.entries(groups).sort((a, b) => {
+      const dateA = new Date(a[1][0].requested_date);
+      const dateB = new Date(b[1][0].requested_date);
+      return dateB.getTime() - dateA.getTime();
+    });
+  }, [scheduleChanges]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -45,7 +66,7 @@ export function MyScheduleChanges() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-6">
             {loading ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">Cargando solicitudes...</p>
@@ -56,39 +77,48 @@ export function MyScheduleChanges() {
                 <p className="text-muted-foreground">No tienes solicitudes de cambio de horario</p>
               </div>
             ) : (
-              scheduleChanges.map((change) => (
-                <div
-                  key={change.id}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors gap-3"
-                >
-                  <div className="flex items-start gap-4">
-                    {getStatusIcon(change.status)}
-                    <div>
-                      <p className="font-medium">
-                        {format(new Date(change.requested_date), 'dd MMMM yyyy', { locale: es })}
-                      </p>
-                      <div className="text-sm text-muted-foreground mt-1">
-                        {change.current_check_in && (
-                          <p>Horario actual: {change.current_check_in} - {change.current_check_out || 'Sin salida'}</p>
-                        )}
-                        <p className="font-medium" style={{ color: '#b062f8' }}>
-                          Horario solicitado: {change.requested_check_in} - {change.requested_check_out || 'Sin salida'}
-                        </p>
+              groupedChanges.map(([monthKey, changes]) => (
+                <div key={monthKey} className="space-y-3">
+                  <h3 className="text-lg font-semibold text-primary capitalize border-b border-border pb-2">
+                    {monthKey}
+                  </h3>
+                  <div className="space-y-3">
+                    {changes.map((change) => (
+                      <div
+                        key={change.id}
+                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors gap-3"
+                      >
+                        <div className="flex items-start gap-4">
+                          {getStatusIcon(change.status)}
+                          <div>
+                            <p className="font-medium text-card-foreground">
+                              {format(new Date(change.requested_date), 'dd MMMM yyyy', { locale: es })}
+                            </p>
+                            <div className="text-sm text-muted-foreground mt-1">
+                              {change.current_check_in && (
+                                <p>Horario actual: {change.current_check_in} - {change.current_check_out || 'Sin salida'}</p>
+                              )}
+                              <p className="font-medium text-primary">
+                                Horario solicitado: {change.requested_check_in} - {change.requested_check_out || 'Sin salida'}
+                              </p>
+                            </div>
+                            {change.reason && (
+                              <p className="text-sm text-muted-foreground mt-2">
+                                <strong>Motivo:</strong> {change.reason}
+                              </p>
+                            )}
+                            {change.admin_comments && (
+                              <p className="text-sm text-muted-foreground italic mt-2">
+                                <strong>Comentarios del admin:</strong> {change.admin_comments}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex justify-end">
+                          {getStatusBadge(change.status)}
+                        </div>
                       </div>
-                      {change.reason && (
-                        <p className="text-sm text-muted-foreground mt-2">
-                          <strong>Motivo:</strong> {change.reason}
-                        </p>
-                      )}
-                      {change.admin_comments && (
-                        <p className="text-sm text-muted-foreground italic mt-2">
-                          <strong>Comentarios del admin:</strong> {change.admin_comments}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex justify-end">
-                    {getStatusBadge(change.status)}
+                    ))}
                   </div>
                 </div>
               ))
