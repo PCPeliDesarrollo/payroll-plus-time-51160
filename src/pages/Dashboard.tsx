@@ -91,7 +91,7 @@ function QuickCheckInButton({
   return (
     <div className="text-center space-y-6">
       <div className="space-y-2">
-        <div className="text-4xl font-bold text-foreground">{currentTime}</div>
+        <div className="text-4xl font-bold text-card-foreground">{currentTime}</div>
         <div className="text-muted-foreground">
           {new Date().toLocaleDateString('es-ES', { 
             weekday: 'long', 
