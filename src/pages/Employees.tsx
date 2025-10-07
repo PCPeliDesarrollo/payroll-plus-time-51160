@@ -141,7 +141,7 @@ export function Employees({ onBack }: EmployeesProps = {}) {
                           </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
-                          <h3 className="font-semibold text-foreground text-sm md:text-base truncate">{employee.full_name}</h3>
+                          <h3 className="font-semibold text-card-foreground text-sm md:text-base truncate">{employee.full_name}</h3>
                           <p className="text-xs md:text-sm text-muted-foreground truncate">{employee.role || 'Sin rol'}</p>
                         </div>
                       </div>

@@ -71,7 +71,7 @@ export function MyScheduleChanges() {
                         {change.current_check_in && (
                           <p>Horario actual: {change.current_check_in} - {change.current_check_out || 'Sin salida'}</p>
                         )}
-                        <p className="font-medium text-foreground">
+                        <p className="font-medium" style={{ color: '#b062f8' }}>
                           Horario solicitado: {change.requested_check_in} - {change.requested_check_out || 'Sin salida'}
                         </p>
                       </div>
