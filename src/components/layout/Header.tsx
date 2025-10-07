@@ -38,7 +38,7 @@ export function Header({ user, onLogout, onPageChange }: HeaderProps) {
         <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl p-2 backdrop-blur-sm border border-primary/20">
           <img src="/logo.png" alt="Peli Soluciones Informáticas" className="h-10 md:h-12 w-auto drop-shadow-[0_0_8px_rgba(176,98,248,0.4)]" />
         </div>
-        <h1 className="text-base md:text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent hidden sm:block">RRHH PcPeli</h1>
+        <h1 className="text-base md:text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent hidden sm:block">Sistema de Fichajes</h1>
       </div>
       
       <div className="flex items-center gap-2 md:gap-4">
