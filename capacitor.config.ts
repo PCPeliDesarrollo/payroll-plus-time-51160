@@ -5,9 +5,9 @@ const config: CapacitorConfig = {
   appName: 'RRHH PcPeli',
   webDir: 'dist',
   // Logo configuration
-  // Using icon-only.png and splash.png from assets/ folder
-  // To regenerate native assets after changing the icon, run:
-  // npx capacitor-assets generate --iconBackgroundColor '#000000' --splashBackgroundColor '#000000' --android --ios
+  // Icon: RRHH_FINAL.png (assets/icon-only.png)
+  // Splash: logo_carga_lav.png (assets/splash.png)
+  // To regenerate: npx capacitor-assets generate --android --ios
   // IMPORTANT: server.url is ONLY for development hot-reload
   // For production APK, this MUST be removed or commented out
   // server: {
