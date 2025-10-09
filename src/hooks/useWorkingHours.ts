@@ -59,7 +59,7 @@ export function useWorkingHours(startDate: string, endDate: string) {
         }
       });
 
-      // Calcular días de vacaciones en el período
+      // Calcular días de vacaciones en el período (solo laborables)
       let vacationDays = 0;
       vacations?.forEach(vacation => {
         const vStart = new Date(vacation.start_date);
@@ -72,8 +72,13 @@ export function useWorkingHours(startDate: string, endDate: string) {
         const overlapEnd = vEnd < pEnd ? vEnd : pEnd;
 
         if (overlapStart <= overlapEnd) {
-          const days = Math.ceil((overlapEnd.getTime() - overlapStart.getTime()) / (1000 * 3600 * 24)) + 1;
-          vacationDays += days;
+          // Contar solo días laborables (lunes a viernes) en el período de vacaciones
+          for (let d = new Date(overlapStart); d <= overlapEnd; d.setDate(d.getDate() + 1)) {
+            const dayOfWeek = d.getDay();
+            if (dayOfWeek !== 0 && dayOfWeek !== 6) { // No sábado ni domingo
+              vacationDays++;
+            }
+          }
         }
       });
 
