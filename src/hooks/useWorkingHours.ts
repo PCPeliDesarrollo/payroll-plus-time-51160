@@ -36,13 +36,14 @@ export function useWorkingHours(startDate: string, endDate: string) {
 
       if (timeError) throw timeError;
 
-      // Obtener vacaciones aprobadas del período
+      // Obtener vacaciones aprobadas que se solapen con el período
       const { data: vacations, error: vacError } = await supabase
         .from('vacation_requests')
         .select('start_date, end_date, total_days')
         .eq('user_id', user.id)
         .eq('status', 'approved')
-        .or(`and(start_date.gte.${startDate},start_date.lte.${endDate}),and(end_date.gte.${startDate},end_date.lte.${endDate})`);
+        .lte('start_date', endDate)
+        .gte('end_date', startDate);
 
       if (vacError) throw vacError;
 
