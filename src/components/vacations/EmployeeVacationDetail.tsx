@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Calendar, Clock, CheckCircle, XCircle, DollarSign, Download, Plus, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, CheckCircle, XCircle, Plus, Edit, Trash2 } from "lucide-react";
 import { VacationCalendar } from "./VacationCalendar";
 import { AddCompensatoryDayDialog } from "./AddCompensatoryDayDialog";
 import { EditVacationRequestDialog } from "./EditVacationRequestDialog";
@@ -11,16 +11,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompensatoryDays } from "@/hooks/useCompensatoryDays";
 import { useToast } from "@/hooks/use-toast";
-
-type PayrollRecord = {
-  id: string;
-  user_id: string;
-  month: number;
-  year: number;
-  base_salary: number | null;
-  file_url: string | null;
-  created_at: string;
-};
 
 interface Employee {
   id: string;
@@ -52,6 +42,7 @@ interface EmployeeVacationDetailProps {
   onBack: () => void;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
 export function EmployeeVacationDetail({
@@ -61,9 +52,8 @@ export function EmployeeVacationDetail({
   onBack,
   onApprove,
   onReject,
+  onDelete,
 }: EmployeeVacationDetailProps) {
-  const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
-  const [loadingPayroll, setLoadingPayroll] = useState(false);
   const [showAddCompensatoryDay, setShowAddCompensatoryDay] = useState(false);
   const [showEditVacation, setShowEditVacation] = useState(false);
   const [selectedVacation, setSelectedVacation] = useState<VacationRequest | null>(null);
@@ -72,7 +62,6 @@ export function EmployeeVacationDetail({
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchPayrollRecords();
     fetchCompensatoryDays(employee.id);
   }, [employee.id]);
 
@@ -134,30 +123,6 @@ export function EmployeeVacationDetail({
     }
   };
 
-  const fetchPayrollRecords = async () => {
-    setLoadingPayroll(true);
-    try {
-      const { data, error } = await supabase
-        .from('payroll_records')
-        .select('*')
-        .eq('user_id', employee.id)
-        .order('year', { ascending: false })
-        .order('month', { ascending: false })
-        .limit(6);
-
-      if (error) throw error;
-      setPayrollRecords(data || []);
-    } catch (error) {
-      console.error('Error fetching payroll records:', error);
-    } finally {
-      setLoadingPayroll(false);
-    }
-  };
-
-  const monthNames = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-  ];
 
   const employeeRequests = vacationRequests.filter(
     (req) => req.user_id === employee.id
@@ -191,20 +156,16 @@ export function EmployeeVacationDetail({
     }
   };
 
-  // Preparar datos para el calendario
+  // Preparar datos para el calendario - solo incluir vacaciones específicas
   const calendarVacations = [
     ...employeeRequests.flatMap((request) => {
-      const startDate = new Date(request.start_date);
-      const endDate = new Date(request.end_date);
       const days = [];
+      const start = new Date(request.start_date + 'T00:00:00');
+      const end = new Date(request.end_date + 'T00:00:00');
 
-      for (
-        let date = new Date(startDate);
-        date <= endDate;
-        date.setDate(date.getDate() + 1)
-      ) {
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
         days.push({
-          date: date.toISOString().split('T')[0],
+          date: d.toISOString().split('T')[0],
           status: request.status as "pending" | "approved" | "rejected" | "compensatory",
           employeeName: employee.full_name,
           reason: request.reason,
@@ -312,62 +273,6 @@ export function EmployeeVacationDetail({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-primary" />
-            Nóminas recientes
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loadingPayroll ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-              <p className="mt-2 text-sm text-muted-foreground">Cargando nóminas...</p>
-            </div>
-          ) : payrollRecords.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              No hay nóminas registradas
-            </p>
-          ) : (
-            <div className="grid gap-3 md:grid-cols-2">
-              {payrollRecords.map((record) => (
-                <Card key={record.id} className="border-muted">
-                  <CardContent className="pt-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-semibold text-sm md:text-base">
-                          {monthNames[record.month - 1]} {record.year}
-                        </p>
-                        {record.base_salary && (
-                          <p className="text-xs md:text-sm text-muted-foreground">
-                            {record.base_salary.toLocaleString('es-ES', {
-                              style: 'currency',
-                              currency: 'EUR'
-                            })}
-                          </p>
-                        )}
-                      </div>
-                      {record.file_url && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          asChild
-                        >
-                          <a href={record.file_url} target="_blank" rel="noopener noreferrer">
-                            <Download className="h-3 w-3 md:h-4 md:w-4" />
-                          </a>
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
             Solicitudes de {employee.full_name}
           </CardTitle>
@@ -450,6 +355,16 @@ export function EmployeeVacationDetail({
                               Rechazar
                             </Button>
                           </>
+                        )}
+                        {(request.status === "approved" || request.status === "rejected") && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => onDelete(request.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2 text-destructive" />
+                            Eliminar
+                          </Button>
                         )}
                       </div>
                     </div>

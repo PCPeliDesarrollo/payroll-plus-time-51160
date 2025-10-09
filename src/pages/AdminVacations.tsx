@@ -76,6 +76,30 @@ export default function AdminVacations({ onBack }: AdminVacationsProps = {}) {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('vacation_requests')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Solicitud eliminada",
+        description: "La solicitud de vacaciones ha sido eliminada correctamente",
+      });
+      
+      window.location.reload();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo eliminar la solicitud",
+      });
+    }
+  };
+
   const filteredEmployees = employees.filter((employee) =>
     employee.full_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -113,6 +137,7 @@ export default function AdminVacations({ onBack }: AdminVacationsProps = {}) {
           onBack={handleBack}
           onApprove={handleApprove}
           onReject={handleReject}
+          onDelete={handleDelete}
         />
       </div>
     );
