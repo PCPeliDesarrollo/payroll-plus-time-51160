@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Search, Calendar, ArrowLeft, MapPin } from "lucide-react";
+import { Clock, Search, Calendar, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -288,27 +288,20 @@ export function AdminAttendance({ onBack }: AdminAttendanceProps = {}) {
                       {entry.check_in_latitude && entry.check_in_longitude && (
                         <div className="space-y-1">
                           <p className="text-xs text-muted-foreground font-mono">
-                            {entry.check_in_latitude.toFixed(6)}, {entry.check_in_longitude.toFixed(6)}
+                            📍 {entry.check_in_latitude.toFixed(6)}, {entry.check_in_longitude.toFixed(6)}
                           </p>
-                          <div className="flex flex-wrap gap-2">
-                            <a
-                              href={`https://www.google.com/maps/search/?api=1&query=${entry.check_in_latitude},${entry.check_in_longitude}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-primary hover:underline flex items-center gap-1"
-                            >
-                              <MapPin className="h-3 w-3" />
-                              Ver en mapa
-                            </a>
-                            <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(`${entry.check_in_latitude},${entry.check_in_longitude}`);
-                              }}
-                              className="text-xs text-primary hover:underline"
-                            >
-                              Copiar
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${entry.check_in_latitude},${entry.check_in_longitude}`);
+                              toast({
+                                title: "Coordenadas copiadas",
+                                description: "Las coordenadas se han copiado al portapapeles",
+                              });
+                            }}
+                            className="text-xs text-primary hover:underline"
+                          >
+                            Copiar coordenadas
+                          </button>
                         </div>
                       )}
                     </div>
@@ -319,27 +312,20 @@ export function AdminAttendance({ onBack }: AdminAttendanceProps = {}) {
                       {entry.check_out_latitude && entry.check_out_longitude && (
                         <div className="space-y-1">
                           <p className="text-xs text-muted-foreground font-mono">
-                            {entry.check_out_latitude.toFixed(6)}, {entry.check_out_longitude.toFixed(6)}
+                            📍 {entry.check_out_latitude.toFixed(6)}, {entry.check_out_longitude.toFixed(6)}
                           </p>
-                          <div className="flex flex-wrap gap-2">
-                            <a
-                              href={`https://www.google.com/maps/search/?api=1&query=${entry.check_out_latitude},${entry.check_out_longitude}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-primary hover:underline flex items-center gap-1"
-                            >
-                              <MapPin className="h-3 w-3" />
-                              Ver en mapa
-                            </a>
-                            <button
-                              onClick={() => {
-                                navigator.clipboard.writeText(`${entry.check_out_latitude},${entry.check_out_longitude}`);
-                              }}
-                              className="text-xs text-primary hover:underline"
-                            >
-                              Copiar
-                            </button>
-                          </div>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(`${entry.check_out_latitude},${entry.check_out_longitude}`);
+                              toast({
+                                title: "Coordenadas copiadas",
+                                description: "Las coordenadas se han copiado al portapapeles",
+                              });
+                            }}
+                            className="text-xs text-primary hover:underline"
+                          >
+                            Copiar coordenadas
+                          </button>
                         </div>
                       )}
                     </div>

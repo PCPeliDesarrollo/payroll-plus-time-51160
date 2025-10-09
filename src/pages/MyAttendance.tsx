@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTimeEntries } from "@/hooks/useTimeEntries";
 import { useToast } from "@/hooks/use-toast";
+import { useWorkingHours } from "@/hooks/useWorkingHours";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 
@@ -30,6 +31,30 @@ export function MyAttendance() {
   const [elapsedTime, setElapsedTime] = useState<string>("00:00:00");
   const { timeEntries, currentEntry, loading, isCheckedIn, checkIn, checkOut } = useTimeEntries();
   const { toast } = useToast();
+
+  // Get current week for working hours calculation
+  const getCurrentWeekDates = () => {
+    const now = new Date();
+    const dayOfWeek = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    return {
+      start: monday.toISOString().split('T')[0],
+      end: sunday.toISOString().split('T')[0]
+    };
+  };
+
+  const weekDates = getCurrentWeekDates();
+  const { summary: weekSummary } = useWorkingHours(weekDates.start, weekDates.end);
+
+  // Filter entries for selected date
+  const selectedDateEntries = React.useMemo(() => {
+    if (!selectedDate) return [];
+    const dateStr = selectedDate.toISOString().split('T')[0];
+    return timeEntries.filter(entry => entry.date === dateStr);
+  }, [selectedDate, timeEntries]);
 
   // Group entries by month
   const entriesByMonth = React.useMemo(() => {
@@ -173,23 +198,115 @@ export function MyAttendance() {
         </Button>
       </div>
 
+      {/* Resumen Semanal */}
+      {weekSummary && (
+        <Card className="bg-gradient-to-r from-primary/10 to-primary/5">
+          <CardHeader>
+            <CardTitle className="text-base sm:text-lg">Resumen de esta semana</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Horas trabajadas</p>
+                <p className="text-xl sm:text-2xl font-bold text-primary">{weekSummary.totalHoursWorked}h</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Horas esperadas</p>
+                <p className="text-xl sm:text-2xl font-bold">{weekSummary.expectedHours}h</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Días de vacaciones</p>
+                <p className="text-xl sm:text-2xl font-bold text-secondary">{weekSummary.vacationDays}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Balance</p>
+                <p className={`text-xl sm:text-2xl font-bold ${
+                  weekSummary.totalHoursWorked >= weekSummary.expectedHours 
+                    ? 'text-success' 
+                    : 'text-destructive'
+                }`}>
+                  {weekSummary.totalHoursWorked >= weekSummary.expectedHours ? '+' : ''}
+                  {(weekSummary.totalHoursWorked - weekSummary.expectedHours).toFixed(1)}h
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calendar */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5 text-primary" />
+            <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+              <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               Calendario
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-2 sm:p-6">
             <Calendar
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
               locale={es}
-              className="rounded-md border pointer-events-auto"
+              className="rounded-md border w-full"
+              modifiers={{
+                hasEntry: timeEntries.map(e => new Date(e.date))
+              }}
+              modifiersStyles={{
+                hasEntry: {
+                  fontWeight: 'bold',
+                  textDecoration: 'underline',
+                  color: 'hsl(var(--primary))'
+                }
+              }}
             />
+            
+            {/* Selected Date Details */}
+            {selectedDate && (
+              <div className="mt-4 p-3 bg-secondary/30 rounded-lg space-y-2">
+                <p className="text-xs sm:text-sm font-medium">
+                  {selectedDate.toLocaleDateString('es-ES', { 
+                    weekday: 'long', 
+                    day: 'numeric', 
+                    month: 'long' 
+                  })}
+                </p>
+                {selectedDateEntries.length > 0 ? (
+                  selectedDateEntries.map((entry) => (
+                    <div key={entry.id} className="text-xs space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Entrada:</span>
+                        <span className="font-medium">
+                          {entry.check_in_time ? new Date(entry.check_in_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '--'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Salida:</span>
+                        <span className="font-medium">
+                          {entry.check_out_time ? new Date(entry.check_out_time).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }) : '--'}
+                        </span>
+                      </div>
+                      {entry.total_hours && (
+                        <div className="flex justify-between pt-1 border-t">
+                          <span className="text-muted-foreground">Total:</span>
+                          <span className="font-semibold">{formatDuration(String(entry.total_hours))}</span>
+                        </div>
+                      )}
+                      <Badge 
+                        variant={entry.status === 'checked_out' ? 'default' : 'outline'} 
+                        className={`text-xs w-full justify-center ${entry.status === 'checked_out' ? 'bg-success' : ''}`}
+                      >
+                        {entry.status === 'checked_out' ? 'Completo' : 
+                         entry.status === 'checked_in' ? 'En curso' : 'Incompleto'}
+                      </Badge>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-xs text-muted-foreground">Sin fichajes este día</p>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 
