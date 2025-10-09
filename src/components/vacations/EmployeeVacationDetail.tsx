@@ -5,6 +5,7 @@ import { ArrowLeft, Calendar, Clock, CheckCircle, XCircle, Plus, Edit, Trash2 } 
 import { VacationCalendar } from "./VacationCalendar";
 import { AddCompensatoryDayDialog } from "./AddCompensatoryDayDialog";
 import { EditVacationRequestDialog } from "./EditVacationRequestDialog";
+import { EditCompensatoryDayDialog } from "./EditCompensatoryDayDialog";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useEffect, useState } from "react";
@@ -56,7 +57,9 @@ export function EmployeeVacationDetail({
 }: EmployeeVacationDetailProps) {
   const [showAddCompensatoryDay, setShowAddCompensatoryDay] = useState(false);
   const [showEditVacation, setShowEditVacation] = useState(false);
+  const [showEditCompensatoryDay, setShowEditCompensatoryDay] = useState(false);
   const [selectedVacation, setSelectedVacation] = useState<VacationRequest | null>(null);
+  const [selectedCompensatoryDay, setSelectedCompensatoryDay] = useState<{ id: string; date: string; reason: string } | null>(null);
   
   const { compensatoryDays, addCompensatoryDay, deleteCompensatoryDay, fetchCompensatoryDays } = useCompensatoryDays();
   const { toast } = useToast();
@@ -95,6 +98,32 @@ export function EmployeeVacationDetail({
         title: "Error",
         description: "No se pudo eliminar el día libre",
       });
+    }
+  };
+
+  const handleEditCompensatoryDay = async (id: string, updates: { date: string; reason: string }) => {
+    try {
+      const { error } = await supabase
+        .from("compensatory_days")
+        .update(updates)
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Día libre actualizado",
+        description: "El día libre compensatorio ha sido actualizado correctamente",
+      });
+      
+      fetchCompensatoryDays(employee.id);
+      setShowEditCompensatoryDay(false);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo actualizar el día libre",
+      });
+      throw error;
     }
   };
 
@@ -160,16 +189,19 @@ export function EmployeeVacationDetail({
   const calendarVacations = [
     ...employeeRequests.flatMap((request) => {
       const days = [];
-      const start = new Date(request.start_date + 'T00:00:00');
-      const end = new Date(request.end_date + 'T00:00:00');
+      const start = new Date(request.start_date + 'T12:00:00');
+      const end = new Date(request.end_date + 'T12:00:00');
 
-      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      // Calcular días entre fechas correctamente
+      const currentDate = new Date(start);
+      while (currentDate <= end) {
         days.push({
-          date: d.toISOString().split('T')[0],
+          date: currentDate.toISOString().split('T')[0],
           status: request.status as "pending" | "approved" | "rejected" | "compensatory",
           employeeName: employee.full_name,
           reason: request.reason,
         });
+        currentDate.setDate(currentDate.getDate() + 1);
       }
 
       return days;
@@ -250,19 +282,35 @@ export function EmployeeVacationDetail({
                   key={day.id}
                   className="flex items-start justify-between p-3 border rounded-lg"
                 >
-                  <div className="space-y-1">
+                  <div className="space-y-1 flex-1">
                     <p className="font-medium">
                       {format(new Date(day.date), "dd/MM/yyyy")}
                     </p>
                     <p className="text-sm text-muted-foreground">{day.reason}</p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDeleteCompensatoryDay(day.id)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedCompensatoryDay({
+                          id: day.id,
+                          date: day.date,
+                          reason: day.reason
+                        });
+                        setShowEditCompensatoryDay(true);
+                      }}
+                    >
+                      <Edit className="h-4 w-4 text-primary" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeleteCompensatoryDay(day.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -389,6 +437,13 @@ export function EmployeeVacationDetail({
         onOpenChange={setShowEditVacation}
         vacationRequest={selectedVacation}
         onSubmit={handleEditVacation}
+      />
+
+      <EditCompensatoryDayDialog
+        open={showEditCompensatoryDay}
+        onOpenChange={setShowEditCompensatoryDay}
+        compensatoryDay={selectedCompensatoryDay}
+        onSubmit={handleEditCompensatoryDay}
       />
     </div>
   );
