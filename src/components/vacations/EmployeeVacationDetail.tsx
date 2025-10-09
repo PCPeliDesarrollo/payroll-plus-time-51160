@@ -129,6 +129,37 @@ export function EmployeeVacationDetail({
 
   const handleEditVacation = async (id: string, updates: { start_date: string; end_date: string; total_days: number }) => {
     try {
+      // Validar que no haya solapamiento con otras solicitudes (excluyendo la actual)
+      const overlappingRequests = vacationRequests.filter(req => {
+        // Excluir la solicitud actual y las rechazadas
+        if (req.id === id || req.status === 'rejected') return false;
+        
+        const existingStart = req.start_date;
+        const existingEnd = req.end_date;
+        const requestedStart = updates.start_date;
+        const requestedEnd = updates.end_date;
+        
+        // Verificar si hay solapamiento de fechas
+        return (
+          (requestedStart >= existingStart && requestedStart <= existingEnd) ||
+          (requestedEnd >= existingStart && requestedEnd <= existingEnd) ||
+          (requestedStart <= existingStart && requestedEnd >= existingEnd)
+        );
+      });
+
+      if (overlappingRequests.length > 0) {
+        const overlappingDates = overlappingRequests.map(req => 
+          `${req.start_date} - ${req.end_date} (${req.status === 'pending' ? 'Pendiente' : 'Aprobada'})`
+        ).join(', ');
+        
+        toast({
+          title: "Error: Días ya solicitados",
+          description: `Los días se solapan con otras solicitudes: ${overlappingDates}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from("vacation_requests")
         .update(updates)

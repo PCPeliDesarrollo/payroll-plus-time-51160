@@ -59,6 +59,38 @@ export function MyVacations() {
       return;
     }
 
+    // Validar que no haya solapamiento con solicitudes existentes (pendientes o aprobadas)
+    const requestedStart = startDate.toISOString().split('T')[0];
+    const requestedEnd = endDate.toISOString().split('T')[0];
+    
+    const overlappingRequests = vacationRequests.filter(req => {
+      // Solo considerar solicitudes pendientes o aprobadas
+      if (req.status === 'rejected') return false;
+      
+      const existingStart = req.start_date;
+      const existingEnd = req.end_date;
+      
+      // Verificar si hay solapamiento de fechas
+      return (
+        (requestedStart >= existingStart && requestedStart <= existingEnd) ||
+        (requestedEnd >= existingStart && requestedEnd <= existingEnd) ||
+        (requestedStart <= existingStart && requestedEnd >= existingEnd)
+      );
+    });
+
+    if (overlappingRequests.length > 0) {
+      const overlappingDates = overlappingRequests.map(req => 
+        `${formatDate(req.start_date)} - ${formatDate(req.end_date)} (${req.status === 'pending' ? 'Pendiente' : 'Aprobada'})`
+      ).join('\n');
+      
+      toast({
+        title: "Error: Días ya solicitados",
+        description: `Los días que intentas solicitar se solapan con solicitudes existentes:\n${overlappingDates}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       await createVacationRequest({
         start_date: startDate.toISOString().split('T')[0],
