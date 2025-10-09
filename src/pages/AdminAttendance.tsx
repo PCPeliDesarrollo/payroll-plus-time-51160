@@ -287,7 +287,7 @@ export function AdminAttendance({ onBack }: AdminAttendanceProps = {}) {
                       <p className="font-medium text-sm md:text-base">{formatTime(entry.check_in_time)}</p>
                       {entry.check_in_latitude && entry.check_in_longitude && (
                         <a
-                          href={`https://www.google.com/maps?q=${entry.check_in_latitude},${entry.check_in_longitude}`}
+                          href={`https://maps.google.com/?q=${entry.check_in_latitude},${entry.check_in_longitude}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-xs text-primary hover:underline flex items-center justify-center gap-1 mt-1"
@@ -303,7 +303,7 @@ export function AdminAttendance({ onBack }: AdminAttendanceProps = {}) {
                       <p className="font-medium text-sm md:text-base">{formatTime(entry.check_out_time)}</p>
                       {entry.check_out_latitude && entry.check_out_longitude && (
                         <a
-                          href={`https://www.google.com/maps?q=${entry.check_out_latitude},${entry.check_out_longitude}`}
+                          href={`https://maps.google.com/?q=${entry.check_out_latitude},${entry.check_out_longitude}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-xs text-primary hover:underline flex items-center justify-center gap-1 mt-1"
