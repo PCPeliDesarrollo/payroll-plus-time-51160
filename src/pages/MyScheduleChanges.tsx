@@ -1,13 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar, Clock, CheckCircle, XCircle, AlertCircle, Trash2 } from "lucide-react";
 import { useScheduleChanges } from "@/hooks/useScheduleChanges";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useMemo } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export function MyScheduleChanges() {
   const { scheduleChanges, loading } = useScheduleChanges();
+  const { toast } = useToast();
 
   // Group changes by month
   const groupedChanges = useMemo(() => {
@@ -48,6 +52,30 @@ export function MyScheduleChanges() {
         return <XCircle className="h-5 w-5 text-destructive" />;
       default:
         return <Clock className="h-5 w-5 text-primary" />;
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('schedule_changes')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Solicitud eliminada",
+        description: "La solicitud de cambio de horario ha sido eliminada correctamente",
+      });
+      
+      window.location.reload();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo eliminar la solicitud",
+      });
     }
   };
 
@@ -114,8 +142,17 @@ export function MyScheduleChanges() {
                             )}
                           </div>
                         </div>
-                        <div className="flex justify-end">
+                        <div className="flex items-center gap-2 justify-end">
                           {getStatusBadge(change.status)}
+                          {(change.status === 'approved' || change.status === 'rejected') && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDelete(change.id)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}

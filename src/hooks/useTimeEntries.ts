@@ -89,13 +89,36 @@ export function useTimeEntries() {
 
       const now = new Date().toISOString();
 
+      // Obtener geolocalización
+      let latitude = null;
+      let longitude = null;
+      
+      try {
+        if ('geolocation' in navigator) {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              timeout: 5000,
+              maximumAge: 0,
+              enableHighAccuracy: true
+            });
+          });
+          latitude = position.coords.latitude;
+          longitude = position.coords.longitude;
+        }
+      } catch (geoError) {
+        console.warn('No se pudo obtener la geolocalización:', geoError);
+        // Continuar sin geolocalización
+      }
+
       const { data, error } = await supabase
         .from('time_entries')
         .insert({
           user_id: user.id,
           date: today,
           check_in_time: now,
-          status: 'checked_in'
+          status: 'checked_in',
+          check_in_latitude: latitude,
+          check_in_longitude: longitude
         })
         .select()
         .single();
@@ -129,12 +152,35 @@ export function useTimeEntries() {
 
     const now = new Date().toISOString();
 
+    // Obtener geolocalización
+    let latitude = null;
+    let longitude = null;
+    
+    try {
+      if ('geolocation' in navigator) {
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            timeout: 5000,
+            maximumAge: 0,
+            enableHighAccuracy: true
+          });
+        });
+        latitude = position.coords.latitude;
+        longitude = position.coords.longitude;
+      }
+    } catch (geoError) {
+      console.warn('No se pudo obtener la geolocalización:', geoError);
+      // Continuar sin geolocalización
+    }
+
     try {
       const { data, error } = await supabase
         .from('time_entries')
         .update({
           check_out_time: now,
-          status: 'checked_out'
+          status: 'checked_out',
+          check_out_latitude: latitude,
+          check_out_longitude: longitude
         })
         .eq('id', currentEntry.id)
         .select()

@@ -3,11 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Search, Calendar, ArrowLeft } from "lucide-react";
+import { Clock, Search, Calendar, ArrowLeft, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { ExportDataDialog } from "@/components/admin/ExportDataDialog";
 
 interface TimeEntry {
   id: string;
@@ -15,6 +16,10 @@ interface TimeEntry {
   date: string;
   check_in_time: string | null;
   check_out_time: string | null;
+  check_in_latitude: number | null;
+  check_in_longitude: number | null;
+  check_out_latitude: number | null;
+  check_out_longitude: number | null;
   total_hours: any;
   status: string;
 }
@@ -143,10 +148,13 @@ export function AdminAttendance({ onBack }: AdminAttendanceProps = {}) {
             ← Volver al Dashboard
           </Button>
         )}
-        <div className="px-2 md:px-0">
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground">Gestión de Fichajes</h2>
-          <p className="text-sm md:text-base text-muted-foreground">Selecciona un empleado para ver sus fichajes</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Gestión de Fichajes</h2>
+          <p className="text-sm sm:text-base text-muted-foreground">Selecciona un empleado para ver sus fichajes</p>
         </div>
+        <ExportDataDialog />
+      </div>
 
         <Card>
           <CardHeader>
@@ -277,11 +285,33 @@ export function AdminAttendance({ onBack }: AdminAttendanceProps = {}) {
                     <div className="text-center">
                       <p className="text-xs md:text-sm text-muted-foreground">Entrada</p>
                       <p className="font-medium text-sm md:text-base">{formatTime(entry.check_in_time)}</p>
+                      {entry.check_in_latitude && entry.check_in_longitude && (
+                        <a
+                          href={`https://www.google.com/maps?q=${entry.check_in_latitude},${entry.check_in_longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline flex items-center justify-center gap-1 mt-1"
+                        >
+                          <MapPin className="h-3 w-3" />
+                          Ver ubicación
+                        </a>
+                      )}
                     </div>
                     
                     <div className="text-center">
                       <p className="text-xs md:text-sm text-muted-foreground">Salida</p>
                       <p className="font-medium text-sm md:text-base">{formatTime(entry.check_out_time)}</p>
+                      {entry.check_out_latitude && entry.check_out_longitude && (
+                        <a
+                          href={`https://www.google.com/maps?q=${entry.check_out_latitude},${entry.check_out_longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline flex items-center justify-center gap-1 mt-1"
+                        >
+                          <MapPin className="h-3 w-3" />
+                          Ver ubicación
+                        </a>
+                      )}
                     </div>
                     
                     <div className="text-center">

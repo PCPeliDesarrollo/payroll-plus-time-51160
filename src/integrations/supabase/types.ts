@@ -244,7 +244,11 @@ export type Database = {
       }
       time_entries: {
         Row: {
+          check_in_latitude: number | null
+          check_in_longitude: number | null
           check_in_time: string | null
+          check_out_latitude: number | null
+          check_out_longitude: number | null
           check_out_time: string | null
           created_at: string | null
           date: string
@@ -256,7 +260,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          check_in_latitude?: number | null
+          check_in_longitude?: number | null
           check_in_time?: string | null
+          check_out_latitude?: number | null
+          check_out_longitude?: number | null
           check_out_time?: string | null
           created_at?: string | null
           date?: string
@@ -268,7 +276,11 @@ export type Database = {
           user_id: string
         }
         Update: {
+          check_in_latitude?: number | null
+          check_in_longitude?: number | null
           check_in_time?: string | null
+          check_out_latitude?: number | null
+          check_out_longitude?: number | null
           check_out_time?: string | null
           created_at?: string | null
           date?: string
