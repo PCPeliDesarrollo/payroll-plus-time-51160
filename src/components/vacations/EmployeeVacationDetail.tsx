@@ -111,46 +111,12 @@ export function EmployeeVacationDetail({
 
   const handleEditVacation = async (id: string, updates: { start_date: string; end_date: string; total_days: number }) => {
     try {
-      // Obtener la solicitud actual
-      const { data: currentRequest, error: fetchError } = await supabase
-        .from("vacation_requests")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // Actualizar la solicitud
-      const { error: updateError } = await supabase
+      const { error } = await supabase
         .from("vacation_requests")
         .update(updates)
         .eq("id", id);
 
-      if (updateError) throw updateError;
-
-      // Si la solicitud está aprobada, actualizar el balance manualmente
-      if (currentRequest.status === 'approved') {
-        const oldDays = currentRequest.total_days;
-        const newDays = updates.total_days;
-        const daysDifference = newDays - oldDays;
-
-        const { data: balance } = await supabase
-          .from("vacation_balance")
-          .select("*")
-          .eq("user_id", employee.id)
-          .single();
-
-        if (balance) {
-          await supabase
-            .from("vacation_balance")
-            .update({
-              used_days: balance.used_days + daysDifference,
-              remaining_days: balance.remaining_days - daysDifference,
-              updated_at: new Date().toISOString()
-            })
-            .eq("user_id", employee.id);
-        }
-      }
+      if (error) throw error;
 
       toast({
         title: "Solicitud actualizada",
@@ -226,26 +192,34 @@ export function EmployeeVacationDetail({
   };
 
   // Preparar datos para el calendario
-  const calendarVacations = employeeRequests.flatMap((request) => {
-    const startDate = new Date(request.start_date);
-    const endDate = new Date(request.end_date);
-    const days = [];
+  const calendarVacations = [
+    ...employeeRequests.flatMap((request) => {
+      const startDate = new Date(request.start_date);
+      const endDate = new Date(request.end_date);
+      const days = [];
 
-    for (
-      let date = new Date(startDate);
-      date <= endDate;
-      date.setDate(date.getDate() + 1)
-    ) {
-      days.push({
-        date: date.toISOString(),
-        status: request.status as "pending" | "approved" | "rejected",
-        employeeName: employee.full_name,
-        reason: request.reason,
-      });
-    }
+      for (
+        let date = new Date(startDate);
+        date <= endDate;
+        date.setDate(date.getDate() + 1)
+      ) {
+        days.push({
+          date: date.toISOString().split('T')[0],
+          status: request.status as "pending" | "approved" | "rejected" | "compensatory",
+          employeeName: employee.full_name,
+          reason: request.reason,
+        });
+      }
 
-    return days;
-  });
+      return days;
+    }),
+    ...compensatoryDays.map((day) => ({
+      date: day.date,
+      status: "compensatory" as "pending" | "approved" | "rejected" | "compensatory",
+      employeeName: employee.full_name,
+      reason: day.reason,
+    }))
+  ];
 
   return (
     <div className="space-y-4">

@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 
 interface VacationDay {
   date: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'compensatory';
   employeeName: string;
   reason?: string;
 }
@@ -38,7 +38,7 @@ export function VacationCalendar({ vacations }: VacationCalendarProps) {
   const getVacationForDate = (day: number) => {
     const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     return vacations.filter(v => {
-      const vacDate = v.date.split('T')[0];
+      const vacDate = v.date.includes('T') ? v.date.split('T')[0] : v.date;
       return vacDate === dateStr;
     });
   };
@@ -51,6 +51,8 @@ export function VacationCalendar({ vacations }: VacationCalendarProps) {
         return 'bg-success/80 hover:bg-success/90';
       case 'rejected':
         return 'bg-destructive/80 hover:bg-destructive/90';
+      case 'compensatory':
+        return 'bg-blue-500/80 hover:bg-blue-500/90';
       default:
         return 'bg-secondary';
     }
@@ -134,6 +136,7 @@ export function VacationCalendar({ vacations }: VacationCalendarProps) {
           <Badge className="bg-accent text-white">Solicitadas</Badge>
           <Badge className="bg-success text-white">Aprobadas</Badge>
           <Badge className="bg-destructive text-white">Rechazadas</Badge>
+          <Badge className="bg-blue-500 text-white">Días Libres</Badge>
         </div>
       </CardHeader>
       <CardContent>
