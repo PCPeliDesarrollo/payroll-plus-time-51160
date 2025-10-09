@@ -89,7 +89,7 @@ export function useTimeEntries() {
 
       const now = new Date().toISOString();
 
-      // Obtener geolocalización
+      // Obtener geolocalización con máxima precisión
       let latitude = null;
       let longitude = null;
       
@@ -97,13 +97,14 @@ export function useTimeEntries() {
         if ('geolocation' in navigator) {
           const position = await new Promise<GeolocationPosition>((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(resolve, reject, {
-              timeout: 5000,
+              timeout: 10000,
               maximumAge: 0,
               enableHighAccuracy: true
             });
           });
           latitude = position.coords.latitude;
           longitude = position.coords.longitude;
+          console.log('Check-in location captured:', { latitude, longitude, accuracy: position.coords.accuracy });
         }
       } catch (geoError) {
         console.warn('No se pudo obtener la geolocalización:', geoError);
@@ -152,7 +153,7 @@ export function useTimeEntries() {
 
     const now = new Date().toISOString();
 
-    // Obtener geolocalización
+    // Obtener geolocalización con máxima precisión
     let latitude = null;
     let longitude = null;
     
@@ -160,13 +161,14 @@ export function useTimeEntries() {
       if ('geolocation' in navigator) {
         const position = await new Promise<GeolocationPosition>((resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
-            timeout: 5000,
+            timeout: 10000,
             maximumAge: 0,
             enableHighAccuracy: true
           });
         });
         latitude = position.coords.latitude;
         longitude = position.coords.longitude;
+        console.log('Check-out location captured:', { latitude, longitude, accuracy: position.coords.accuracy });
       }
     } catch (geoError) {
       console.warn('No se pudo obtener la geolocalización:', geoError);
