@@ -272,7 +272,7 @@ export function AdminAttendance({ onBack }: AdminAttendanceProps = {}) {
                   key={entry.id} 
                   className="flex flex-col sm:flex-row sm:items-center justify-between p-3 md:p-4 bg-secondary/50 rounded-lg border gap-3"
                 >
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-1 min-w-0">
                     <p className="font-medium text-base md:text-lg">
                       {format(new Date(entry.date), "EEEE, d 'de' MMMM", { locale: es })}
                     </p>
@@ -281,46 +281,78 @@ export function AdminAttendance({ onBack }: AdminAttendanceProps = {}) {
                     </p>
                   </div>
                   
-                  <div className="flex flex-wrap items-center gap-3 md:gap-6">
-                    <div className="text-center">
-                      <p className="text-xs md:text-sm text-muted-foreground">Entrada</p>
-                      <p className="font-medium text-sm md:text-base">{formatTime(entry.check_in_time)}</p>
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-4 md:gap-6 w-full">
+                    <div className="flex-1 min-w-[200px]">
+                      <p className="text-xs md:text-sm text-muted-foreground mb-1">Entrada</p>
+                      <p className="font-medium text-sm md:text-base mb-2">{formatTime(entry.check_in_time)}</p>
                       {entry.check_in_latitude && entry.check_in_longitude && (
-                        <a
-                          href={`https://maps.google.com/?q=${entry.check_in_latitude},${entry.check_in_longitude}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline flex items-center justify-center gap-1 mt-1"
-                        >
-                          <MapPin className="h-3 w-3" />
-                          Ver ubicación
-                        </a>
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground font-mono">
+                            {entry.check_in_latitude.toFixed(6)}, {entry.check_in_longitude.toFixed(6)}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${entry.check_in_latitude},${entry.check_in_longitude}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-primary hover:underline flex items-center gap-1"
+                            >
+                              <MapPin className="h-3 w-3" />
+                              Ver en mapa
+                            </a>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(`${entry.check_in_latitude},${entry.check_in_longitude}`);
+                              }}
+                              className="text-xs text-primary hover:underline"
+                            >
+                              Copiar
+                            </button>
+                          </div>
+                        </div>
                       )}
                     </div>
                     
-                    <div className="text-center">
-                      <p className="text-xs md:text-sm text-muted-foreground">Salida</p>
-                      <p className="font-medium text-sm md:text-base">{formatTime(entry.check_out_time)}</p>
+                    <div className="flex-1 min-w-[200px]">
+                      <p className="text-xs md:text-sm text-muted-foreground mb-1">Salida</p>
+                      <p className="font-medium text-sm md:text-base mb-2">{formatTime(entry.check_out_time)}</p>
                       {entry.check_out_latitude && entry.check_out_longitude && (
-                        <a
-                          href={`https://maps.google.com/?q=${entry.check_out_latitude},${entry.check_out_longitude}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline flex items-center justify-center gap-1 mt-1"
-                        >
-                          <MapPin className="h-3 w-3" />
-                          Ver ubicación
-                        </a>
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground font-mono">
+                            {entry.check_out_latitude.toFixed(6)}, {entry.check_out_longitude.toFixed(6)}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            <a
+                              href={`https://www.google.com/maps/search/?api=1&query=${entry.check_out_latitude},${entry.check_out_longitude}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-primary hover:underline flex items-center gap-1"
+                            >
+                              <MapPin className="h-3 w-3" />
+                              Ver en mapa
+                            </a>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(`${entry.check_out_latitude},${entry.check_out_longitude}`);
+                              }}
+                              className="text-xs text-primary hover:underline"
+                            >
+                              Copiar
+                            </button>
+                          </div>
+                        </div>
                       )}
                     </div>
                     
-                    <div className="text-center">
-                      <p className="text-xs md:text-sm text-muted-foreground">Total</p>
-                      <p className="font-medium text-sm md:text-base">{formatDuration(entry.total_hours)}</p>
-                    </div>
-                    
-                    <div className="text-center">
-                      {getStatusBadge(entry.status)}
+                    <div className="flex items-center gap-4">
+                      <div className="text-center">
+                        <p className="text-xs md:text-sm text-muted-foreground">Total</p>
+                        <p className="font-medium text-sm md:text-base">{formatDuration(entry.total_hours)}</p>
+                      </div>
+                      
+                      <div className="text-center">
+                        {getStatusBadge(entry.status)}
+                      </div>
                     </div>
                   </div>
                 </div>
