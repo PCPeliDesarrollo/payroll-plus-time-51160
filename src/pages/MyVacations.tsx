@@ -142,10 +142,9 @@ export function MyVacations() {
   const getVacationForDate = (day: number) => {
     const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     return vacationRequests.filter(request => {
-      const start = new Date(request.start_date);
-      const end = new Date(request.end_date);
-      const current = new Date(dateStr);
-      return current >= start && current <= end;
+      const start = request.start_date;
+      const end = request.end_date;
+      return dateStr >= start && dateStr <= end;
     });
   };
 

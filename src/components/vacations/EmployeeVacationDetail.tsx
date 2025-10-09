@@ -111,12 +111,46 @@ export function EmployeeVacationDetail({
 
   const handleEditVacation = async (id: string, updates: { start_date: string; end_date: string; total_days: number }) => {
     try {
-      const { error } = await supabase
+      // Obtener la solicitud actual
+      const { data: currentRequest, error: fetchError } = await supabase
+        .from("vacation_requests")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Actualizar la solicitud
+      const { error: updateError } = await supabase
         .from("vacation_requests")
         .update(updates)
         .eq("id", id);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      // Si la solicitud está aprobada, actualizar el balance manualmente
+      if (currentRequest.status === 'approved') {
+        const oldDays = currentRequest.total_days;
+        const newDays = updates.total_days;
+        const daysDifference = newDays - oldDays;
+
+        const { data: balance } = await supabase
+          .from("vacation_balance")
+          .select("*")
+          .eq("user_id", employee.id)
+          .single();
+
+        if (balance) {
+          await supabase
+            .from("vacation_balance")
+            .update({
+              used_days: balance.used_days + daysDifference,
+              remaining_days: balance.remaining_days - daysDifference,
+              updated_at: new Date().toISOString()
+            })
+            .eq("user_id", employee.id);
+        }
+      }
 
       toast({
         title: "Solicitud actualizada",
