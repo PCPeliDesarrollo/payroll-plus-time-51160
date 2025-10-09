@@ -184,12 +184,12 @@ export function EmployeeVacationDetail({
 
   return (
     <div className="space-y-4">
-      <Button variant="outline" onClick={onBack} className="mb-4">
+      <Button variant="outline" onClick={onBack} className="mb-4 w-full sm:w-auto">
         <ArrowLeft className="h-4 w-4 mr-2" />
         Volver a la lista
       </Button>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Días Totales</CardTitle>

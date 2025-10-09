@@ -93,7 +93,7 @@ export function EmployeeVacationList({
             return (
               <div
                 key={employee.id}
-                className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
+                className={`flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-lg border transition-all ${
                   employeeVacations.some(req => req.status === 'pending')
                     ? 'border-accent border-2 bg-accent/10 shadow-md'
                     : ''
@@ -111,7 +111,7 @@ export function EmployeeVacationList({
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`font-medium truncate ${
+                    <p className={`font-medium break-words ${
                       employeeVacations.some(req => req.status === 'pending')
                         ? 'text-accent font-bold'
                         : ''
@@ -119,13 +119,13 @@ export function EmployeeVacationList({
                       {employee.full_name}
                       {employeeVacations.some(req => req.status === 'pending') && ' 🔔'}
                     </p>
-                    <p className="text-sm text-muted-foreground truncate">
+                    <p className="text-sm text-muted-foreground break-words">
                       {employee.department || 'Sin departamento'}
                     </p>
                   </div>
                 </div>
                 {employeeVacations.length > 0 && (
-                  <div className="flex-shrink-0 ml-2">
+                  <div className="flex-shrink-0 w-full sm:w-auto">
                     {getVacationBadges(employeeVacations)}
                   </div>
                 )}

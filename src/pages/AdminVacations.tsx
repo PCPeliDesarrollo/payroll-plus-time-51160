@@ -144,15 +144,15 @@ export default function AdminVacations({ onBack }: AdminVacationsProps = {}) {
   }
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-6">
+    <div className="container mx-auto p-2 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
       {onBack && (
-        <Button variant="outline" onClick={onBack} size="sm">
+        <Button variant="outline" onClick={onBack} size="sm" className="w-full sm:w-auto">
           ← Volver al Dashboard
         </Button>
       )}
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl md:text-3xl font-bold">Gestión de Vacaciones</h1>
-        <p className="text-sm md:text-base text-muted-foreground">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Gestión de Vacaciones</h1>
+        <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
           Selecciona un empleado para ver y gestionar sus vacaciones
         </p>
       </div>

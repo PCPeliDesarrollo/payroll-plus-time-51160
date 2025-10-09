@@ -177,7 +177,7 @@ export function MyVacations() {
       days.push(
         <div
           key={day}
-          className={`aspect-square flex flex-col items-center justify-center text-sm rounded-lg border ${
+          className={`aspect-square flex flex-col items-center justify-center text-[10px] sm:text-xs md:text-sm rounded border sm:rounded-lg ${
             hasVacations
               ? `${getDateColor(dayVacations[0].status)} text-white font-semibold`
               : 'bg-background hover:bg-accent/20'
@@ -211,16 +211,16 @@ export function MyVacations() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold text-foreground">Mis Vacaciones</h2>
-          <p className="text-muted-foreground">Gestiona tus solicitudes de vacaciones y consulta tu saldo disponible</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Mis Vacaciones</h2>
+          <p className="text-sm sm:text-base text-muted-foreground">Gestiona tus solicitudes de vacaciones y consulta tu saldo disponible</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2 w-full sm:w-auto">
               <Plus className="h-4 w-4" />
-              Nueva Solicitud
+              <span className="sm:inline">Nueva Solicitud</span>
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
@@ -330,40 +330,41 @@ export function MyVacations() {
 
       {/* Vacation Calendar */}
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5 text-primary" />
-              Calendario de Vacaciones
-            </CardTitle>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" onClick={previousMonth}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="text-sm font-medium min-w-[150px] text-center">
-                {months[currentMonth]} {currentYear}
-              </span>
-              <Button variant="outline" size="icon" onClick={nextMonth}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+        <CardHeader className="p-4 sm:p-6">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                <span className="hidden sm:inline">Calendario de Vacaciones</span>
+                <span className="sm:hidden">Calendario</span>
+              </CardTitle>
+              <div className="flex items-center gap-1 sm:gap-2">
+                <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={previousMonth}>
+                  <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
+                </Button>
+                <span className="text-xs sm:text-sm font-medium min-w-[100px] sm:min-w-[150px] text-center">
+                  {months[currentMonth]} {currentYear}
+                </span>
+                <Button variant="outline" size="icon" className="h-8 w-8 sm:h-10 sm:w-10" onClick={nextMonth}>
+                  <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
+                </Button>
+              </div>
             </div>
-          </div>
-          <div className="flex flex-wrap gap-2 mt-4">
-            <Badge className="bg-accent text-white">Pendientes</Badge>
-            <Badge className="bg-success text-white">Aprobadas</Badge>
-            <Badge className="bg-destructive text-white">Rechazadas</Badge>
+            <div className="flex flex-wrap gap-1 sm:gap-2">
+              <Badge className="bg-accent text-white text-[10px] sm:text-xs">Pendientes</Badge>
+              <Badge className="bg-success text-white text-[10px] sm:text-xs">Aprobadas</Badge>
+              <Badge className="bg-destructive text-white text-[10px] sm:text-xs">Rechazadas</Badge>
+            </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <div className="grid grid-cols-7 gap-1 md:gap-2 min-w-[280px]">
-              {daysOfWeek.map(day => (
-                <div key={day} className="text-center font-semibold text-xs md:text-sm p-2">
-                  {day}
-                </div>
-              ))}
-              {renderCalendar()}
-            </div>
+        <CardContent className="p-2 sm:p-6">
+          <div className="grid grid-cols-7 gap-0.5 sm:gap-1 md:gap-2">
+            {daysOfWeek.map(day => (
+              <div key={day} className="text-center font-semibold text-[10px] sm:text-xs md:text-sm p-1 sm:p-2">
+                {day}
+              </div>
+            ))}
+            {renderCalendar()}
           </div>
         </CardContent>
       </Card>

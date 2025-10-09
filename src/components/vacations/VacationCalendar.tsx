@@ -76,7 +76,7 @@ export function VacationCalendar({ vacations }: VacationCalendarProps) {
       days.push(
         <div
           key={day}
-          className={`aspect-square flex flex-col items-center justify-center text-sm rounded-lg border ${
+          className={`aspect-square flex flex-col items-center justify-center text-[10px] sm:text-xs md:text-sm rounded border sm:rounded-lg ${
             hasVacations
               ? `${getDateColor(dayVacations[0].status)} text-white font-semibold cursor-pointer`
               : 'bg-background hover:bg-accent'
@@ -85,7 +85,7 @@ export function VacationCalendar({ vacations }: VacationCalendarProps) {
         >
           <span>{day}</span>
           {dayVacations.length > 1 && (
-            <span className="text-[10px]">+{dayVacations.length - 1}</span>
+            <span className="text-[8px] sm:text-[10px]">+{dayVacations.length - 1}</span>
           )}
         </div>
       );
@@ -139,16 +139,14 @@ export function VacationCalendar({ vacations }: VacationCalendarProps) {
           <Badge className="bg-blue-500 text-white">Días Libres</Badge>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <div className="grid grid-cols-7 gap-1 md:gap-2 min-w-[280px]">
-            {daysOfWeek.map(day => (
-              <div key={day} className="text-center font-semibold text-xs md:text-sm p-2">
-                {day}
-              </div>
-            ))}
-            {renderCalendar()}
-          </div>
+      <CardContent className="p-2 sm:p-6">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-1 md:gap-2">
+          {daysOfWeek.map(day => (
+            <div key={day} className="text-center font-semibold text-[10px] sm:text-xs md:text-sm p-1 sm:p-2">
+              {day}
+            </div>
+          ))}
+          {renderCalendar()}
         </div>
       </CardContent>
     </Card>
