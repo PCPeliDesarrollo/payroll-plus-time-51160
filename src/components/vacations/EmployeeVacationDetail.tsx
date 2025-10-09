@@ -1,12 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Calendar, Clock, CheckCircle, XCircle, DollarSign, Download } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, CheckCircle, XCircle, DollarSign, Download, Plus, Edit, Trash2 } from "lucide-react";
 import { VacationCalendar } from "./VacationCalendar";
+import { AddCompensatoryDayDialog } from "./AddCompensatoryDayDialog";
+import { EditVacationRequestDialog } from "./EditVacationRequestDialog";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useCompensatoryDays } from "@/hooks/useCompensatoryDays";
+import { useToast } from "@/hooks/use-toast";
 
 type PayrollRecord = {
   id: string;
@@ -60,10 +64,75 @@ export function EmployeeVacationDetail({
 }: EmployeeVacationDetailProps) {
   const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
   const [loadingPayroll, setLoadingPayroll] = useState(false);
+  const [showAddCompensatoryDay, setShowAddCompensatoryDay] = useState(false);
+  const [showEditVacation, setShowEditVacation] = useState(false);
+  const [selectedVacation, setSelectedVacation] = useState<VacationRequest | null>(null);
+  
+  const { compensatoryDays, addCompensatoryDay, deleteCompensatoryDay, fetchCompensatoryDays } = useCompensatoryDays();
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchPayrollRecords();
+    fetchCompensatoryDays(employee.id);
   }, [employee.id]);
+
+  const handleAddCompensatoryDay = async (data: { user_id: string; date: string; reason: string }) => {
+    try {
+      await addCompensatoryDay(data);
+      toast({
+        title: "Día libre añadido",
+        description: "El día libre compensatorio ha sido añadido correctamente",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo añadir el día libre",
+      });
+      throw error;
+    }
+  };
+
+  const handleDeleteCompensatoryDay = async (id: string) => {
+    try {
+      await deleteCompensatoryDay(id);
+      toast({
+        title: "Día libre eliminado",
+        description: "El día libre compensatorio ha sido eliminado",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo eliminar el día libre",
+      });
+    }
+  };
+
+  const handleEditVacation = async (id: string, updates: { start_date: string; end_date: string; total_days: number }) => {
+    try {
+      const { error } = await supabase
+        .from("vacation_requests")
+        .update(updates)
+        .eq("id", id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Solicitud actualizada",
+        description: "La solicitud de vacaciones ha sido actualizada correctamente",
+      });
+      
+      window.location.reload();
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo actualizar la solicitud",
+      });
+      throw error;
+    }
+  };
 
   const fetchPayrollRecords = async () => {
     setLoadingPayroll(true);
@@ -189,6 +258,50 @@ export function EmployeeVacationDetail({
       <VacationCalendar vacations={calendarVacations} />
 
       <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-lg">Días Libres Compensatorios</CardTitle>
+          <Button
+            onClick={() => setShowAddCompensatoryDay(true)}
+            size="sm"
+            className="gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Añadir día libre
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {compensatoryDays.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              No hay días libres compensatorios registrados
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {compensatoryDays.map((day) => (
+                <div
+                  key={day.id}
+                  className="flex items-start justify-between p-3 border rounded-lg"
+                >
+                  <div className="space-y-1">
+                    <p className="font-medium">
+                      {format(new Date(day.date), "dd/MM/yyyy")}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{day.reason}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteCompensatoryDay(day.id)}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <DollarSign className="h-5 w-5 text-primary" />
@@ -294,28 +407,43 @@ export function EmployeeVacationDetail({
                         </div>
                       )}
 
-                      {request.status === "pending" && (
-                        <div className="flex gap-2 pt-2">
+                      <div className="flex gap-2 pt-2 flex-wrap">
+                        {(request.status === "approved" || request.status === "pending") && (
                           <Button
                             size="sm"
-                            variant="default"
-                            onClick={() => onApprove(request.id)}
-                            className="flex-1"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedVacation(request);
+                              setShowEditVacation(true);
+                            }}
                           >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Aprobar
+                            <Edit className="h-4 w-4 mr-2" />
+                            Editar
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => onReject(request.id)}
-                            className="flex-1"
-                          >
-                            <XCircle className="h-4 w-4 mr-2" />
-                            Rechazar
-                          </Button>
-                        </div>
-                      )}
+                        )}
+                        {request.status === "pending" && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => onApprove(request.id)}
+                              className="flex-1"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Aprobar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => onReject(request.id)}
+                              className="flex-1"
+                            >
+                              <XCircle className="h-4 w-4 mr-2" />
+                              Rechazar
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -324,6 +452,21 @@ export function EmployeeVacationDetail({
           )}
         </CardContent>
       </Card>
+
+      <AddCompensatoryDayDialog
+        open={showAddCompensatoryDay}
+        onOpenChange={setShowAddCompensatoryDay}
+        employeeId={employee.id}
+        employeeName={employee.full_name}
+        onSubmit={handleAddCompensatoryDay}
+      />
+
+      <EditVacationRequestDialog
+        open={showEditVacation}
+        onOpenChange={setShowEditVacation}
+        vacationRequest={selectedVacation}
+        onSubmit={handleEditVacation}
+      />
     </div>
   );
 }

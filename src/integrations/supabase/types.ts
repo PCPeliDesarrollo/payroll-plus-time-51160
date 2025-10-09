@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      compensatory_days: {
+        Row: {
+          created_at: string
+          date: string
+          granted_by: string
+          id: string
+          reason: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          granted_by: string
+          id?: string
+          reason: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          granted_by?: string
+          id?: string
+          reason?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null
