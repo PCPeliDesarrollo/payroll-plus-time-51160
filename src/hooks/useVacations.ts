@@ -65,6 +65,26 @@ export function useVacations() {
     try {
       const startDate = new Date(request.start_date);
       const endDate = new Date(request.end_date);
+      const currentYear = new Date().getFullYear();
+      
+      // Validar que las fechas estén en el año actual o enero/febrero del siguiente
+      const isValidDate = (date: Date) => {
+        const year = date.getFullYear();
+        const month = date.getMonth(); // 0-indexed (0 = enero, 1 = febrero)
+        
+        // Año actual: cualquier mes
+        if (year === currentYear) return true;
+        
+        // Año siguiente: solo enero (0) y febrero (1)
+        if (year === currentYear + 1 && (month === 0 || month === 1)) return true;
+        
+        return false;
+      };
+      
+      if (!isValidDate(startDate) || !isValidDate(endDate)) {
+        throw new Error('Las vacaciones solo pueden solicitarse para el año en curso o enero/febrero del año siguiente');
+      }
+      
       const timeDiff = endDate.getTime() - startDate.getTime();
       const totalDays = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
 

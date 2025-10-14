@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTimeEntries } from "@/hooks/useTimeEntries";
 import { useToast } from "@/hooks/use-toast";
-import { useWorkingHours } from "@/hooks/useWorkingHours";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 
@@ -31,23 +30,6 @@ export function MyAttendance() {
   const [elapsedTime, setElapsedTime] = useState<string>("00:00:00");
   const { timeEntries, currentEntry, loading, isCheckedIn, checkIn, checkOut } = useTimeEntries();
   const { toast } = useToast();
-
-  // Get current week for working hours calculation
-  const getCurrentWeekDates = () => {
-    const now = new Date();
-    const dayOfWeek = now.getDay();
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    return {
-      start: monday.toISOString().split('T')[0],
-      end: sunday.toISOString().split('T')[0]
-    };
-  };
-
-  const weekDates = getCurrentWeekDates();
-  const { summary: weekSummary } = useWorkingHours(weekDates.start, weekDates.end);
 
   // Filter entries for selected date
   const selectedDateEntries = React.useMemo(() => {
@@ -197,42 +179,6 @@ export function MyAttendance() {
           <span className="sm:inline">Exportar Datos</span>
         </Button>
       </div>
-
-      {/* Resumen Semanal */}
-      {weekSummary && (
-        <Card className="bg-gradient-to-r from-primary/10 to-primary/5">
-          <CardHeader>
-            <CardTitle className="text-base sm:text-lg">Resumen de esta semana</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Horas trabajadas</p>
-                <p className="text-xl sm:text-2xl font-bold text-primary">{weekSummary.totalHoursWorked}h</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Horas esperadas</p>
-                <p className="text-xl sm:text-2xl font-bold">{weekSummary.expectedHours}h</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Días de vacaciones</p>
-                <p className="text-xl sm:text-2xl font-bold text-secondary">{weekSummary.vacationDays}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Balance</p>
-                <p className={`text-xl sm:text-2xl font-bold ${
-                  weekSummary.totalHoursWorked >= weekSummary.expectedHours 
-                    ? 'text-success' 
-                    : 'text-destructive'
-                }`}>
-                  {weekSummary.totalHoursWorked >= weekSummary.expectedHours ? '+' : ''}
-                  {(weekSummary.totalHoursWorked - weekSummary.expectedHours).toFixed(1)}h
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calendar */}
