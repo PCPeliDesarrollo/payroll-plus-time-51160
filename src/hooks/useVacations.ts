@@ -111,7 +111,12 @@ export function useVacations() {
           .select()
           .single();
 
-        if (error) throw error;
+        if (error) {
+          if (error.message?.includes('solicitud de vacaciones para estas fechas')) {
+            throw new Error('Ya tienes una solicitud de vacaciones para estas fechas o parte de ellas');
+          }
+          throw error;
+        }
         await fetchVacationRequests();
         return { ...data, ...warningData };
       }
@@ -130,8 +135,12 @@ export function useVacations() {
       if (error) throw error;
       await fetchVacationRequests();
       return data;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating vacation request:', error);
+      // Check if it's an overlap error from the database
+      if (error.message?.includes('solicitud de vacaciones para estas fechas')) {
+        throw new Error('Ya tienes una solicitud de vacaciones para estas fechas o parte de ellas');
+      }
       throw error;
     }
   };
