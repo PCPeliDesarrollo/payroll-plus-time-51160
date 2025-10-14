@@ -5,11 +5,12 @@ import { useAuth } from "./useAuth";
 export interface CompensatoryDay {
   id: string;
   user_id: string;
-  date: string;
+  date: string | null;
   reason: string;
   granted_by: string;
   created_at: string;
   updated_at: string;
+  days_count: number;
 }
 
 export const useCompensatoryDays = () => {
@@ -23,7 +24,7 @@ export const useCompensatoryDays = () => {
       let query = supabase
         .from("compensatory_days")
         .select("*")
-        .order("date", { ascending: false });
+        .order("date", { ascending: true, nullsFirst: true });
 
       if (userId) {
         query = query.eq("user_id", userId);
@@ -51,12 +52,16 @@ export const useCompensatoryDays = () => {
 
   const addCompensatoryDay = async (data: {
     user_id: string;
-    date: string;
+    date?: string;
     reason: string;
+    days_count?: number;
   }) => {
     try {
       const { error } = await supabase.from("compensatory_days").insert({
-        ...data,
+        user_id: data.user_id,
+        date: data.date || null,
+        reason: data.reason,
+        days_count: data.days_count || 1,
         granted_by: user?.id,
       });
 

@@ -13,7 +13,7 @@ interface EditCompensatoryDayDialogProps {
     date: string;
     reason: string;
   } | null;
-  onSubmit: (id: string, data: { date: string; reason: string }) => Promise<void>;
+  onSubmit: (id: string, data: { date?: string; reason: string }) => Promise<void>;
 }
 
 export function EditCompensatoryDayDialog({
@@ -28,7 +28,7 @@ export function EditCompensatoryDayDialog({
 
   useEffect(() => {
     if (compensatoryDay) {
-      setDate(compensatoryDay.date);
+      setDate(compensatoryDay.date || "");
       setReason(compensatoryDay.reason);
     }
   }, [compensatoryDay]);
@@ -39,7 +39,10 @@ export function EditCompensatoryDayDialog({
 
     setIsSubmitting(true);
     try {
-      await onSubmit(compensatoryDay.id, { date, reason });
+      await onSubmit(compensatoryDay.id, { 
+        date: date || undefined,
+        reason 
+      });
       onOpenChange(false);
     } catch (error) {
       console.error("Error updating compensatory day:", error);
@@ -56,13 +59,15 @@ export function EditCompensatoryDayDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-date">Fecha</Label>
+            <Label htmlFor="edit-date">Fecha (opcional)</Label>
+            <p className="text-xs text-muted-foreground">
+              Deja vacío si aún no se ha decidido cuándo se tomará el día libre
+            </p>
             <Input
               id="edit-date"
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              required
             />
           </div>
           <div className="space-y-2">

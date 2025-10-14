@@ -68,7 +68,7 @@ export function EmployeeVacationDetail({
     fetchCompensatoryDays(employee.id);
   }, [employee.id]);
 
-  const handleAddCompensatoryDay = async (data: { user_id: string; date: string; reason: string }) => {
+  const handleAddCompensatoryDay = async (data: { user_id: string; date?: string; reason: string; days_count?: number }) => {
     try {
       await addCompensatoryDay(data);
       toast({
@@ -101,11 +101,14 @@ export function EmployeeVacationDetail({
     }
   };
 
-  const handleEditCompensatoryDay = async (id: string, updates: { date: string; reason: string }) => {
+  const handleEditCompensatoryDay = async (id: string, updates: { date?: string; reason: string }) => {
     try {
       const { error } = await supabase
         .from("compensatory_days")
-        .update(updates)
+        .update({
+          date: updates.date || null,
+          reason: updates.reason
+        })
         .eq("id", id);
 
       if (error) throw error;
@@ -237,12 +240,14 @@ export function EmployeeVacationDetail({
 
       return days;
     }),
-    ...compensatoryDays.map((day) => ({
-      date: day.date,
-      status: "compensatory" as "pending" | "approved" | "rejected" | "compensatory",
-      employeeName: employee.full_name,
-      reason: day.reason,
-    }))
+    ...compensatoryDays
+      .filter((day) => day.date) // Solo mostrar en calendario los que tienen fecha
+      .map((day) => ({
+        date: day.date!,
+        status: "compensatory" as "pending" | "approved" | "rejected" | "compensatory",
+        employeeName: employee.full_name,
+        reason: day.reason,
+      }))
   ];
 
   return (
@@ -308,42 +313,63 @@ export function EmployeeVacationDetail({
             </p>
           ) : (
             <div className="space-y-3">
-              {compensatoryDays.map((day) => (
-                <div
-                  key={day.id}
-                  className="flex items-start justify-between p-3 border rounded-lg"
-                >
-                  <div className="space-y-1 flex-1">
-                    <p className="font-medium">
-                      {format(new Date(day.date), "dd/MM/yyyy")}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{day.reason}</p>
+              {compensatoryDays
+                .sort((a, b) => {
+                  // Ordenar: primero los sin fecha, luego por fecha
+                  if (!a.date && !b.date) return 0;
+                  if (!a.date) return -1;
+                  if (!b.date) return 1;
+                  return new Date(a.date).getTime() - new Date(b.date).getTime();
+                })
+                .map((day) => (
+                  <div
+                    key={day.id}
+                    className={`flex items-start justify-between p-3 border rounded-lg ${
+                      !day.date ? 'bg-accent/10 border-accent' : ''
+                    }`}
+                  >
+                    <div className="space-y-1 flex-1">
+                      <div className="flex items-center gap-2">
+                        {day.date ? (
+                          <p className="font-medium">
+                            {format(new Date(day.date), "dd/MM/yyyy")}
+                          </p>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="bg-accent/20">
+                              {day.days_count} día{day.days_count !== 1 ? 's' : ''} pendiente{day.days_count !== 1 ? 's' : ''}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">(sin fecha asignada)</span>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">{day.reason}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedCompensatoryDay({
+                            id: day.id,
+                            date: day.date || '',
+                            reason: day.reason
+                          });
+                          setShowEditCompensatoryDay(true);
+                        }}
+                      >
+                        <Edit className="h-4 w-4 text-primary" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteCompensatoryDay(day.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setSelectedCompensatoryDay({
-                          id: day.id,
-                          date: day.date,
-                          reason: day.reason
-                        });
-                        setShowEditCompensatoryDay(true);
-                      }}
-                    >
-                      <Edit className="h-4 w-4 text-primary" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteCompensatoryDay(day.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           )}
         </CardContent>

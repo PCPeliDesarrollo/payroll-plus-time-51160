@@ -17,7 +17,8 @@ export type Database = {
       compensatory_days: {
         Row: {
           created_at: string
-          date: string
+          date: string | null
+          days_count: number
           granted_by: string
           id: string
           reason: string
@@ -26,7 +27,8 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          date: string
+          date?: string | null
+          days_count?: number
           granted_by: string
           id?: string
           reason: string
@@ -35,7 +37,8 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          date?: string
+          date?: string | null
+          days_count?: number
           granted_by?: string
           id?: string
           reason?: string
