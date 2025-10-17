@@ -68,7 +68,7 @@ const Index = () => {
           <div className="relative">
             <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full animate-pulse" />
             <img 
-              src="/logo-app-icon.png" 
+              src="/app-icon-512.png" 
               alt="RRHH PcPeli" 
               className="h-32 w-32 object-contain relative z-10 animate-scale-in drop-shadow-2xl"
             />
