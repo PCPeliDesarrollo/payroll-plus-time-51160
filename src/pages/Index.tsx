@@ -63,8 +63,27 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">
+        <div className="flex flex-col items-center gap-6 animate-fade-in">
+          <div className="relative">
+            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full animate-pulse" />
+            <img 
+              src="/logo-app-icon.png" 
+              alt="RRHH PcPeli" 
+              className="h-32 w-32 object-contain relative z-10 animate-scale-in drop-shadow-2xl"
+            />
+          </div>
+          <div className="flex flex-col items-center gap-3">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              RRHH PcPeli
+            </h1>
+            <div className="flex gap-2">
+              <div className="h-2 w-2 rounded-full bg-primary animate-bounce [animation-delay:-0.3s]" />
+              <div className="h-2 w-2 rounded-full bg-primary animate-bounce [animation-delay:-0.15s]" />
+              <div className="h-2 w-2 rounded-full bg-primary animate-bounce" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
