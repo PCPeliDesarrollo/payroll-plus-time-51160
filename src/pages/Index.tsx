@@ -63,31 +63,8 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5">
-        <div className="flex flex-col items-center gap-8 animate-fade-in">
-          {/* Pensando animation */}
-          <div className="relative flex items-center justify-center">
-            {/* Outer pulsing ring */}
-            <div className="absolute inset-0 w-24 h-24 rounded-full bg-primary/20 animate-ping" />
-            <div className="absolute inset-0 w-24 h-24 rounded-full bg-primary/30 animate-pulse" />
-            
-            {/* Inner thinking dots */}
-            <div className="relative flex gap-3 z-10">
-              <div className="h-4 w-4 rounded-full bg-primary animate-bounce [animation-delay:-0.3s] shadow-lg shadow-primary/50" />
-              <div className="h-4 w-4 rounded-full bg-primary animate-bounce [animation-delay:-0.15s] shadow-lg shadow-primary/50" />
-              <div className="h-4 w-4 rounded-full bg-primary animate-bounce shadow-lg shadow-primary/50" />
-            </div>
-          </div>
-          
-          <div className="flex flex-col items-center gap-3">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
-              RRHH PcPeli
-            </h1>
-            <p className="text-muted-foreground text-sm animate-pulse">
-              Cargando...
-            </p>
-          </div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-primary">
+        <Loader2 className="h-12 w-12 animate-spin text-primary-foreground" />
       </div>
     );
   }
