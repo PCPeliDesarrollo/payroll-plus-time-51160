@@ -57,7 +57,9 @@ serve(async (req) => {
 
       if (error) {
         console.error(`Error updating ${table}:`, error);
-        throw error;
+        // Continue with other tables even if one fails
+        results[table] = 0;
+        continue;
       }
 
       const count = data?.length || 0;
