@@ -59,7 +59,7 @@ export function useVacations() {
     }
   };
 
-  const createVacationRequest = async (request: Omit<VacationRequest, 'id' | 'user_id' | 'status' | 'created_at' | 'updated_at' | 'total_days'>) => {
+  const createVacationRequest = async (request: Omit<VacationRequest, 'id' | 'user_id' | 'status' | 'created_at' | 'updated_at' | 'total_days' | 'company_id'>) => {
     if (!user) throw new Error('No user logged in');
 
     try {
@@ -104,6 +104,7 @@ export function useVacations() {
           .insert({
             ...request,
             user_id: user.id,
+            company_id: profile?.company_id || null,
             total_days: totalDays,
             status: 'pending',
             reason: request.reason ? `${request.reason} [EXCEDE DÍAS DISPONIBLES: ${totalDays}/${vacationBalance.remaining_days}]` : `[EXCEDE DÍAS DISPONIBLES: ${totalDays}/${vacationBalance.remaining_days}]`
@@ -126,6 +127,7 @@ export function useVacations() {
         .insert({
           ...request,
           user_id: user.id,
+          company_id: profile?.company_id || null,
           total_days: totalDays,
           status: 'pending',
         })

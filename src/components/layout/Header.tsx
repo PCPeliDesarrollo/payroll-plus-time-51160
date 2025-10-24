@@ -18,7 +18,7 @@ interface HeaderProps {
   user: {
     name: string;
     email: string;
-    role: 'admin' | 'employee';
+    role: 'super_admin' | 'admin' | 'employee';
   };
   onLogout: () => void;
   onPageChange?: (page: string) => void;

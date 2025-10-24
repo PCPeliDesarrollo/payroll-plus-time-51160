@@ -5,7 +5,7 @@ interface AppLayoutProps {
   user: {
     name: string;
     email: string;
-    role: 'admin' | 'employee';
+    role: 'super_admin' | 'admin' | 'employee';
   };
   currentPage: string;
   onPageChange: (page: string) => void;

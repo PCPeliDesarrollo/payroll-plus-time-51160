@@ -6,7 +6,7 @@ import { Menu } from "lucide-react";
 import { useState } from "react";
 
 interface SidebarProps {
-  userRole: 'admin' | 'employee';
+  userRole: 'super_admin' | 'admin' | 'employee';
   currentPage: string;
   onPageChange: (page: string) => void;
   onLogout: () => void;
@@ -14,6 +14,13 @@ interface SidebarProps {
 
 export function Sidebar({ userRole, currentPage, onPageChange, onLogout }: SidebarProps) {
   const [open, setOpen] = useState(false);
+  
+  const superAdminMenuItems = [
+    { id: 'super-admin', label: 'Panel Super Admin', icon: Users },
+    { id: 'dashboard', label: 'Dashboard General', icon: Home },
+    { id: 'settings', label: 'Configuración', icon: Settings },
+  ];
+
   const adminMenuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'employees', label: 'Empleados', icon: Users },
@@ -34,7 +41,11 @@ export function Sidebar({ userRole, currentPage, onPageChange, onLogout }: Sideb
     { id: 'my-profile', label: 'Mi Perfil', icon: Settings },
   ];
 
-  const menuItems = userRole === 'admin' ? adminMenuItems : employeeMenuItems;
+  const menuItems = userRole === 'super_admin' 
+    ? superAdminMenuItems 
+    : userRole === 'admin' 
+    ? adminMenuItems 
+    : employeeMenuItems;
 
   const handlePageChange = (page: string) => {
     onPageChange(page);
@@ -45,7 +56,7 @@ export function Sidebar({ userRole, currentPage, onPageChange, onLogout }: Sideb
     <>
       <div className="p-6 border-b border-border">
         <h2 className="text-xl font-bold text-primary">
-          {userRole === 'admin' ? 'Admin Panel' : 'Panel Empleado'}
+          {userRole === 'super_admin' ? 'Super Admin' : userRole === 'admin' ? 'Admin Panel' : 'Panel Empleado'}
         </h2>
       </div>
       
