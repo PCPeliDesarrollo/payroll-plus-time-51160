@@ -28,38 +28,19 @@ export function MigrateDataDialog() {
 
     setLoading(true);
     try {
-      const tables = [
-        'payroll_records',
-        'vacation_requests',
-        'vacation_balance',
-        'time_entries',
-        'schedule_changes',
-        'compensatory_days',
-        'notifications'
-      ];
+      const { data, error } = await supabase.functions.invoke('migrate-company-data', {
+        body: { companyId },
+      });
 
-      let totalUpdated = 0;
+      if (error) throw error;
 
-      for (const table of tables) {
-        const { data, error } = await supabase
-          .from(table as any)
-          .update({ company_id: companyId })
-          .is('company_id', null)
-          .select();
-
-        if (error) {
-          console.error(`Error updating ${table}:`, error);
-          throw error;
-        }
-
-        if (data) {
-          totalUpdated += data.length;
-        }
+      if (!data.success) {
+        throw new Error(data.error || 'Error al migrar datos');
       }
 
       toast({
         title: '¡Migración completada!',
-        description: `Se actualizaron ${totalUpdated} registros con la empresa seleccionada`,
+        description: `Se actualizaron ${data.totalUpdated} registros con la empresa seleccionada`,
       });
 
       setOpen(false);
