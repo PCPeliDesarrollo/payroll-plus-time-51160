@@ -35,7 +35,6 @@ serve(async (req) => {
 
     const tables = [
       'payroll_records',
-      'vacation_requests',
       'vacation_balance',
       'time_entries',
       'schedule_changes',
@@ -67,6 +66,21 @@ serve(async (req) => {
       totalUpdated += count;
       
       console.log(`Updated ${count} records in ${table}`);
+    }
+
+    // Migrar vacation_requests usando la función especial
+    console.log('Migrating vacation_requests using function...');
+    const { data: vacationResult, error: vacationError } = await supabaseAdmin
+      .rpc('migrate_vacation_requests', { target_company_id: companyId });
+
+    if (vacationError) {
+      console.error('Error migrating vacation_requests:', vacationError);
+      results['vacation_requests'] = 0;
+    } else {
+      const vacationCount = vacationResult?.[0]?.updated_count || 0;
+      results['vacation_requests'] = vacationCount;
+      totalUpdated += vacationCount;
+      console.log(`Updated ${vacationCount} vacation requests`);
     }
 
     console.log('Migration completed. Total records updated:', totalUpdated);
