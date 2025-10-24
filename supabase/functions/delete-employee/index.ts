@@ -27,14 +27,14 @@ serve(async (req) => {
       throw new Error('No autenticado')
     }
 
-    // Check if user is admin
+    // Check if user is admin or super_admin
     const { data: profile } = await supabaseClient
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single()
 
-    if (!profile || profile.role !== 'admin') {
+    if (!profile || (profile.role !== 'admin' && profile.role !== 'super_admin')) {
       throw new Error('No autorizado - se requiere rol de administrador')
     }
 
