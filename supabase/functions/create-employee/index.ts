@@ -39,7 +39,7 @@ serve(async (req) => {
     }
 
     // Get the employee data from the request
-    const { full_name, email, role = 'employee', department, employee_id, phone, password } = await req.json()
+    const { full_name, email, role = 'employee', department, employee_id, phone, password, company_id } = await req.json()
     
     // Validate password
     if (!password || password.length < 6) {
@@ -62,7 +62,8 @@ serve(async (req) => {
         role,
         department,
         employee_id,
-        phone
+        phone,
+        company_id
       }
     })
 
@@ -89,6 +90,7 @@ serve(async (req) => {
         department,
         employee_id,
         phone,
+        company_id,
       })
       .eq('id', authData.user.id)
 
