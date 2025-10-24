@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Building2, Users, Mail, Phone, MapPin, MoreHorizontal, Calendar, Shield } from "lucide-react";
 import { CreateCompanyDialog } from "@/components/superadmin/CreateCompanyDialog";
 import { CreateSuperAdminDialog } from "@/components/superadmin/CreateSuperAdminDialog";
+import { CreateCompanyAdminDialog } from "@/components/superadmin/CreateCompanyAdminDialog";
 import { useCompanies } from "@/hooks/useCompanies";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -61,6 +62,7 @@ export function SuperAdminPanel({ onBack }: SuperAdminPanelProps = {}) {
         </div>
         <div className="flex gap-3">
           <CreateSuperAdminDialog />
+          <CreateCompanyAdminDialog />
           <CreateCompanyDialog />
         </div>
       </div>
