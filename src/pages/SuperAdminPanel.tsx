@@ -6,6 +6,7 @@ import { Building2, Users, Mail, Phone, MapPin, MoreHorizontal, Calendar, Shield
 import { CreateCompanyDialog } from "@/components/superadmin/CreateCompanyDialog";
 import { CreateSuperAdminDialog } from "@/components/superadmin/CreateSuperAdminDialog";
 import { CreateCompanyAdminDialog } from "@/components/superadmin/CreateCompanyAdminDialog";
+import { CompanyEmployeesList } from "@/components/superadmin/CompanyEmployeesList";
 import { useCompanies } from "@/hooks/useCompanies";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -112,6 +113,42 @@ export function SuperAdminPanel({ onBack }: SuperAdminPanelProps = {}) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Empleados por Empresa */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Empleados por Empresa
+          </CardTitle>
+          <CardDescription>
+            Vista de todos los empleados organizados por empresa
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-2 text-muted-foreground">Cargando empresas...</p>
+            </div>
+          ) : companies.length === 0 ? (
+            <div className="text-center py-8">
+              <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">No hay empresas registradas</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {companies.filter(c => c.is_active).map((company) => (
+                <CompanyEmployeesList 
+                  key={company.id}
+                  companyId={company.id}
+                  companyName={company.name}
+                />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Lista de Empresas */}
       <Card>
