@@ -7,6 +7,7 @@ import { CreateCompanyDialog } from "@/components/superadmin/CreateCompanyDialog
 import { CreateSuperAdminDialog } from "@/components/superadmin/CreateSuperAdminDialog";
 import { CreateCompanyAdminDialog } from "@/components/superadmin/CreateCompanyAdminDialog";
 import { CompanyEmployeesList } from "@/components/superadmin/CompanyEmployeesList";
+import { MigrateDataDialog } from "@/components/superadmin/MigrateDataDialog";
 import { useCompanies } from "@/hooks/useCompanies";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -61,10 +62,11 @@ export function SuperAdminPanel({ onBack }: SuperAdminPanelProps = {}) {
           </h2>
           <p className="text-muted-foreground">Gestiona todas las empresas y super administradores del sistema</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           <CreateSuperAdminDialog />
           <CreateCompanyAdminDialog />
           <CreateCompanyDialog />
+          <MigrateDataDialog />
         </div>
       </div>
 
