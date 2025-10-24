@@ -81,7 +81,8 @@ const Index = () => {
       user={{
         name: profile.full_name,
         email: profile.email,
-        role: profile.role as "super_admin" | "admin" | "employee"
+        role: profile.role as "super_admin" | "admin" | "employee",
+        companyName: (profile as any).companies?.name
       }}
       currentPage={currentPage}
       onPageChange={setCurrentPage}

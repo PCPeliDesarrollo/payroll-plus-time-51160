@@ -6,6 +6,7 @@ interface AppLayoutProps {
     name: string;
     email: string;
     role: 'super_admin' | 'admin' | 'employee';
+    companyName?: string;
   };
   currentPage: string;
   onPageChange: (page: string) => void;

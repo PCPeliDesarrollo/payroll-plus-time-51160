@@ -19,6 +19,7 @@ interface HeaderProps {
     name: string;
     email: string;
     role: 'super_admin' | 'admin' | 'employee';
+    companyName?: string;
   };
   onLogout: () => void;
   onPageChange?: (page: string) => void;
@@ -38,7 +39,16 @@ export function Header({ user, onLogout, onPageChange }: HeaderProps) {
         <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl p-2 backdrop-blur-sm border border-primary/20">
           <img src="/logo.png" alt="Peli Soluciones Informáticas" className="h-10 md:h-12 w-auto drop-shadow-[0_0_8px_rgba(176,98,248,0.4)]" />
         </div>
-        <h1 className="text-base md:text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent hidden sm:block">Sistema de Fichajes</h1>
+        <div className="hidden sm:block">
+          <h1 className="text-base md:text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            Sistema de Fichajes
+          </h1>
+          {user.companyName && user.role !== 'super_admin' && (
+            <p className="text-xs md:text-sm text-muted-foreground">
+              {user.companyName}
+            </p>
+          )}
+        </div>
       </div>
       
       <div className="flex items-center gap-2 md:gap-4">
@@ -122,7 +132,9 @@ export function Header({ user, onLogout, onPageChange }: HeaderProps) {
               </Avatar>
               <div className="text-left hidden sm:block">
                 <p className="text-sm font-medium">{user.name}</p>
-                <p className="text-xs text-muted-foreground capitalize">{user.role}</p>
+                <p className="text-xs text-muted-foreground capitalize">
+                  {user.role === 'super_admin' ? 'Super Admin' : user.role === 'admin' ? 'Administrador' : 'Empleado'}
+                </p>
               </div>
             </Button>
           </DropdownMenuTrigger>
