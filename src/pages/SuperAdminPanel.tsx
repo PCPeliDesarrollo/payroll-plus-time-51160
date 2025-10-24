@@ -7,7 +7,6 @@ import { CreateCompanyDialog } from "@/components/superadmin/CreateCompanyDialog
 import { CreateSuperAdminDialog } from "@/components/superadmin/CreateSuperAdminDialog";
 import { CreateCompanyAdminDialog } from "@/components/superadmin/CreateCompanyAdminDialog";
 import { CompanyEmployeesList } from "@/components/superadmin/CompanyEmployeesList";
-import { MigrateDataDialog } from "@/components/superadmin/MigrateDataDialog";
 import { useCompanies } from "@/hooks/useCompanies";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -66,7 +65,6 @@ export function SuperAdminPanel({ onBack }: SuperAdminPanelProps = {}) {
           <CreateSuperAdminDialog />
           <CreateCompanyAdminDialog />
           <CreateCompanyDialog />
-          <MigrateDataDialog />
         </div>
       </div>
 
