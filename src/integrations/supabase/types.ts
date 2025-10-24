@@ -561,6 +561,13 @@ export type Database = {
         Returns: boolean
       }
       is_super_admin: { Args: { _user_id: string }; Returns: boolean }
+      migrate_vacation_requests: {
+        Args: { target_company_id: string }
+        Returns: {
+          error_message: string
+          updated_count: number
+        }[]
+      }
     }
     Enums: {
       app_role: "super_admin" | "admin" | "employee"
