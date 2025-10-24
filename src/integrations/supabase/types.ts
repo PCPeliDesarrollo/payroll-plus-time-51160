@@ -14,8 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      companies: {
+        Row: {
+          address: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          logo_url: string | null
+          name: string
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name: string
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          logo_url?: string | null
+          name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       compensatory_days: {
         Row: {
+          company_id: string | null
           created_at: string
           date: string | null
           days_count: number
@@ -26,6 +63,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           date?: string | null
           days_count?: number
@@ -36,6 +74,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           date?: string | null
           days_count?: number
@@ -45,10 +84,19 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "compensatory_days_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
+          company_id: string | null
           created_at: string | null
           id: string
           is_read: boolean | null
@@ -60,6 +108,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          company_id?: string | null
           created_at?: string | null
           id?: string
           is_read?: boolean | null
@@ -71,6 +120,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          company_id?: string | null
           created_at?: string | null
           id?: string
           is_read?: boolean | null
@@ -81,12 +131,21 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payroll_records: {
         Row: {
           base_salary: number
           bonuses: number | null
+          company_id: string | null
           created_at: string | null
           created_by: string | null
           deductions: number | null
@@ -104,6 +163,7 @@ export type Database = {
         Insert: {
           base_salary: number
           bonuses?: number | null
+          company_id?: string | null
           created_at?: string | null
           created_by?: string | null
           deductions?: number | null
@@ -121,6 +181,7 @@ export type Database = {
         Update: {
           base_salary?: number
           bonuses?: number | null
+          company_id?: string | null
           created_at?: string | null
           created_by?: string | null
           deductions?: number | null
@@ -136,6 +197,13 @@ export type Database = {
           year?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "payroll_records_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "payroll_records_created_by_fkey"
             columns: ["created_by"]
@@ -154,6 +222,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          company_id: string | null
           created_at: string | null
           department: string | null
           email: string
@@ -167,6 +236,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          company_id?: string | null
           created_at?: string | null
           department?: string | null
           email: string
@@ -180,6 +250,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          company_id?: string | null
           created_at?: string | null
           department?: string | null
           email?: string
@@ -192,13 +263,22 @@ export type Database = {
           role?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       schedule_changes: {
         Row: {
           admin_comments: string | null
           approved_at: string | null
           approved_by: string | null
+          company_id: string | null
           created_at: string | null
           current_check_in: string | null
           current_check_out: string | null
@@ -215,6 +295,7 @@ export type Database = {
           admin_comments?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          company_id?: string | null
           created_at?: string | null
           current_check_in?: string | null
           current_check_out?: string | null
@@ -231,6 +312,7 @@ export type Database = {
           admin_comments?: string | null
           approved_at?: string | null
           approved_by?: string | null
+          company_id?: string | null
           created_at?: string | null
           current_check_in?: string | null
           current_check_out?: string | null
@@ -243,7 +325,15 @@ export type Database = {
           updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "schedule_changes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       time_entries: {
         Row: {
@@ -253,12 +343,13 @@ export type Database = {
           check_out_latitude: number | null
           check_out_longitude: number | null
           check_out_time: string | null
+          company_id: string | null
           created_at: string | null
           date: string
           id: string
           notes: string | null
           status: string | null
-          total_hours: unknown | null
+          total_hours: unknown
           updated_at: string | null
           user_id: string
         }
@@ -269,12 +360,13 @@ export type Database = {
           check_out_latitude?: number | null
           check_out_longitude?: number | null
           check_out_time?: string | null
+          company_id?: string | null
           created_at?: string | null
           date?: string
           id?: string
           notes?: string | null
           status?: string | null
-          total_hours?: unknown | null
+          total_hours?: unknown
           updated_at?: string | null
           user_id: string
         }
@@ -285,16 +377,24 @@ export type Database = {
           check_out_latitude?: number | null
           check_out_longitude?: number | null
           check_out_time?: string | null
+          company_id?: string | null
           created_at?: string | null
           date?: string
           id?: string
           notes?: string | null
           status?: string | null
-          total_hours?: unknown | null
+          total_hours?: unknown
           updated_at?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "time_entries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "time_entries_user_id_fkey"
             columns: ["user_id"]
@@ -327,6 +427,7 @@ export type Database = {
       }
       vacation_balance: {
         Row: {
+          company_id: string | null
           created_at: string | null
           id: string
           remaining_days: number
@@ -337,6 +438,7 @@ export type Database = {
           year: number
         }
         Insert: {
+          company_id?: string | null
           created_at?: string | null
           id?: string
           remaining_days?: number
@@ -347,6 +449,7 @@ export type Database = {
           year?: number
         }
         Update: {
+          company_id?: string | null
           created_at?: string | null
           id?: string
           remaining_days?: number
@@ -357,6 +460,13 @@ export type Database = {
           year?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "vacation_balance_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "vacation_balance_user_id_fkey"
             columns: ["user_id"]
@@ -371,6 +481,7 @@ export type Database = {
           approved_at: string | null
           approved_by: string | null
           comments: string | null
+          company_id: string | null
           created_at: string | null
           end_date: string
           id: string
@@ -385,6 +496,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           comments?: string | null
+          company_id?: string | null
           created_at?: string | null
           end_date: string
           id?: string
@@ -399,6 +511,7 @@ export type Database = {
           approved_at?: string | null
           approved_by?: string | null
           comments?: string | null
+          company_id?: string | null
           created_at?: string | null
           end_date?: string
           id?: string
@@ -418,6 +531,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "vacation_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "vacation_requests_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -431,10 +551,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      close_open_time_entries: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      close_open_time_entries: { Args: never; Returns: undefined }
+      get_user_company_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -442,9 +560,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_super_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "employee"
+      app_role: "super_admin" | "admin" | "employee"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -572,7 +691,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "employee"],
+      app_role: ["super_admin", "admin", "employee"],
     },
   },
 } as const
