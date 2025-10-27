@@ -10,11 +10,9 @@ export function useTimeEntries() {
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentEntry, setCurrentEntry] = useState<TimeEntry | null>(null);
-  const [companyId, setCompanyId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
-      fetchCompanyId();
       fetchTimeEntries();
       fetchTodayEntry();
       
@@ -26,23 +24,6 @@ export function useTimeEntries() {
       return () => clearInterval(intervalId);
     }
   }, [user]);
-
-  const fetchCompanyId = async () => {
-    if (!user) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('company_id')
-        .eq('id', user.id)
-        .single();
-      
-      if (error) throw error;
-      setCompanyId(data.company_id);
-    } catch (error) {
-      console.error('Error fetching company_id:', error);
-    }
-  };
 
   const fetchTimeEntries = async () => {
     if (!user) return;
@@ -92,6 +73,18 @@ export function useTimeEntries() {
     const today = new Date().toISOString().split('T')[0];
     
     try {
+      // Obtener el company_id del usuario
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+      if (!profile?.company_id) {
+        throw new Error('No se encontró el company_id del usuario');
+      }
+
       // Check if there's already an entry for today that is checked_in
       const { data: existingEntry } = await supabase
         .from('time_entries')
@@ -134,7 +127,7 @@ export function useTimeEntries() {
         .from('time_entries')
         .insert({
           user_id: user.id,
-          company_id: companyId,
+          company_id: profile.company_id,
           date: today,
           check_in_time: now,
           status: 'checked_in',
@@ -230,12 +223,24 @@ export function useTimeEntries() {
     if (!user) throw new Error('No user logged in');
 
     try {
+      // Obtener el company_id del usuario
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+      if (!profile?.company_id) {
+        throw new Error('No se encontró el company_id del usuario');
+      }
+
       const { data, error } = await supabase
         .from('time_entries')
         .insert({
           ...entry,
           user_id: user.id,
-          company_id: companyId,
+          company_id: profile.company_id,
         })
         .select()
         .single();
