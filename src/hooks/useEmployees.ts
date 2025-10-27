@@ -45,9 +45,24 @@ export function useEmployees() {
     if (!user) throw new Error('No user logged in');
 
     try {
+      // Obtener el company_id del admin que está creando el empleado
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) throw profileError;
+      if (!profile?.company_id) {
+        throw new Error('No se encontró el company_id del administrador');
+      }
+
       // Call the edge function to create the employee
       const { data, error } = await supabase.functions.invoke('create-employee', {
-        body: employee
+        body: {
+          ...employee,
+          company_id: profile.company_id
+        }
       });
 
       console.log('Respuesta de la edge function:', { data, error });
