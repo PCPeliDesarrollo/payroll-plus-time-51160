@@ -49,6 +49,7 @@ export function usePayroll() {
         .insert({
           ...record,
           created_by: user.id,
+          company_id: profile?.company_id,
         })
         .select()
         .single();
