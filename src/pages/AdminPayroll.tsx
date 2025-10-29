@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { FileText, Upload, Eye, Download, Plus, Search, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 interface PayrollRecord {
   id: string;
@@ -50,6 +51,7 @@ export function AdminPayroll({ onBack }: AdminPayrollProps = {}) {
   const [uploadingFile, setUploadingFile] = useState<string | null>(null);
   const [pendingPayrollByEmployee, setPendingPayrollByEmployee] = useState<Record<string, number>>({});
   const { toast } = useToast();
+  const { user, profile } = useAuth();
 
   const [newPayroll, setNewPayroll] = useState({
     month: new Date().getMonth() + 1,
@@ -211,7 +213,9 @@ export function AdminPayroll({ onBack }: AdminPayrollProps = {}) {
           deductions: 0,
           bonuses: 0,
           net_salary: 0,
-          status: 'draft'
+          status: 'draft',
+          company_id: profile?.company_id,
+          created_by: user?.id
         }]);
 
       if (error) throw error;
