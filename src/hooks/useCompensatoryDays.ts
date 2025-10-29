@@ -63,6 +63,7 @@ export const useCompensatoryDays = () => {
         reason: data.reason,
         days_count: data.days_count || 1,
         granted_by: user?.id,
+        company_id: profile?.company_id,
       });
 
       if (error) throw error;
