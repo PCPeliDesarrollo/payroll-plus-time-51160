@@ -71,7 +71,7 @@ export function Sidebar({ userRole, currentPage, onPageChange, onLogout }: Sideb
                 "w-full justify-start h-12 text-left font-medium transition-all",
                 currentPage === item.id 
                   ? "bg-primary text-primary-foreground shadow-md" 
-                  : "hover:bg-secondary hover:text-secondary-foreground"
+                  : "text-foreground hover:bg-secondary hover:text-secondary-foreground"
               )}
               onClick={() => handlePageChange(item.id)}
             >
