@@ -79,8 +79,11 @@ export function AdminAttendance({ onBack }: AdminAttendanceProps = {}) {
   const fetchTimeEntries = async (employeeId: string) => {
     try {
       setLoading(true);
+      // Calcular correctamente el último día del mes
+      const [year, month] = selectedMonth.split('-').map(Number);
+      const lastDay = new Date(year, month, 0).getDate();
       const startDate = `${selectedMonth}-01`;
-      const endDate = `${selectedMonth}-31`;
+      const endDate = `${selectedMonth}-${String(lastDay).padStart(2, '0')}`;
       
       const { data, error } = await supabase
         .from('time_entries')
