@@ -29,9 +29,9 @@ export default function AdminVacations({ onBack }: AdminVacationsProps = {}) {
         .from('vacation_balance')
         .select('*')
         .eq('user_id', employeeId)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error) throw error;
       setEmployeeBalance(data);
     } catch (error) {
       console.error("Error fetching employee balance:", error);

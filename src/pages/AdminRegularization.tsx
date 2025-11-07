@@ -31,7 +31,7 @@ export function AdminRegularization() {
         .from('profiles')
         .select('company_id')
         .eq('id', selectedEmployee)
-        .single();
+        .maybeSingle();
 
       if (employeeError) throw employeeError;
       if (!employeeData?.company_id) {
