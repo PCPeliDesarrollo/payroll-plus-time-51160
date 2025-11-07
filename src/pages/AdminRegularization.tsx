@@ -90,14 +90,22 @@ export function AdminRegularization() {
 
       // Create entries for missing days
       const newEntries = missingDays.map(date => {
-        const hours = Math.floor(hoursPerDay);
-        const minutes = Math.round((hoursPerDay - hours) * 60);
+        let hours = Math.floor(hoursPerDay);
+        let minutes = Math.round((hoursPerDay - hours) * 60);
+        
+        // Ajustar si los minutos son 60
+        if (minutes === 60) {
+          hours += 1;
+          minutes = 0;
+        }
+        
+        const checkOutHour = 9 + hours;
         
         return {
           user_id: selectedEmployee,
           date,
           check_in_time: `${date}T09:00:00`,
-          check_out_time: `${date}T${String(9 + hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`,
+          check_out_time: `${date}T${String(checkOutHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`,
           status: 'checked_out'
         };
       });
