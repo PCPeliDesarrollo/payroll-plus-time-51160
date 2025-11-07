@@ -53,28 +53,57 @@ serve(async (req) => {
 
     console.log('Iniciando eliminación del empleado:', employee_id)
 
-    // Delete from profiles table first (this allows auth deletion to proceed)
-    const { error: profileError } = await supabaseAdmin
-      .from('profiles')
-      .delete()
-      .eq('id', employee_id)
+    // Delete all related records first
+    try {
+      // Delete notifications
+      await supabaseAdmin.from('notifications').delete().eq('user_id', employee_id)
+      console.log('Notificaciones eliminadas')
 
-    if (profileError) {
-      console.error('Error eliminando perfil:', profileError)
-      // Continue anyway, try to delete auth user
-    } else {
-      console.log('Perfil eliminado correctamente')
+      // Delete schedule changes
+      await supabaseAdmin.from('schedule_changes').delete().eq('user_id', employee_id)
+      console.log('Cambios de horario eliminados')
+
+      // Delete vacation requests
+      await supabaseAdmin.from('vacation_requests').delete().eq('user_id', employee_id)
+      console.log('Solicitudes de vacaciones eliminadas')
+
+      // Delete vacation balance
+      await supabaseAdmin.from('vacation_balance').delete().eq('user_id', employee_id)
+      console.log('Balance de vacaciones eliminado')
+
+      // Delete compensatory days
+      await supabaseAdmin.from('compensatory_days').delete().eq('user_id', employee_id)
+      console.log('Días compensatorios eliminados')
+
+      // Delete time entries
+      await supabaseAdmin.from('time_entries').delete().eq('user_id', employee_id)
+      console.log('Fichajes eliminados')
+
+      // Delete payroll records
+      await supabaseAdmin.from('payroll_records').delete().eq('user_id', employee_id)
+      console.log('Registros de nómina eliminados')
+
+      // Delete user roles
+      await supabaseAdmin.from('user_roles').delete().eq('user_id', employee_id)
+      console.log('Roles de usuario eliminados')
+
+      // Delete profile
+      await supabaseAdmin.from('profiles').delete().eq('id', employee_id)
+      console.log('Perfil eliminado')
+
+    } catch (deleteError) {
+      console.error('Error eliminando registros relacionados:', deleteError)
+      const errorMsg = deleteError instanceof Error ? deleteError.message : 'Error desconocido'
+      throw new Error(`Error al eliminar registros relacionados: ${errorMsg}`)
     }
 
-    // Then delete the auth user
+    // Finally delete the auth user
     const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(employee_id)
 
     if (authError) {
       console.error('Error eliminando usuario de auth:', authError)
       throw new Error(`Error al eliminar usuario: ${authError.message}`)
     }
-
-    console.log('Usuario de auth eliminado correctamente')
 
     console.log('Empleado eliminado exitosamente:', employee_id)
 
