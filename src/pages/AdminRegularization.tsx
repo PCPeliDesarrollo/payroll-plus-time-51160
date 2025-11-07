@@ -26,6 +26,24 @@ export function AdminRegularization() {
 
     setLoading(true);
     try {
+      // Get employee's company_id
+      const { data: employeeData, error: employeeError } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', selectedEmployee)
+        .single();
+
+      if (employeeError) throw employeeError;
+      if (!employeeData?.company_id) {
+        toast({
+          title: "Error",
+          description: "El empleado no tiene una empresa asignada",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       // Get current month's entries for the selected employee
       const now = new Date();
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -103,6 +121,7 @@ export function AdminRegularization() {
         
         return {
           user_id: selectedEmployee,
+          company_id: employeeData.company_id,
           date,
           check_in_time: `${date}T09:00:00`,
           check_out_time: `${date}T${String(checkOutHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`,
