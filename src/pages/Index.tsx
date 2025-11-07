@@ -28,6 +28,18 @@ const Index = () => {
   };
 
   const renderCurrentPage = () => {
+    // Si hay usuario pero no profile, mostrar loading
+    if (user && !profile) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-primary">
+          <div className="text-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary-foreground mx-auto mb-4" />
+            <p className="text-primary-foreground">Cargando perfil...</p>
+          </div>
+        </div>
+      );
+    }
+    
     if (!user || !profile) return null;
 
     switch (currentPage) {

@@ -12,10 +12,19 @@ export function useAuth() {
 
   useEffect(() => {
     let mounted = true;
+    let timeoutId: NodeJS.Timeout;
 
     // FIRST check for existing session
     const initializeAuth = async () => {
       try {
+        // Set a timeout to prevent infinite loading
+        timeoutId = setTimeout(() => {
+          if (mounted) {
+            console.error('Auth initialization timeout');
+            setLoading(false);
+          }
+        }, 10000); // 10 second timeout
+
         const { data: { session } } = await supabase.auth.getSession();
         
         if (!mounted) return;
@@ -29,8 +38,11 @@ export function useAuth() {
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
+        setUser(null);
+        setProfile(null);
       } finally {
         if (mounted) {
+          clearTimeout(timeoutId);
           setLoading(false);
         }
       }
