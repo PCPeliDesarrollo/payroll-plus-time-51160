@@ -75,7 +75,7 @@ export function AdminRegularization() {
         }
       });
 
-      // Calculate remaining hours needed (40 hours per week, ~160 hours per month)
+      // Calculate remaining hours needed (40 hours per week = 160 hours per month)
       const targetHours = 160;
       const remainingHours = targetHours - totalHours;
 
@@ -88,46 +88,100 @@ export function AdminRegularization() {
         return;
       }
 
-      // Calculate days needed (8 hours per day)
-      const daysNeeded = Math.ceil(remainingHours / 8);
-      const hoursPerDay = remainingHours / daysNeeded;
-
-      // Get all days of the month
+      // Get all days of the month that are valid work days
       const daysInMonth = lastDayOfMonth.getDate();
-      const missingDays: string[] = [];
+      const availableSlots: { date: string; type: 'weekday_morning' | 'weekday_afternoon' | 'saturday'; hours: number }[] = [];
 
-      for (let day = 1; day <= daysInMonth && missingDays.length < daysNeeded; day++) {
+      for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(now.getFullYear(), now.getMonth(), day);
         const dateStr = date.toISOString().split('T')[0];
+        const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
         
-        // Skip weekends and existing entries
-        if (date.getDay() !== 0 && date.getDay() !== 6 && !existingDates.has(dateStr) && date <= now) {
-          missingDays.push(dateStr);
+        // Skip if date is in the future or already has entries
+        if (date > now || existingDates.has(dateStr)) continue;
+        
+        // Skip Sunday (day 0) - NO work on Sundays
+        if (dayOfWeek === 0) continue;
+        
+        // Saturday: 11:00-14:00 (3 hours)
+        if (dayOfWeek === 6) {
+          availableSlots.push({ date: dateStr, type: 'saturday', hours: 3 });
+        } else {
+          // Monday to Friday: Morning 9:00-14:00 (5h) + Afternoon 17:00-20:00 (3h)
+          availableSlots.push({ date: dateStr, type: 'weekday_morning', hours: 5 });
+          availableSlots.push({ date: dateStr, type: 'weekday_afternoon', hours: 3 });
         }
       }
 
-      // Create entries for missing days
-      const newEntries = missingDays.map(date => {
-        let hours = Math.floor(hoursPerDay);
-        let minutes = Math.round((hoursPerDay - hours) * 60);
-        
-        // Ajustar si los minutos son 60
-        if (minutes === 60) {
-          hours += 1;
-          minutes = 0;
+      // Sort slots: weekdays first (morning then afternoon), then Saturdays
+      availableSlots.sort((a, b) => {
+        if (a.type === 'saturday' && b.type !== 'saturday') return 1;
+        if (a.type !== 'saturday' && b.type === 'saturday') return -1;
+        return a.date.localeCompare(b.date);
+      });
+
+      // Create entries until we reach remaining hours
+      let hoursToCreate = remainingHours;
+      const newEntries: Array<{
+        user_id: string;
+        company_id: string;
+        date: string;
+        check_in_time: string;
+        check_out_time: string;
+        status: string;
+      }> = [];
+
+      for (const slot of availableSlots) {
+        if (hoursToCreate <= 0) break;
+
+        let checkIn: string;
+        let checkOut: string;
+        let hoursForThisEntry: number;
+
+        if (slot.type === 'weekday_morning') {
+          // Turno mañana: 9:00 - 14:00 (5 horas)
+          checkIn = `${slot.date}T09:00:00`;
+          checkOut = `${slot.date}T14:00:00`;
+          hoursForThisEntry = Math.min(5, hoursToCreate);
+          // Adjust checkout if we need less than 5 hours
+          if (hoursForThisEntry < 5) {
+            const endHour = 9 + Math.floor(hoursForThisEntry);
+            const endMinutes = Math.round((hoursForThisEntry - Math.floor(hoursForThisEntry)) * 60);
+            checkOut = `${slot.date}T${String(endHour).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}:00`;
+          }
+        } else if (slot.type === 'weekday_afternoon') {
+          // Turno tarde: 17:00 - 20:00 (3 horas)
+          checkIn = `${slot.date}T17:00:00`;
+          checkOut = `${slot.date}T20:00:00`;
+          hoursForThisEntry = Math.min(3, hoursToCreate);
+          if (hoursForThisEntry < 3) {
+            const endHour = 17 + Math.floor(hoursForThisEntry);
+            const endMinutes = Math.round((hoursForThisEntry - Math.floor(hoursForThisEntry)) * 60);
+            checkOut = `${slot.date}T${String(endHour).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}:00`;
+          }
+        } else {
+          // Sábado: 11:00 - 14:00 (3 horas)
+          checkIn = `${slot.date}T11:00:00`;
+          checkOut = `${slot.date}T14:00:00`;
+          hoursForThisEntry = Math.min(3, hoursToCreate);
+          if (hoursForThisEntry < 3) {
+            const endHour = 11 + Math.floor(hoursForThisEntry);
+            const endMinutes = Math.round((hoursForThisEntry - Math.floor(hoursForThisEntry)) * 60);
+            checkOut = `${slot.date}T${String(endHour).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}:00`;
+          }
         }
-        
-        const checkOutHour = 9 + hours;
-        
-        return {
+
+        newEntries.push({
           user_id: selectedEmployee,
           company_id: employeeData.company_id,
-          date,
-          check_in_time: `${date}T09:00:00`,
-          check_out_time: `${date}T${String(checkOutHour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`,
+          date: slot.date,
+          check_in_time: checkIn,
+          check_out_time: checkOut,
           status: 'checked_out'
-        };
-      });
+        });
+
+        hoursToCreate -= hoursForThisEntry;
+      }
 
       if (newEntries.length === 0) {
         toast({
@@ -225,15 +279,15 @@ export function AdminRegularization() {
           </p>
           <p className="flex items-start gap-2">
             <span className="text-primary font-bold">3.</span>
-            <span>Crea fichajes automáticos en días laborables sin registro previo</span>
+            <span>Crea fichajes respetando el horario real: L-V mañana (9-14h) y tarde (17-20h), sábados (11-14h)</span>
           </p>
           <p className="flex items-start gap-2">
             <span className="text-primary font-bold">4.</span>
-            <span>Distribuye las horas de forma equitativa (aproximadamente 8 horas por día)</span>
+            <span>Nunca crea fichajes en domingo ni fuera del horario laboral</span>
           </p>
           <div className="mt-4 p-3 bg-warning/10 border border-warning/20 rounded-lg">
             <p className="text-warning-foreground">
-              <strong>Nota:</strong> Esta función solo creará fichajes en días laborables (lunes a viernes) del mes actual que no tengan registro previo.
+              <strong>Nota:</strong> Solo se crearán fichajes en días sin registro previo y hasta la fecha actual. L-V genera hasta 2 fichajes por día (mañana y tarde).
             </p>
           </div>
         </CardContent>
