@@ -113,30 +113,30 @@ export function VacationCalendar({ vacations }: VacationCalendarProps) {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5 text-primary" />
-            Calendario de Vacaciones
+    <Card className="overflow-hidden">
+      <CardHeader className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <CalendarIcon className="h-5 w-5 text-primary shrink-0" />
+            <span>Calendario de Vacaciones</span>
           </CardTitle>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={previousMonth}>
+          <div className="flex items-center justify-center gap-2">
+            <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={previousMonth}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="text-sm font-medium min-w-[150px] text-center">
+            <span className="text-sm font-medium w-28 sm:w-36 text-center truncate">
               {months[currentMonth]} {currentYear}
             </span>
-            <Button variant="outline" size="icon" onClick={nextMonth}>
+            <Button variant="outline" size="icon" className="h-8 w-8 shrink-0" onClick={nextMonth}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2 mt-4">
-          <Badge className="bg-accent text-white">Solicitadas</Badge>
-          <Badge className="bg-success text-white">Aprobadas</Badge>
-          <Badge className="bg-destructive text-white">Rechazadas</Badge>
-          <Badge className="bg-blue-500 text-white">Días Libres</Badge>
+        <div className="flex flex-wrap gap-1.5 sm:gap-2">
+          <Badge className="bg-accent text-white text-xs">Solicitadas</Badge>
+          <Badge className="bg-success text-white text-xs">Aprobadas</Badge>
+          <Badge className="bg-destructive text-white text-xs">Rechazadas</Badge>
+          <Badge className="bg-blue-500 text-white text-xs">Días Libres</Badge>
         </div>
       </CardHeader>
       <CardContent className="p-2 sm:p-6">
