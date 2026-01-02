@@ -132,9 +132,9 @@ export function Header({ user, onLogout, onPageChange }: HeaderProps) {
               </Avatar>
               <div className="text-left hidden sm:block">
                 <p className="text-sm font-medium">{user.name}</p>
-                <p className="text-xs text-muted-foreground capitalize">
+                <Badge className="bg-primary text-primary-foreground text-xs capitalize">
                   {user.role === 'super_admin' ? 'Super Admin' : user.role === 'admin' ? 'Administrador' : 'Empleado'}
-                </p>
+                </Badge>
               </div>
             </Button>
           </DropdownMenuTrigger>
