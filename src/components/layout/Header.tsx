@@ -130,11 +130,11 @@ export function Header({ user, onLogout, onPageChange }: HeaderProps) {
                   {user.name.charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
-              <div className="text-left hidden sm:block">
+              <div className="hidden sm:block bg-primary text-primary-foreground px-3 py-1 rounded-lg">
                 <p className="text-sm font-medium">{user.name}</p>
-                <Badge className="bg-primary text-primary-foreground text-xs capitalize">
+                <p className="text-xs opacity-90 capitalize">
                   {user.role === 'super_admin' ? 'Super Admin' : user.role === 'admin' ? 'Administrador' : 'Empleado'}
-                </Badge>
+                </p>
               </div>
             </Button>
           </DropdownMenuTrigger>
