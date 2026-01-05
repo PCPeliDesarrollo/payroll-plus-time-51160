@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Calendar as CalendarIcon, 
   Plus,
@@ -20,8 +21,10 @@ import {
   Trash2
 } from "lucide-react";
 import { useVacations } from "@/hooks/useVacations";
+import { useExtraHours } from "@/hooks/useExtraHours";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { ExtraHoursSection } from "@/components/extrahours/ExtraHoursSection";
 
 export function MyVacations() {
   const [startDate, setStartDate] = useState<Date>();
@@ -31,6 +34,7 @@ export function MyVacations() {
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const { vacationRequests, vacationBalance, loading, createVacationRequest } = useVacations();
+  const { extraHours, extraHoursRequests, balance: extraHoursBalance, requestExtraHours, loading: extraHoursLoading } = useExtraHours();
   const { toast } = useToast();
 
   const months = [
@@ -271,16 +275,32 @@ export function MyVacations() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Mis Vacaciones</h2>
-          <p className="text-sm sm:text-base text-muted-foreground">Gestiona tus solicitudes de vacaciones y consulta tu saldo disponible</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Mis Vacaciones y Horas Extra</h2>
+          <p className="text-sm sm:text-base text-muted-foreground">Gestiona tus solicitudes de vacaciones, horas extra y consulta tu saldo disponible</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2 w-full sm:w-auto">
-              <Plus className="h-4 w-4" />
-              <span className="sm:inline">Nueva Solicitud</span>
-            </Button>
-          </DialogTrigger>
+      </div>
+
+      <Tabs defaultValue="vacations" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="vacations" className="flex items-center gap-2">
+            <Plane className="h-4 w-4" />
+            Vacaciones
+          </TabsTrigger>
+          <TabsTrigger value="extra-hours" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            Horas Extra
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="vacations" className="space-y-6 mt-6">
+          <div className="flex justify-end">
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-2 w-full sm:w-auto">
+                  <Plus className="h-4 w-4" />
+                  <span className="sm:inline">Nueva Solicitud</span>
+                </Button>
+              </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>Solicitar Vacaciones</DialogTitle>
@@ -523,6 +543,18 @@ export function MyVacations() {
           </div>
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="extra-hours" className="space-y-6 mt-6">
+          <ExtraHoursSection
+            extraHours={extraHours}
+            extraHoursRequests={extraHoursRequests}
+            balance={extraHoursBalance}
+            isAdmin={false}
+            onRequestHours={requestExtraHours}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
