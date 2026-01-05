@@ -59,6 +59,58 @@ export function useVacations() {
     }
   };
 
+  // Calculate vacation balance for a future period based on hire date
+  // MUST be defined before createVacationRequest since it uses this function
+  const calculateFuturePeriodBalance = (periodYear: number, hireDate: string | null): {
+    total_days: number;
+    used_days: number;
+    remaining_days: number;
+    period_start: string;
+    period_end: string;
+  } => {
+    const periodStart = new Date(periodYear, 2, 1); // March 1st
+    const periodEnd = new Date(periodYear + 1, 1, 28); // Feb 28th
+    
+    // Default 22 days per year
+    let totalDays = 22;
+    
+    // If hire date exists, calculate proportional days
+    if (hireDate) {
+      const hire = new Date(hireDate);
+      
+      // If employee was hired before period start, they get full days
+      if (hire < periodStart) {
+        totalDays = 22;
+      } else if (hire <= periodEnd) {
+        // Hired during this period - calculate proportional
+        const monthsRemaining = 12 - (hire.getMonth() - 2);
+        const daysProportional = Math.round((22 / 12) * Math.max(0, monthsRemaining));
+        totalDays = Math.min(22, Math.max(0, daysProportional));
+      } else {
+        // Hired after period - no days
+        totalDays = 0;
+      }
+    }
+    
+    // For future periods, used_days starts at 0
+    // We need to count approved/pending requests for this period
+    const usedDays = vacationRequests
+      .filter(req => {
+        if (req.status === 'rejected') return false;
+        const startDate = new Date(req.start_date);
+        return startDate >= periodStart && startDate <= periodEnd;
+      })
+      .reduce((sum, req) => sum + req.total_days, 0);
+    
+    return {
+      total_days: totalDays,
+      used_days: usedDays,
+      remaining_days: totalDays - usedDays,
+      period_start: periodStart.toISOString().split('T')[0],
+      period_end: periodEnd.toISOString().split('T')[0]
+    };
+  };
+
   const createVacationRequest = async (request: Omit<VacationRequest, 'id' | 'user_id' | 'status' | 'created_at' | 'updated_at' | 'total_days' | 'company_id'>) => {
     if (!user) throw new Error('No user logged in');
 
@@ -66,26 +118,47 @@ export function useVacations() {
       const startDate = new Date(request.start_date);
       const endDate = new Date(request.end_date);
       
-      // Validar que las fechas estén dentro del periodo activo
-      if (vacationBalance?.period_start && vacationBalance?.period_end) {
-        const periodStart = new Date(vacationBalance.period_start);
-        const periodEnd = new Date(vacationBalance.period_end);
-        
-        if (startDate < periodStart || startDate > periodEnd) {
-          throw new Error(`La fecha de inicio debe estar dentro del periodo activo (${formatPeriodDate(vacationBalance.period_start)} - ${formatPeriodDate(vacationBalance.period_end)})`);
-        }
-        
-        if (endDate < periodStart || endDate > periodEnd) {
-          throw new Error(`La fecha de fin debe estar dentro del periodo activo (${formatPeriodDate(vacationBalance.period_start)} - ${formatPeriodDate(vacationBalance.period_end)})`);
-        }
+      // Determine which period the request belongs to (current or next)
+      const now = new Date();
+      const currentPeriodYear = now.getMonth() >= 2 ? now.getFullYear() : now.getFullYear() - 1;
+      const nextPeriodYear = currentPeriodYear + 1;
+      
+      // Current period: March currentYear - Feb (currentYear+1)
+      const currentPeriodStart = new Date(currentPeriodYear, 2, 1);
+      const currentPeriodEnd = new Date(currentPeriodYear + 1, 1, 28);
+      
+      // Next period: March nextYear - Feb (nextYear+1)
+      const nextPeriodStart = new Date(nextPeriodYear, 2, 1);
+      const nextPeriodEnd = new Date(nextPeriodYear + 1, 1, 28);
+      
+      // Check if dates are within current period
+      const isInCurrentPeriod = startDate >= currentPeriodStart && startDate <= currentPeriodEnd &&
+                                 endDate >= currentPeriodStart && endDate <= currentPeriodEnd;
+      
+      // Check if dates are within next period
+      const isInNextPeriod = startDate >= nextPeriodStart && startDate <= nextPeriodEnd &&
+                              endDate >= nextPeriodStart && endDate <= nextPeriodEnd;
+      
+      if (!isInCurrentPeriod && !isInNextPeriod) {
+        const formatDate = (d: Date) => d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+        throw new Error(`Las fechas deben estar dentro del periodo actual (${formatDate(currentPeriodStart)} - ${formatDate(currentPeriodEnd)}) o el próximo periodo (${formatDate(nextPeriodStart)} - ${formatDate(nextPeriodEnd)})`);
       }
       
       const timeDiff = endDate.getTime() - startDate.getTime();
       const totalDays = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
 
-      // Validar que no solicite más días de los disponibles
-      if (vacationBalance && totalDays > vacationBalance.remaining_days) {
-        throw new Error(`No puede solicitar más días (${totalDays}) de los disponibles (${vacationBalance.remaining_days})`);
+      // Get the appropriate balance for validation
+      if (isInCurrentPeriod) {
+        // Validate against current period balance
+        if (vacationBalance && totalDays > vacationBalance.remaining_days) {
+          throw new Error(`No puede solicitar más días (${totalDays}) de los disponibles (${vacationBalance.remaining_days}) en el periodo actual`);
+        }
+      } else if (isInNextPeriod) {
+        // For next period, calculate the future balance
+        const futureBalance = calculateFuturePeriodBalance(nextPeriodYear, profile?.hire_date || null);
+        if (totalDays > futureBalance.remaining_days) {
+          throw new Error(`No puede solicitar más días (${totalDays}) de los disponibles (${futureBalance.remaining_days}) en el próximo periodo`);
+        }
       }
 
       const { data, error } = await supabase
@@ -196,58 +269,6 @@ export function useVacations() {
       return null;
     }
   };
-
-  // Calculate vacation balance for a future period based on hire date
-  const calculateFuturePeriodBalance = (periodYear: number, hireDate: string | null): {
-    total_days: number;
-    used_days: number;
-    remaining_days: number;
-    period_start: string;
-    period_end: string;
-  } => {
-    const periodStart = new Date(periodYear, 2, 1); // March 1st
-    const periodEnd = new Date(periodYear + 1, 1, 28); // Feb 28th
-    
-    // Default 22 days per year
-    let totalDays = 22;
-    
-    // If hire date exists, calculate proportional days
-    if (hireDate) {
-      const hire = new Date(hireDate);
-      
-      // If employee was hired before period start, they get full days
-      if (hire < periodStart) {
-        totalDays = 22;
-      } else if (hire <= periodEnd) {
-        // Hired during this period - calculate proportional
-        const monthsRemaining = 12 - (hire.getMonth() - 2);
-        const daysProportional = Math.round((22 / 12) * Math.max(0, monthsRemaining));
-        totalDays = Math.min(22, Math.max(0, daysProportional));
-      } else {
-        // Hired after period - no days
-        totalDays = 0;
-      }
-    }
-    
-    // For future periods, used_days starts at 0
-    // We need to count approved requests for this period
-    const usedDays = vacationRequests
-      .filter(req => {
-        if (req.status !== 'approved') return false;
-        const startDate = new Date(req.start_date);
-        return startDate >= periodStart && startDate <= periodEnd;
-      })
-      .reduce((sum, req) => sum + req.total_days, 0);
-    
-    return {
-      total_days: totalDays,
-      used_days: usedDays,
-      remaining_days: totalDays - usedDays,
-      period_start: periodStart.toISOString().split('T')[0],
-      period_end: periodEnd.toISOString().split('T')[0]
-    };
-  };
-
   return {
     vacationRequests,
     vacationBalance,
