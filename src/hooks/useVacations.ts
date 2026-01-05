@@ -197,6 +197,57 @@ export function useVacations() {
     }
   };
 
+  // Calculate vacation balance for a future period based on hire date
+  const calculateFuturePeriodBalance = (periodYear: number, hireDate: string | null): {
+    total_days: number;
+    used_days: number;
+    remaining_days: number;
+    period_start: string;
+    period_end: string;
+  } => {
+    const periodStart = new Date(periodYear, 2, 1); // March 1st
+    const periodEnd = new Date(periodYear + 1, 1, 28); // Feb 28th
+    
+    // Default 22 days per year
+    let totalDays = 22;
+    
+    // If hire date exists, calculate proportional days
+    if (hireDate) {
+      const hire = new Date(hireDate);
+      
+      // If employee was hired before period start, they get full days
+      if (hire < periodStart) {
+        totalDays = 22;
+      } else if (hire <= periodEnd) {
+        // Hired during this period - calculate proportional
+        const monthsRemaining = 12 - (hire.getMonth() - 2);
+        const daysProportional = Math.round((22 / 12) * Math.max(0, monthsRemaining));
+        totalDays = Math.min(22, Math.max(0, daysProportional));
+      } else {
+        // Hired after period - no days
+        totalDays = 0;
+      }
+    }
+    
+    // For future periods, used_days starts at 0
+    // We need to count approved requests for this period
+    const usedDays = vacationRequests
+      .filter(req => {
+        if (req.status !== 'approved') return false;
+        const startDate = new Date(req.start_date);
+        return startDate >= periodStart && startDate <= periodEnd;
+      })
+      .reduce((sum, req) => sum + req.total_days, 0);
+    
+    return {
+      total_days: totalDays,
+      used_days: usedDays,
+      remaining_days: totalDays - usedDays,
+      period_start: periodStart.toISOString().split('T')[0],
+      period_end: periodEnd.toISOString().split('T')[0]
+    };
+  };
+
   return {
     vacationRequests,
     vacationBalance,
@@ -209,5 +260,7 @@ export function useVacations() {
     fetchVacationRequests,
     fetchVacationBalance,
     getVacationBalanceForUser,
+    calculateFuturePeriodBalance,
+    hireDate: profile?.hire_date || null,
   };
 }

@@ -59,13 +59,24 @@ export function MyVacations() {
   const availablePeriods = getAvailablePeriods();
   const [selectedPeriodYear, setSelectedPeriodYear] = useState<number>(availablePeriods[0]);
   
-  const { vacationRequests, vacationBalance, loading, createVacationRequest } = useVacations();
+  const { vacationRequests, vacationBalance, loading, createVacationRequest, calculateFuturePeriodBalance, hireDate } = useVacations();
   const { extraHours, extraHoursRequests, balance: extraHoursBalance, requestExtraHours, loading: extraHoursLoading } = useExtraHours();
   const { toast } = useToast();
   
   // Get period dates for the selected period
   const selectedPeriodDates = getPeriodDates(selectedPeriodYear);
   const isCurrentPeriod = selectedPeriodYear === availablePeriods[0];
+  
+  // Calculate balance for the selected period
+  const displayBalance = React.useMemo(() => {
+    if (isCurrentPeriod) {
+      // For current period, use the actual balance from DB
+      return vacationBalance;
+    } else {
+      // For future periods, calculate based on hire date
+      return calculateFuturePeriodBalance(selectedPeriodYear, hireDate);
+    }
+  }, [isCurrentPeriod, vacationBalance, selectedPeriodYear, hireDate, calculateFuturePeriodBalance]);
 
   const months = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -464,7 +475,7 @@ export function MyVacations() {
               <CalendarIcon className="h-4 w-4 text-muted-foreground" />
               <div className="space-y-1">
                 <p className="text-sm font-medium leading-none">Días Totales</p>
-                <p className="text-2xl font-bold">{vacationBalance?.total_days || 22}</p>
+                <p className="text-2xl font-bold">{displayBalance?.total_days || 22}</p>
               </div>
             </div>
           </CardContent>
@@ -476,7 +487,7 @@ export function MyVacations() {
               <Plane className="h-4 w-4 text-muted-foreground" />
               <div className="space-y-1">
                 <p className="text-sm font-medium leading-none">Días Usados</p>
-                <p className="text-2xl font-bold text-primary">{vacationBalance?.used_days || 0}</p>
+                <p className="text-2xl font-bold text-primary">{displayBalance?.used_days || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -488,7 +499,7 @@ export function MyVacations() {
               <CheckCircle className="h-4 w-4 text-muted-foreground" />
               <div className="space-y-1">
                 <p className="text-sm font-medium leading-none">Días Disponibles</p>
-                <p className="text-2xl font-bold text-success">{vacationBalance?.remaining_days || 22}</p>
+                <p className="text-2xl font-bold text-success">{displayBalance?.remaining_days || 22}</p>
               </div>
             </div>
           </CardContent>
@@ -501,8 +512,8 @@ export function MyVacations() {
               <div className="space-y-1">
                 <p className="text-sm font-medium leading-none">Fecha Límite</p>
                 <p className="text-lg font-bold text-destructive">
-                  {vacationBalance?.period_end 
-                    ? new Date(vacationBalance.period_end).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+                  {displayBalance?.period_end 
+                    ? new Date(displayBalance.period_end).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
                     : '28 Feb'}
                 </p>
               </div>
