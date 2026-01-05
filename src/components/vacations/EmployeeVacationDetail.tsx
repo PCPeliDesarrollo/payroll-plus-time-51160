@@ -6,11 +6,13 @@ import { VacationCalendar } from "./VacationCalendar";
 import { AddCompensatoryDayDialog } from "./AddCompensatoryDayDialog";
 import { EditVacationRequestDialog } from "./EditVacationRequestDialog";
 import { EditCompensatoryDayDialog } from "./EditCompensatoryDayDialog";
+import { ExtraHoursSection } from "@/components/extrahours/ExtraHoursSection";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompensatoryDays } from "@/hooks/useCompensatoryDays";
+import { useExtraHours } from "@/hooks/useExtraHours";
 import { useToast } from "@/hooks/use-toast";
 
 interface Employee {
@@ -62,10 +64,22 @@ export function EmployeeVacationDetail({
   const [selectedCompensatoryDay, setSelectedCompensatoryDay] = useState<{ id: string; date: string; reason: string } | null>(null);
   
   const { compensatoryDays, addCompensatoryDay, deleteCompensatoryDay, fetchCompensatoryDays } = useCompensatoryDays();
+  const { 
+    extraHours, 
+    extraHoursRequests, 
+    balance: extraHoursBalance, 
+    addExtraHours, 
+    deleteExtraHours, 
+    approveExtraHoursRequest, 
+    rejectExtraHoursRequest,
+    deleteExtraHoursRequest,
+    fetchExtraHours 
+  } = useExtraHours();
   const { toast } = useToast();
 
   useEffect(() => {
     fetchCompensatoryDays(employee.id);
+    fetchExtraHours(employee.id);
   }, [employee.id]);
 
   const handleAddCompensatoryDay = async (data: { user_id: string; date?: string; reason: string; days_count?: number }) => {
@@ -291,6 +305,30 @@ export function EmployeeVacationDetail({
           </CardContent>
         </Card>
       </div>
+
+      {/* Sección de Horas Extra */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Clock className="h-5 w-5 text-primary" />
+            Horas Extra
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ExtraHoursSection
+            extraHours={extraHours.filter(h => h.user_id === employee.id)}
+            extraHoursRequests={extraHoursRequests.filter(r => r.user_id === employee.id)}
+            balance={extraHoursBalance}
+            isAdmin={true}
+            userId={employee.id}
+            onAddHours={addExtraHours}
+            onDeleteHours={deleteExtraHours}
+            onApproveRequest={approveExtraHoursRequest}
+            onRejectRequest={rejectExtraHoursRequest}
+            onDeleteRequest={deleteExtraHoursRequest}
+          />
+        </CardContent>
+      </Card>
 
       <VacationCalendar vacations={calendarVacations} />
 
