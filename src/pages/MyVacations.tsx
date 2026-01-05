@@ -209,17 +209,25 @@ export function MyVacations() {
     }
   };
 
-  // Group requests by month
+  // Filter requests by selected period
+  const filteredVacationRequests = React.useMemo(() => {
+    return vacationRequests.filter(request => {
+      const startDate = request.start_date;
+      return startDate >= selectedPeriodDates.start && startDate <= selectedPeriodDates.end;
+    });
+  }, [vacationRequests, selectedPeriodDates]);
+
+  // Group requests by month (using filtered requests)
   const requestsByMonth = React.useMemo(() => {
     const grouped: Record<string, typeof vacationRequests> = {};
-    vacationRequests.forEach(request => {
+    filteredVacationRequests.forEach(request => {
       const date = new Date(request.start_date);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       if (!grouped[monthKey]) grouped[monthKey] = [];
       grouped[monthKey].push(request);
     });
     return Object.entries(grouped).sort((a, b) => b[0].localeCompare(a[0]));
-  }, [vacationRequests]);
+  }, [filteredVacationRequests]);
 
   // Calendar functions
   const getDaysInMonth = (month: number, year: number) => {
@@ -233,7 +241,7 @@ export function MyVacations() {
 
   const getVacationForDate = (day: number) => {
     const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return vacationRequests.filter(request => {
+    return filteredVacationRequests.filter(request => {
       const start = request.start_date;
       const end = request.end_date;
       return dateStr >= start && dateStr <= end;
@@ -398,22 +406,22 @@ export function MyVacations() {
       </div>
 
       {/* Period Selector */}
-      <Card className="bg-primary/5 border-primary/20">
+      <Card className="border-primary/20">
         <CardContent className="p-4">
           <div className="flex flex-col gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-2">
                 <CalendarIcon className="h-5 w-5 text-primary" />
-                <span className="font-medium">Periodo Laboral</span>
+                <span className="font-medium text-card-foreground">Periodo Laboral</span>
               </div>
               <Select 
                 value={selectedPeriodYear.toString()} 
                 onValueChange={(value) => setSelectedPeriodYear(parseInt(value))}
               >
-                <SelectTrigger className="w-full sm:w-[280px] bg-background">
+                <SelectTrigger className="w-full sm:w-[280px] bg-card text-card-foreground">
                   <SelectValue placeholder="Seleccionar periodo" />
                 </SelectTrigger>
-                <SelectContent className="bg-background z-50">
+                <SelectContent className="bg-card z-50">
                   {availablePeriods.map((year) => (
                     <SelectItem key={year} value={year.toString()}>
                       Periodo Laboral {year} {year === availablePeriods[0] && "(Actual)"}
@@ -425,17 +433,17 @@ export function MyVacations() {
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm">
               <span className="text-muted-foreground">Fechas del periodo:</span>
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-primary">
+                <Badge variant="outline" className="bg-card text-card-foreground border-primary/30">
                   {new Date(selectedPeriodDates.start).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
-                </span>
+                </Badge>
                 <span className="text-muted-foreground">→</span>
-                <span className="font-semibold text-primary">
+                <Badge variant="outline" className="bg-card text-card-foreground border-primary/30">
                   {new Date(selectedPeriodDates.end).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
-                </span>
+                </Badge>
               </div>
             </div>
             {!isCurrentPeriod && (
-              <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 p-2 rounded">
+              <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 p-2 rounded">
                 ⚠️ Estás viendo el próximo periodo laboral. Puedes solicitar vacaciones anticipadas para este periodo.
               </p>
             )}
@@ -558,10 +566,10 @@ export function MyVacations() {
               <div className="text-center py-8">
                 <p className="text-muted-foreground">Cargando solicitudes...</p>
               </div>
-            ) : vacationRequests.length === 0 ? (
+            ) : filteredVacationRequests.length === 0 ? (
               <div className="text-center py-8">
                 <Plane className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No tienes solicitudes de vacaciones</p>
+                <p className="text-muted-foreground">No tienes solicitudes de vacaciones en este periodo</p>
                 <p className="text-sm text-muted-foreground mt-2">
                   Haz clic en "Nueva Solicitud" para crear tu primera solicitud
                 </p>
