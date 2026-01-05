@@ -65,61 +65,27 @@ export function useVacations() {
     try {
       const startDate = new Date(request.start_date);
       const endDate = new Date(request.end_date);
-      const currentYear = new Date().getFullYear();
       
-      // Validar que las fechas estén en el año actual o enero/febrero del siguiente
-      const isValidDate = (date: Date) => {
-        const year = date.getFullYear();
-        const month = date.getMonth(); // 0-indexed (0 = enero, 1 = febrero)
+      // Validar que las fechas estén dentro del periodo activo
+      if (vacationBalance?.period_start && vacationBalance?.period_end) {
+        const periodStart = new Date(vacationBalance.period_start);
+        const periodEnd = new Date(vacationBalance.period_end);
         
-        // Año actual: cualquier mes
-        if (year === currentYear) return true;
+        if (startDate < periodStart || startDate > periodEnd) {
+          throw new Error(`La fecha de inicio debe estar dentro del periodo activo (${formatPeriodDate(vacationBalance.period_start)} - ${formatPeriodDate(vacationBalance.period_end)})`);
+        }
         
-        // Año siguiente: solo enero (0) y febrero (1)
-        if (year === currentYear + 1 && (month === 0 || month === 1)) return true;
-        
-        return false;
-      };
-      
-      if (!isValidDate(startDate) || !isValidDate(endDate)) {
-        throw new Error('Las vacaciones solo pueden solicitarse para el año en curso o enero/febrero del año siguiente');
+        if (endDate < periodStart || endDate > periodEnd) {
+          throw new Error(`La fecha de fin debe estar dentro del periodo activo (${formatPeriodDate(vacationBalance.period_start)} - ${formatPeriodDate(vacationBalance.period_end)})`);
+        }
       }
       
       const timeDiff = endDate.getTime() - startDate.getTime();
       const totalDays = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
 
-      // Check if user has enough vacation days
+      // Validar que no solicite más días de los disponibles
       if (vacationBalance && totalDays > vacationBalance.remaining_days) {
-        // Create a warning object that can be returned
-        const warningData = {
-          warning: true,
-          message: `Solicitud excede días disponibles. Solicitados: ${totalDays}, Disponibles: ${vacationBalance.remaining_days}. Se enviará a administración para revisión.`,
-          requestedDays: totalDays,
-          availableDays: vacationBalance.remaining_days
-        };
-        
-        // Still create the request but with a special status or note
-        const { data, error } = await supabase
-          .from('vacation_requests')
-          .insert({
-            ...request,
-            user_id: user.id,
-            company_id: profile?.company_id || null,
-            total_days: totalDays,
-            status: 'pending',
-            reason: request.reason ? `${request.reason} [EXCEDE DÍAS DISPONIBLES: ${totalDays}/${vacationBalance.remaining_days}]` : `[EXCEDE DÍAS DISPONIBLES: ${totalDays}/${vacationBalance.remaining_days}]`
-          })
-          .select()
-          .single();
-
-        if (error) {
-          if (error.message?.includes('solicitud de vacaciones para estas fechas')) {
-            throw new Error('Ya tienes una solicitud de vacaciones para estas fechas o parte de ellas');
-          }
-          throw error;
-        }
-        await fetchVacationRequests();
-        return { ...data, ...warningData };
+        throw new Error(`No puede solicitar más días (${totalDays}) de los disponibles (${vacationBalance.remaining_days})`);
       }
 
       const { data, error } = await supabase
@@ -134,17 +100,33 @@ export function useVacations() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // Handle specific database errors
+        if (error.message?.includes('solicitud de vacaciones para estas fechas')) {
+          throw new Error('Ya tienes una solicitud de vacaciones para estas fechas o parte de ellas');
+        }
+        if (error.message?.includes('periodo activo')) {
+          throw new Error(error.message);
+        }
+        if (error.message?.includes('más días')) {
+          throw new Error(error.message);
+        }
+        throw error;
+      }
       await fetchVacationRequests();
       return data;
     } catch (error: any) {
       console.error('Error creating vacation request:', error);
-      // Check if it's an overlap error from the database
-      if (error.message?.includes('solicitud de vacaciones para estas fechas')) {
-        throw new Error('Ya tienes una solicitud de vacaciones para estas fechas o parte de ellas');
-      }
       throw error;
     }
+  };
+
+  const formatPeriodDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
   };
 
   const updateVacationRequest = async (id: string, updates: Partial<VacationRequest>) => {

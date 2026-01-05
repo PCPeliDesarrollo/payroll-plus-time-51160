@@ -367,8 +367,34 @@ export function MyVacations() {
         </Dialog>
       </div>
 
+      {/* Period Info Banner */}
+      {vacationBalance?.period_start && vacationBalance?.period_end && (
+        <Card className="bg-primary/5 border-primary/20">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5 text-primary" />
+                <span className="font-medium">Periodo de Vacaciones Actual</span>
+              </div>
+              <div className="text-sm">
+                <span className="font-semibold text-primary">
+                  {new Date(vacationBalance.period_start).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </span>
+                <span className="mx-2">→</span>
+                <span className="font-semibold text-primary">
+                  {new Date(vacationBalance.period_end).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </span>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Las vacaciones solo pueden solicitarse dentro de este periodo. Los días no disfrutados no se acumulan al siguiente periodo.
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Vacation Balance */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center space-x-2">
@@ -400,6 +426,22 @@ export function MyVacations() {
               <div className="space-y-1">
                 <p className="text-sm font-medium leading-none">Días Disponibles</p>
                 <p className="text-2xl font-bold text-success">{vacationBalance?.remaining_days || 22}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <div className="space-y-1">
+                <p className="text-sm font-medium leading-none">Fecha Límite</p>
+                <p className="text-lg font-bold text-destructive">
+                  {vacationBalance?.period_end 
+                    ? new Date(vacationBalance.period_end).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
+                    : '28 Feb'}
+                </p>
               </div>
             </div>
           </CardContent>
