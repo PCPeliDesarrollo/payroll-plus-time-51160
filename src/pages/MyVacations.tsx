@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
   Calendar as CalendarIcon, 
   Plus,
   Clock,
@@ -26,6 +27,26 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ExtraHoursSection } from "@/components/extrahours/ExtraHoursSection";
 
+// Helper to get period label (e.g., "2025" for March 2025 - Feb 2026)
+const getPeriodLabel = (periodStart: Date): number => {
+  return periodStart.getMonth() >= 2 ? periodStart.getFullYear() : periodStart.getFullYear() - 1;
+};
+
+// Helper to get period dates from a year label
+const getPeriodDates = (year: number): { start: string; end: string } => {
+  return {
+    start: `${year}-03-01`,
+    end: `${year + 1}-02-28`
+  };
+};
+
+// Generate available periods (current and next)
+const getAvailablePeriods = (): number[] => {
+  const now = new Date();
+  const currentPeriodYear = now.getMonth() >= 2 ? now.getFullYear() : now.getFullYear() - 1;
+  return [currentPeriodYear, currentPeriodYear + 1];
+};
+
 export function MyVacations() {
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
@@ -33,9 +54,18 @@ export function MyVacations() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+  
+  // Selected period year (e.g., 2025 means March 2025 - Feb 2026)
+  const availablePeriods = getAvailablePeriods();
+  const [selectedPeriodYear, setSelectedPeriodYear] = useState<number>(availablePeriods[0]);
+  
   const { vacationRequests, vacationBalance, loading, createVacationRequest } = useVacations();
   const { extraHours, extraHoursRequests, balance: extraHoursBalance, requestExtraHours, loading: extraHoursLoading } = useExtraHours();
   const { toast } = useToast();
+  
+  // Get period dates for the selected period
+  const selectedPeriodDates = getPeriodDates(selectedPeriodYear);
+  const isCurrentPeriod = selectedPeriodYear === availablePeriods[0];
 
   const months = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -367,31 +397,56 @@ export function MyVacations() {
         </Dialog>
       </div>
 
-      {/* Period Info Banner */}
-      {vacationBalance?.period_start && vacationBalance?.period_end && (
-        <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      {/* Period Selector */}
+      <Card className="bg-primary/5 border-primary/20">
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div className="flex items-center gap-2">
                 <CalendarIcon className="h-5 w-5 text-primary" />
-                <span className="font-medium">Periodo de Vacaciones Actual</span>
+                <span className="font-medium">Periodo Laboral</span>
               </div>
-              <div className="text-sm">
+              <Select 
+                value={selectedPeriodYear.toString()} 
+                onValueChange={(value) => setSelectedPeriodYear(parseInt(value))}
+              >
+                <SelectTrigger className="w-full sm:w-[280px] bg-background">
+                  <SelectValue placeholder="Seleccionar periodo" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  {availablePeriods.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      Periodo Laboral {year} {year === availablePeriods[0] && "(Actual)"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 text-sm">
+              <span className="text-muted-foreground">Fechas del periodo:</span>
+              <div className="flex items-center gap-2">
                 <span className="font-semibold text-primary">
-                  {new Date(vacationBalance.period_start).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  {new Date(selectedPeriodDates.start).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </span>
-                <span className="mx-2">→</span>
+                <span className="text-muted-foreground">→</span>
                 <span className="font-semibold text-primary">
-                  {new Date(vacationBalance.period_end).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  {new Date(selectedPeriodDates.end).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
                 </span>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
-              Las vacaciones solo pueden solicitarse dentro de este periodo. Los días no disfrutados no se acumulan al siguiente periodo.
-            </p>
-          </CardContent>
-        </Card>
-      )}
+            {!isCurrentPeriod && (
+              <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 p-2 rounded">
+                ⚠️ Estás viendo el próximo periodo laboral. Puedes solicitar vacaciones anticipadas para este periodo.
+              </p>
+            )}
+            {isCurrentPeriod && (
+              <p className="text-xs text-muted-foreground">
+                Las vacaciones solo pueden solicitarse dentro de este periodo. Los días no disfrutados no se acumulan al siguiente periodo.
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Vacation Balance */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
