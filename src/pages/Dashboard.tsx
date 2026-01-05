@@ -143,8 +143,8 @@ function QuickCheckInButton({
       </div>
 
       {isCheckedIn && currentEntry?.check_in_time && (
-        <div className="p-4 bg-success/10 rounded-lg">
-          <p className="text-sm text-success-foreground">
+        <div className="p-4 bg-success/20 rounded-lg border border-success/30">
+          <p className="text-sm text-card-foreground">
             <strong>Entrada:</strong> {new Date(currentEntry.check_in_time).toLocaleTimeString('es-ES')}
           </p>
         </div>
@@ -354,8 +354,8 @@ export function Dashboard({ userRole, onPageChange }: DashboardProps) {
   return (
     <div className="max-w-4xl mx-auto space-y-6 px-4 md:px-6">
       <div className="text-center">
-        <h2 className="text-2xl md:text-3xl font-bold text-foreground">Mi Dashboard</h2>
-        <p className="text-sm md:text-base text-muted-foreground">Resumen de tu actividad</p>
+        <h2 className="text-2xl md:text-3xl font-bold text-card-foreground">Mi Dashboard</h2>
+        <p className="text-sm md:text-base text-card-foreground/70">Resumen de tu actividad</p>
       </div>
 
       {/* Quick Check-In Section - PRIMERO */}
