@@ -555,6 +555,8 @@ export type Database = {
           company_id: string | null
           created_at: string | null
           id: string
+          period_end: string | null
+          period_start: string | null
           remaining_days: number
           total_days: number
           updated_at: string | null
@@ -566,6 +568,8 @@ export type Database = {
           company_id?: string | null
           created_at?: string | null
           id?: string
+          period_end?: string | null
+          period_start?: string | null
           remaining_days?: number
           total_days?: number
           updated_at?: string | null
@@ -577,6 +581,8 @@ export type Database = {
           company_id?: string | null
           created_at?: string | null
           id?: string
+          period_end?: string | null
+          period_start?: string | null
           remaining_days?: number
           total_days?: number
           updated_at?: string | null
@@ -676,7 +682,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_proportional_vacation_days: {
+        Args: { annual_days?: number; hire_date: string }
+        Returns: number
+      }
       close_open_time_entries: { Args: never; Returns: undefined }
+      get_current_vacation_period: {
+        Args: never
+        Returns: {
+          period_end: string
+          period_start: string
+        }[]
+      }
       get_user_company_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -693,6 +710,7 @@ export type Database = {
           updated_count: number
         }[]
       }
+      renew_vacation_periods: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "super_admin" | "admin" | "employee"
