@@ -65,8 +65,13 @@ export const useExtraHours = () => {
   const fetchExtraHours = async (userId?: string) => {
     try {
       setLoading(true);
-      // If userId is provided, use it. Otherwise use stored userId or default logic
-      const targetUserId = userId || currentUserIdRef.current || (profile?.role === "employee" ? user?.id : undefined);
+      // If userId is provided, use it. Otherwise use stored userId or current user's id
+      let targetUserId = userId || currentUserIdRef.current;
+      
+      // For employees, always fetch their own data if no specific userId
+      if (!targetUserId && user?.id) {
+        targetUserId = user.id;
+      }
       
       // Store the userId we're fetching for (for subsequent refresh calls)
       if (userId) {
