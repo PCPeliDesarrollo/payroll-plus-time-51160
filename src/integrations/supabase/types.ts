@@ -607,6 +607,47 @@ export type Database = {
           },
         ]
       }
+      vacation_periods: {
+        Row: {
+          company_id: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          period_end: string
+          period_start: string
+          updated_at: string | null
+          year: number
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          period_end: string
+          period_start: string
+          updated_at?: string | null
+          year: number
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          period_end?: string
+          period_start?: string
+          updated_at?: string | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vacation_periods_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vacation_requests: {
         Row: {
           approved_at: string | null
@@ -616,6 +657,7 @@ export type Database = {
           created_at: string | null
           end_date: string
           id: string
+          period_id: string | null
           reason: string | null
           start_date: string
           status: string | null
@@ -631,6 +673,7 @@ export type Database = {
           created_at?: string | null
           end_date: string
           id?: string
+          period_id?: string | null
           reason?: string | null
           start_date: string
           status?: string | null
@@ -646,6 +689,7 @@ export type Database = {
           created_at?: string | null
           end_date?: string
           id?: string
+          period_id?: string | null
           reason?: string | null
           start_date?: string
           status?: string | null
@@ -666,6 +710,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vacation_requests_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "vacation_periods"
             referencedColumns: ["id"]
           },
           {
