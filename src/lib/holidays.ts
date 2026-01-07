@@ -73,6 +73,9 @@ function generateHolidaysForYear(year: number): Holiday[] {
   const easterMonday = addDays(easter, 1);
   holidays.push({ date: formatDate(easterMonday), name: 'Lunes de Pascua', type: 'regional' });
   
+  // === FESTIVOS LOCALES DE ALBURQUERQUE ===
+  holidays.push({ date: `${year}-05-22`, name: 'Fiesta Local Alburquerque', type: 'regional' });
+  
   return holidays;
 }
 
