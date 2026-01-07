@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 
@@ -37,12 +37,12 @@ interface CompensatoryDay {
 }
 
 export const useExtraHours = () => {
+  const { user, profile } = useAuth();
   const [extraHours, setExtraHours] = useState<ExtraHour[]>([]);
   const [extraHoursRequests, setExtraHoursRequests] = useState<ExtraHoursRequest[]>([]);
-  const [compensatoryDaysHours, setCompensatoryDaysHours] = useState(0); // Hours from compensatory days (1 day = 8 hours)
+  const [compensatoryDaysHours, setCompensatoryDaysHours] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined); // Track which user we're viewing
-  const { user, profile } = useAuth();
+  const currentUserIdRef = useRef<string | undefined>(undefined);
 
   // Calcular el balance de horas: horas ganadas + días compensatorios (x8) - horas usadas (aprobadas)
   const calculateBalance = () => {
@@ -66,11 +66,11 @@ export const useExtraHours = () => {
     try {
       setLoading(true);
       // If userId is provided, use it. Otherwise use stored userId or default logic
-      const targetUserId = userId || currentUserId || (profile?.role === "employee" ? user?.id : undefined);
+      const targetUserId = userId || currentUserIdRef.current || (profile?.role === "employee" ? user?.id : undefined);
       
       // Store the userId we're fetching for (for subsequent refresh calls)
       if (userId) {
-        setCurrentUserId(userId);
+        currentUserIdRef.current = userId;
       }
       
       // Fetch extra hours earned
