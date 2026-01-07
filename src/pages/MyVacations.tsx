@@ -261,11 +261,11 @@ export function MyVacations() {
     });
   };
 
-  // Check if there's an approved extra hours request for this date
+  // Check if there's an extra hours request for this date (pending or approved)
   const getExtraHoursForDate = (day: number) => {
     const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     return extraHoursRequests.filter(request => {
-      return request.requested_date === dateStr && request.status === 'approved';
+      return request.requested_date === dateStr && (request.status === 'approved' || request.status === 'pending');
     });
   };
 
@@ -277,8 +277,10 @@ export function MyVacations() {
         return 'bg-success/80';
       case 'rejected':
         return 'bg-destructive/80';
-      case 'extra_hours':
+      case 'extra_hours_approved':
         return 'bg-teal-500/80';
+      case 'extra_hours_pending':
+        return 'bg-orange-500/80';
       default:
         return 'bg-secondary';
     }
@@ -315,12 +317,16 @@ export function MyVacations() {
           .join(' | ');
         title = `📝 ${reasons}`;
       } else if (hasExtraHours) {
-        bgClass = `${getDateColor('extra_hours')} text-white font-semibold cursor-help`;
+        // Check if any are pending or all approved
+        const hasPending = dayExtraHours.some(r => r.status === 'pending');
+        const colorStatus = hasPending ? 'extra_hours_pending' : 'extra_hours_approved';
+        bgClass = `${getDateColor(colorStatus)} text-white font-semibold cursor-help`;
         const hours = dayExtraHours.reduce((sum, r) => sum + Number(r.hours_requested), 0);
+        const statusText = hasPending ? '(Pendiente)' : '(Aprobada)';
         const reasons = dayExtraHours
           .map(r => r.reason || 'Sin motivo')
           .join(' | ');
-        title = `⏰ ${hours}h - ${reasons}`;
+        title = `⏰ ${hours}h ${statusText} - ${reasons}`;
       } else if (isHolidayDay) {
         bgClass = isNational 
           ? 'bg-indigo-600/80 text-white font-semibold' 
@@ -644,7 +650,8 @@ export function MyVacations() {
               <Badge className="bg-accent text-white text-[10px] sm:text-xs">Pendientes</Badge>
               <Badge className="bg-success text-white text-[10px] sm:text-xs">Aprobadas</Badge>
               <Badge className="bg-destructive text-white text-[10px] sm:text-xs">Rechazadas</Badge>
-              <Badge className="bg-teal-500 text-white text-[10px] sm:text-xs">⏰ Horas Extra</Badge>
+              <Badge className="bg-orange-500 text-white text-[10px] sm:text-xs">⏰ Horas Pendiente</Badge>
+              <Badge className="bg-teal-500 text-white text-[10px] sm:text-xs">⏰ Horas Aprobada</Badge>
               <Badge className="bg-indigo-600 text-white text-[10px] sm:text-xs">🇪🇸 Nacional</Badge>
               <Badge className="bg-pink-500 text-white text-[10px] sm:text-xs">🏛️ Extremadura</Badge>
             </div>
