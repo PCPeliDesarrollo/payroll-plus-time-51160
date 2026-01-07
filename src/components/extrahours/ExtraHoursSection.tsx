@@ -9,7 +9,7 @@ import { RequestExtraHoursDialog } from "./RequestExtraHoursDialog";
 interface ExtraHoursSectionProps {
   extraHours: ExtraHour[];
   extraHoursRequests: ExtraHoursRequest[];
-  balance: { earned: number; used: number; available: number };
+  balance: { earned: number; used: number; available: number; earnedDays?: number; availableDays?: number };
   isAdmin: boolean;
   userId?: string;
   onAddHours?: (data: { user_id: string; hours: number; date: string; reason: string }) => Promise<void>;
@@ -52,6 +52,15 @@ export function ExtraHoursSection({
     }
   };
 
+  // Format hours with equivalent days
+  const formatHoursWithDays = (hours: number) => {
+    const days = Math.floor(hours / 8);
+    if (days > 0) {
+      return `${hours.toFixed(1)}h (${days} día${days !== 1 ? 's' : ''})`;
+    }
+    return `${hours.toFixed(1)}h`;
+  };
+
   return (
     <div className="space-y-4">
       {/* Balance de Horas */}
@@ -61,8 +70,8 @@ export function ExtraHoursSection({
             <div className="flex items-center gap-2">
               <Plus className="h-4 w-4 text-success" />
               <div>
-                <p className="text-sm text-muted-foreground">Horas Ganadas</p>
-                <p className="text-2xl font-bold text-success">{balance.earned.toFixed(1)}h</p>
+                <p className="text-sm text-muted-foreground">Horas Acumuladas</p>
+                <p className="text-xl font-bold text-success">{formatHoursWithDays(balance.earned)}</p>
               </div>
             </div>
           </CardContent>
@@ -73,7 +82,7 @@ export function ExtraHoursSection({
               <Clock className="h-4 w-4 text-primary" />
               <div>
                 <p className="text-sm text-muted-foreground">Horas Usadas</p>
-                <p className="text-2xl font-bold text-primary">{balance.used.toFixed(1)}h</p>
+                <p className="text-xl font-bold text-primary">{formatHoursWithDays(balance.used)}</p>
               </div>
             </div>
           </CardContent>
@@ -84,7 +93,7 @@ export function ExtraHoursSection({
               <CheckCircle className="h-4 w-4 text-success" />
               <div>
                 <p className="text-sm text-muted-foreground">Horas Disponibles</p>
-                <p className="text-2xl font-bold">{balance.available.toFixed(1)}h</p>
+                <p className="text-xl font-bold">{formatHoursWithDays(balance.available)}</p>
               </div>
             </div>
           </CardContent>

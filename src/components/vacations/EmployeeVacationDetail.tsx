@@ -1,17 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Calendar, Clock, CheckCircle, XCircle, Plus, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, CheckCircle, XCircle, Edit, Trash2 } from "lucide-react";
 import { VacationCalendar } from "./VacationCalendar";
-import { AddCompensatoryDayDialog } from "./AddCompensatoryDayDialog";
 import { EditVacationRequestDialog } from "./EditVacationRequestDialog";
-import { EditCompensatoryDayDialog } from "./EditCompensatoryDayDialog";
 import { ExtraHoursSection } from "@/components/extrahours/ExtraHoursSection";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useCompensatoryDays } from "@/hooks/useCompensatoryDays";
 import { useExtraHours } from "@/hooks/useExtraHours";
 import { useToast } from "@/hooks/use-toast";
 
@@ -57,13 +54,9 @@ export function EmployeeVacationDetail({
   onReject,
   onDelete,
 }: EmployeeVacationDetailProps) {
-  const [showAddCompensatoryDay, setShowAddCompensatoryDay] = useState(false);
   const [showEditVacation, setShowEditVacation] = useState(false);
-  const [showEditCompensatoryDay, setShowEditCompensatoryDay] = useState(false);
   const [selectedVacation, setSelectedVacation] = useState<VacationRequest | null>(null);
-  const [selectedCompensatoryDay, setSelectedCompensatoryDay] = useState<{ id: string; date: string; reason: string } | null>(null);
   
-  const { compensatoryDays, addCompensatoryDay, deleteCompensatoryDay, fetchCompensatoryDays } = useCompensatoryDays();
   const { 
     extraHours, 
     extraHoursRequests, 
@@ -78,71 +71,8 @@ export function EmployeeVacationDetail({
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchCompensatoryDays(employee.id);
     fetchExtraHours(employee.id);
   }, [employee.id]);
-
-  const handleAddCompensatoryDay = async (data: { user_id: string; date?: string; reason: string; days_count?: number }) => {
-    try {
-      await addCompensatoryDay(data);
-      toast({
-        title: "Día libre añadido",
-        description: "El día libre compensatorio ha sido añadido correctamente",
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No se pudo añadir el día libre",
-      });
-      throw error;
-    }
-  };
-
-  const handleDeleteCompensatoryDay = async (id: string) => {
-    try {
-      await deleteCompensatoryDay(id);
-      toast({
-        title: "Día libre eliminado",
-        description: "El día libre compensatorio ha sido eliminado",
-      });
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No se pudo eliminar el día libre",
-      });
-    }
-  };
-
-  const handleEditCompensatoryDay = async (id: string, updates: { date?: string; reason: string }) => {
-    try {
-      const { error } = await supabase
-        .from("compensatory_days")
-        .update({
-          date: updates.date || null,
-          reason: updates.reason
-        })
-        .eq("id", id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Día libre actualizado",
-        description: "El día libre compensatorio ha sido actualizado correctamente",
-      });
-      
-      fetchCompensatoryDays(employee.id);
-      setShowEditCompensatoryDay(false);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No se pudo actualizar el día libre",
-      });
-      throw error;
-    }
-  };
 
   const handleEditVacation = async (id: string, updates: { start_date: string; end_date: string; total_days: number }) => {
     try {
@@ -200,7 +130,6 @@ export function EmployeeVacationDetail({
     }
   };
 
-
   const employeeRequests = vacationRequests.filter(
     (req) => req.user_id === employee.id
   );
@@ -233,36 +162,26 @@ export function EmployeeVacationDetail({
     }
   };
 
-  // Preparar datos para el calendario - solo incluir vacaciones específicas
-  const calendarVacations = [
-    ...employeeRequests.flatMap((request) => {
-      const days = [];
-      const start = new Date(request.start_date + 'T12:00:00');
-      const end = new Date(request.end_date + 'T12:00:00');
+  // Preparar datos para el calendario - solo incluir vacaciones
+  const calendarVacations = employeeRequests.flatMap((request) => {
+    const days = [];
+    const start = new Date(request.start_date + 'T12:00:00');
+    const end = new Date(request.end_date + 'T12:00:00');
 
-      // Calcular días entre fechas correctamente
-      const currentDate = new Date(start);
-      while (currentDate <= end) {
-        days.push({
-          date: currentDate.toISOString().split('T')[0],
-          status: request.status as "pending" | "approved" | "rejected" | "compensatory",
-          employeeName: employee.full_name,
-          reason: request.reason,
-        });
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-
-      return days;
-    }),
-    ...compensatoryDays
-      .filter((day) => day.date) // Solo mostrar en calendario los que tienen fecha
-      .map((day) => ({
-        date: day.date!,
-        status: "compensatory" as "pending" | "approved" | "rejected" | "compensatory",
+    // Calcular días entre fechas correctamente
+    const currentDate = new Date(start);
+    while (currentDate <= end) {
+      days.push({
+        date: currentDate.toISOString().split('T')[0],
+        status: request.status as "pending" | "approved" | "rejected",
         employeeName: employee.full_name,
-        reason: day.reason,
-      }))
-  ];
+        reason: request.reason,
+      });
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    return days;
+  });
 
   return (
     <div className="space-y-4">
@@ -331,87 +250,6 @@ export function EmployeeVacationDetail({
       </Card>
 
       <VacationCalendar vacations={calendarVacations} />
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Días Libres Compensatorios</CardTitle>
-          <Button
-            onClick={() => setShowAddCompensatoryDay(true)}
-            size="sm"
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Añadir día libre
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {compensatoryDays.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              No hay días libres compensatorios registrados
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {compensatoryDays
-                .sort((a, b) => {
-                  // Ordenar: primero los sin fecha, luego por fecha
-                  if (!a.date && !b.date) return 0;
-                  if (!a.date) return -1;
-                  if (!b.date) return 1;
-                  return new Date(a.date).getTime() - new Date(b.date).getTime();
-                })
-                .map((day) => (
-                  <div
-                    key={day.id}
-                    className={`flex items-start justify-between p-3 border rounded-lg ${
-                      !day.date ? 'bg-accent/10 border-accent' : ''
-                    }`}
-                  >
-                    <div className="space-y-1 flex-1">
-                      <div className="flex items-center gap-2">
-                        {day.date ? (
-                          <p className="font-medium">
-                            {format(new Date(day.date), "dd/MM/yyyy")}
-                          </p>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="bg-accent/20">
-                              {day.days_count} día{day.days_count !== 1 ? 's' : ''} pendiente{day.days_count !== 1 ? 's' : ''}
-                            </Badge>
-                            <span className="text-sm text-muted-foreground">(sin fecha asignada)</span>
-                          </div>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{day.reason}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedCompensatoryDay({
-                            id: day.id,
-                            date: day.date || '',
-                            reason: day.reason
-                          });
-                          setShowEditCompensatoryDay(true);
-                        }}
-                      >
-                        <Edit className="h-4 w-4 text-primary" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteCompensatoryDay(day.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       <Card>
         <CardHeader>
@@ -519,26 +357,11 @@ export function EmployeeVacationDetail({
         </CardContent>
       </Card>
 
-      <AddCompensatoryDayDialog
-        open={showAddCompensatoryDay}
-        onOpenChange={setShowAddCompensatoryDay}
-        employeeId={employee.id}
-        employeeName={employee.full_name}
-        onSubmit={handleAddCompensatoryDay}
-      />
-
       <EditVacationRequestDialog
         open={showEditVacation}
         onOpenChange={setShowEditVacation}
         vacationRequest={selectedVacation}
         onSubmit={handleEditVacation}
-      />
-
-      <EditCompensatoryDayDialog
-        open={showEditCompensatoryDay}
-        onOpenChange={setShowEditCompensatoryDay}
-        compensatoryDay={selectedCompensatoryDay}
-        onSubmit={handleEditCompensatoryDay}
       />
     </div>
   );
