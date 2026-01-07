@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { isHoliday, isNationalHoliday, isRegionalHoliday, getHolidayName } from "@/lib/holidays";
 
 interface VacationDay {
   date: string;
@@ -72,20 +73,40 @@ export function VacationCalendar({ vacations }: VacationCalendarProps) {
     for (let day = 1; day <= daysInMonth; day++) {
       const dayVacations = getVacationForDate(day);
       const hasVacations = dayVacations.length > 0;
+      const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const holidayName = getHolidayName(dateStr);
+      const isNational = isNationalHoliday(dateStr);
+      const isRegional = isRegionalHoliday(dateStr);
+      const isHolidayDay = isNational || isRegional;
+
+      let bgClass = 'bg-background hover:bg-accent';
+      let textClass = '';
+      let title = '';
+
+      if (hasVacations) {
+        bgClass = `${getDateColor(dayVacations[0].status)} text-white font-semibold cursor-pointer`;
+        title = dayVacations.map(v => `${v.employeeName} (${v.status})`).join('\n');
+      } else if (isHolidayDay) {
+        bgClass = isNational 
+          ? 'bg-red-500/80 hover:bg-red-500/90 text-white font-semibold' 
+          : 'bg-orange-400/80 hover:bg-orange-400/90 text-white font-semibold';
+        title = holidayName || '';
+      }
 
       days.push(
         <div
           key={day}
-          className={`aspect-square flex flex-col items-center justify-center text-[10px] sm:text-xs md:text-sm rounded border sm:rounded-lg ${
-            hasVacations
-              ? `${getDateColor(dayVacations[0].status)} text-white font-semibold cursor-pointer`
-              : 'bg-background hover:bg-accent'
-          }`}
-          title={hasVacations ? dayVacations.map(v => `${v.employeeName} (${v.status})`).join('\n') : ''}
+          className={`aspect-square flex flex-col items-center justify-center text-[10px] sm:text-xs md:text-sm rounded border sm:rounded-lg ${bgClass} ${textClass}`}
+          title={title}
         >
           <span>{day}</span>
           {dayVacations.length > 1 && (
             <span className="text-[8px] sm:text-[10px]">+{dayVacations.length - 1}</span>
+          )}
+          {isHolidayDay && !hasVacations && (
+            <span className="text-[6px] sm:text-[8px] leading-tight text-center px-0.5">
+              {isNational ? '🇪🇸' : '🏛️'}
+            </span>
           )}
         </div>
       );
@@ -137,6 +158,8 @@ export function VacationCalendar({ vacations }: VacationCalendarProps) {
           <Badge className="bg-success text-white text-xs">Aprobadas</Badge>
           <Badge className="bg-destructive text-white text-xs">Rechazadas</Badge>
           <Badge className="bg-blue-500 text-white text-xs">Días Libres</Badge>
+          <Badge className="bg-red-500 text-white text-xs">🇪🇸 Festivo Nacional</Badge>
+          <Badge className="bg-orange-400 text-white text-xs">🏛️ Festivo Extremadura</Badge>
         </div>
       </CardHeader>
       <CardContent className="p-2 sm:p-6">

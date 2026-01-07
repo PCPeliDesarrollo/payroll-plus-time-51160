@@ -26,6 +26,7 @@ import { useExtraHours } from "@/hooks/useExtraHours";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ExtraHoursSection } from "@/components/extrahours/ExtraHoursSection";
+import { isHoliday, isNationalHoliday, isRegionalHoliday, getHolidayName } from "@/lib/holidays";
 
 // Helper to get period label (e.g., "2025" for March 2025 - Feb 2026)
 const getPeriodLabel = (periodStart: Date): number => {
@@ -40,11 +41,15 @@ const getPeriodDates = (year: number): { start: string; end: string } => {
   };
 };
 
-// Generate available periods (current and next)
+// Generate available periods (current up to 2030)
 const getAvailablePeriods = (): number[] => {
   const now = new Date();
   const currentPeriodYear = now.getMonth() >= 2 ? now.getFullYear() : now.getFullYear() - 1;
-  return [currentPeriodYear, currentPeriodYear + 1];
+  const periods: number[] = [];
+  for (let year = currentPeriodYear; year <= 2030; year++) {
+    periods.push(year);
+  }
+  return periods;
 };
 
 export function MyVacations() {
@@ -281,17 +286,34 @@ export function MyVacations() {
     for (let day = 1; day <= daysInMonth; day++) {
       const dayVacations = getVacationForDate(day);
       const hasVacations = dayVacations.length > 0;
+      const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const holidayName = getHolidayName(dateStr);
+      const isNational = isNationalHoliday(dateStr);
+      const isRegional = isRegionalHoliday(dateStr);
+      const isHolidayDay = isNational || isRegional;
+
+      let bgClass = 'bg-background hover:bg-accent/20';
+      let title = '';
+
+      if (hasVacations) {
+        bgClass = `${getDateColor(dayVacations[0].status)} text-white font-semibold`;
+      } else if (isHolidayDay) {
+        bgClass = isNational 
+          ? 'bg-red-500/80 text-white font-semibold' 
+          : 'bg-orange-400/80 text-white font-semibold';
+        title = holidayName || '';
+      }
 
       days.push(
         <div
           key={day}
-          className={`aspect-square flex flex-col items-center justify-center text-[10px] sm:text-xs md:text-sm rounded border sm:rounded-lg ${
-            hasVacations
-              ? `${getDateColor(dayVacations[0].status)} text-white font-semibold`
-              : 'bg-background hover:bg-accent/20'
-          }`}
+          className={`aspect-square flex flex-col items-center justify-center text-[10px] sm:text-xs md:text-sm rounded border sm:rounded-lg ${bgClass}`}
+          title={title}
         >
           <span>{day}</span>
+          {isHolidayDay && !hasVacations && (
+            <span className="text-[6px] sm:text-[8px]">{isNational ? '🇪🇸' : '🏛️'}</span>
+          )}
         </div>
       );
     }
