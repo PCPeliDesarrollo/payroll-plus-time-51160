@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { EmployeeVacationList } from "@/components/vacations/EmployeeVacationList";
 import { EmployeeVacationDetail } from "@/components/vacations/EmployeeVacationDetail";
-import { VacationPeriodsCard } from "@/components/vacations/VacationPeriodsCard";
 import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -14,42 +13,19 @@ interface AdminVacationsProps {
   onBack?: () => void;
 }
 
-// Get current period year
-const getCurrentPeriodYear = (): number => {
-  const now = new Date();
-  return now.getMonth() >= 2 ? now.getFullYear() : now.getFullYear() - 1;
-};
-
 export default function AdminVacations({ onBack }: AdminVacationsProps = {}) {
   const { vacationRequests, approveVacationRequest, rejectVacationRequest, loading } = useVacations();
   const { employees } = useEmployees();
   const { toast } = useToast();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [employeeBalance, setEmployeeBalance] = useState<any>(null);
-  const [selectedPeriodYear, setSelectedPeriodYear] = useState<number>(getCurrentPeriodYear());
 
-  const handleEmployeeClick = async (employeeId: string) => {
+  const handleEmployeeClick = (employeeId: string) => {
     setSelectedEmployeeId(employeeId);
-    // Fetch balance for this employee
-    try {
-      const { data, error } = await supabase
-        .from('vacation_balance')
-        .select('*')
-        .eq('user_id', employeeId)
-        .maybeSingle();
-
-      if (error) throw error;
-      setEmployeeBalance(data);
-    } catch (error) {
-      console.error("Error fetching employee balance:", error);
-      setEmployeeBalance(null);
-    }
   };
 
   const handleBack = () => {
     setSelectedEmployeeId(null);
-    setEmployeeBalance(null);
   };
 
   const handleApprove = async (id: string) => {
@@ -141,7 +117,6 @@ export default function AdminVacations({ onBack }: AdminVacationsProps = {}) {
         <EmployeeVacationDetail
           employee={selectedEmployee}
           vacationRequests={vacationRequests}
-          vacationBalance={employeeBalance}
           onBack={handleBack}
           onApprove={handleApprove}
           onReject={handleReject}
@@ -164,12 +139,6 @@ export default function AdminVacations({ onBack }: AdminVacationsProps = {}) {
           Selecciona un empleado para ver y gestionar sus vacaciones
         </p>
       </div>
-
-      {/* Vacation Periods Card */}
-      <VacationPeriodsCard 
-        selectedPeriodYear={selectedPeriodYear} 
-        onPeriodChange={setSelectedPeriodYear} 
-      />
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
