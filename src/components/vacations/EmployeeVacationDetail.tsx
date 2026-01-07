@@ -4,12 +4,14 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar, Clock, CheckCircle, XCircle, Edit, Trash2 } from "lucide-react";
 import { VacationCalendar } from "./VacationCalendar";
 import { EditVacationRequestDialog } from "./EditVacationRequestDialog";
+import { VacationPeriodsCard } from "./VacationPeriodsCard";
 import { ExtraHoursSection } from "@/components/extrahours/ExtraHoursSection";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useExtraHours } from "@/hooks/useExtraHours";
+import { useVacationPeriods } from "@/hooks/useVacationPeriods";
 import { useToast } from "@/hooks/use-toast";
 
 interface Employee {
@@ -27,28 +29,36 @@ interface VacationRequest {
   total_days: number;
   reason?: string;
   comments?: string;
+  period_id?: string | null;
 }
 
 interface VacationBalance {
   total_days: number;
   used_days: number;
   remaining_days: number;
+  year: number;
+  period_start: string | null;
+  period_end: string | null;
 }
 
 interface EmployeeVacationDetailProps {
   employee: Employee;
   vacationRequests: VacationRequest[];
-  vacationBalance: VacationBalance | null;
   onBack: () => void;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
+// Get current period year
+const getCurrentPeriodYear = (): number => {
+  const now = new Date();
+  return now.getMonth() >= 2 ? now.getFullYear() : now.getFullYear() - 1;
+};
+
 export function EmployeeVacationDetail({
   employee,
   vacationRequests,
-  vacationBalance,
   onBack,
   onApprove,
   onReject,
@@ -56,7 +66,11 @@ export function EmployeeVacationDetail({
 }: EmployeeVacationDetailProps) {
   const [showEditVacation, setShowEditVacation] = useState(false);
   const [selectedVacation, setSelectedVacation] = useState<VacationRequest | null>(null);
+  const [selectedPeriodYear, setSelectedPeriodYear] = useState<number>(getCurrentPeriodYear());
+  const [vacationBalance, setVacationBalance] = useState<VacationBalance | null>(null);
+  const [balanceLoading, setBalanceLoading] = useState(false);
   
+  const { periods } = useVacationPeriods();
   const { 
     extraHours, 
     extraHoursRequests, 
@@ -69,6 +83,68 @@ export function EmployeeVacationDetail({
     fetchExtraHours 
   } = useExtraHours();
   const { toast } = useToast();
+
+  // Fetch balance for selected period
+  useEffect(() => {
+    const fetchBalanceForPeriod = async () => {
+      if (!employee.id) return;
+      
+      setBalanceLoading(true);
+      try {
+        // First try to get existing balance for this period
+        const { data, error } = await supabase
+          .from('vacation_balance')
+          .select('*')
+          .eq('user_id', employee.id)
+          .eq('year', selectedPeriodYear)
+          .maybeSingle();
+
+        if (error) throw error;
+        
+        if (data) {
+          setVacationBalance(data);
+        } else {
+          // Calculate balance from vacation requests for this period
+          const selectedPeriod = periods.find(p => p.year === selectedPeriodYear);
+          if (selectedPeriod) {
+            // Count approved vacation days within this period
+            const periodRequests = vacationRequests.filter(req => {
+              if (req.user_id !== employee.id) return false;
+              if (req.status === 'rejected') return false;
+              
+              const reqStart = new Date(req.start_date);
+              const periodStart = new Date(selectedPeriod.period_start);
+              const periodEnd = new Date(selectedPeriod.period_end);
+              
+              return reqStart >= periodStart && reqStart <= periodEnd;
+            });
+            
+            const usedDays = periodRequests
+              .filter(req => req.status === 'approved')
+              .reduce((sum, req) => sum + req.total_days, 0);
+            
+            setVacationBalance({
+              total_days: 22,
+              used_days: usedDays,
+              remaining_days: 22 - usedDays,
+              year: selectedPeriodYear,
+              period_start: selectedPeriod.period_start,
+              period_end: selectedPeriod.period_end
+            });
+          } else {
+            setVacationBalance(null);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching vacation balance:", error);
+        setVacationBalance(null);
+      } finally {
+        setBalanceLoading(false);
+      }
+    };
+
+    fetchBalanceForPeriod();
+  }, [employee.id, selectedPeriodYear, periods, vacationRequests]);
 
   useEffect(() => {
     fetchExtraHours(employee.id);
@@ -130,9 +206,21 @@ export function EmployeeVacationDetail({
     }
   };
 
-  const employeeRequests = vacationRequests.filter(
-    (req) => req.user_id === employee.id
-  );
+  // Filter requests for this employee and selected period
+  const selectedPeriod = periods.find(p => p.year === selectedPeriodYear);
+  const employeeRequests = vacationRequests.filter((req) => {
+    if (req.user_id !== employee.id) return false;
+    
+    if (selectedPeriod) {
+      const reqStart = new Date(req.start_date);
+      const periodStart = new Date(selectedPeriod.period_start);
+      const periodEnd = new Date(selectedPeriod.period_end);
+      
+      return reqStart >= periodStart && reqStart <= periodEnd;
+    }
+    
+    return true;
+  });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -162,7 +250,7 @@ export function EmployeeVacationDetail({
     }
   };
 
-  // Preparar datos para el calendario - solo incluir vacaciones
+  // Preparar datos para el calendario - solo incluir vacaciones del periodo seleccionado
   const calendarVacations = employeeRequests.flatMap((request) => {
     const days = [];
     const start = new Date(request.start_date + 'T12:00:00');
@@ -190,15 +278,25 @@ export function EmployeeVacationDetail({
         Volver a la lista
       </Button>
 
+      {/* Vacation Period Selector */}
+      <VacationPeriodsCard 
+        selectedPeriodYear={selectedPeriodYear} 
+        onPeriodChange={setSelectedPeriodYear} 
+      />
+
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Días Totales</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-primary">
-              {vacationBalance?.total_days || 0}
-            </p>
+            {balanceLoading ? (
+              <div className="animate-pulse h-9 bg-muted rounded"></div>
+            ) : (
+              <p className="text-3xl font-bold text-primary">
+                {vacationBalance?.total_days || 0}
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -207,9 +305,13 @@ export function EmployeeVacationDetail({
             <CardTitle className="text-lg">Días Usados</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-accent">
-              {vacationBalance?.used_days || 0}
-            </p>
+            {balanceLoading ? (
+              <div className="animate-pulse h-9 bg-muted rounded"></div>
+            ) : (
+              <p className="text-3xl font-bold text-accent">
+                {vacationBalance?.used_days || 0}
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -218,9 +320,13 @@ export function EmployeeVacationDetail({
             <CardTitle className="text-lg">Días Restantes</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-green-500">
-              {vacationBalance?.remaining_days || 0}
-            </p>
+            {balanceLoading ? (
+              <div className="animate-pulse h-9 bg-muted rounded"></div>
+            ) : (
+              <p className="text-3xl font-bold text-green-500">
+                {vacationBalance?.remaining_days || 0}
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -255,13 +361,13 @@ export function EmployeeVacationDetail({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
-            Solicitudes de {employee.full_name}
+            Solicitudes de {employee.full_name} - Periodo {selectedPeriodYear}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {employeeRequests.length === 0 ? (
             <p className="text-muted-foreground text-center py-8">
-              No hay solicitudes de vacaciones
+              No hay solicitudes de vacaciones en este periodo
             </p>
           ) : (
             <div className="space-y-4">
