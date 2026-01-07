@@ -41,6 +41,7 @@ export const useExtraHours = () => {
   const [extraHoursRequests, setExtraHoursRequests] = useState<ExtraHoursRequest[]>([]);
   const [compensatoryDaysHours, setCompensatoryDaysHours] = useState(0); // Hours from compensatory days (1 day = 8 hours)
   const [loading, setLoading] = useState(true);
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>(undefined); // Track which user we're viewing
   const { user, profile } = useAuth();
 
   // Calcular el balance de horas: horas ganadas + días compensatorios (x8) - horas usadas (aprobadas)
@@ -64,7 +65,13 @@ export const useExtraHours = () => {
   const fetchExtraHours = async (userId?: string) => {
     try {
       setLoading(true);
-      const targetUserId = userId || (profile?.role === "employee" ? user?.id : undefined);
+      // If userId is provided, use it. Otherwise use stored userId or default logic
+      const targetUserId = userId || currentUserId || (profile?.role === "employee" ? user?.id : undefined);
+      
+      // Store the userId we're fetching for (for subsequent refresh calls)
+      if (userId) {
+        setCurrentUserId(userId);
+      }
       
       // Fetch extra hours earned
       let hoursQuery = supabase
