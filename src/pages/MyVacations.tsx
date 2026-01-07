@@ -261,6 +261,14 @@ export function MyVacations() {
     });
   };
 
+  // Check if there's an approved extra hours request for this date
+  const getExtraHoursForDate = (day: number) => {
+    const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return extraHoursRequests.filter(request => {
+      return request.requested_date === dateStr && request.status === 'approved';
+    });
+  };
+
   const getDateColor = (status: string) => {
     switch (status) {
       case 'pending':
@@ -269,6 +277,8 @@ export function MyVacations() {
         return 'bg-success/80';
       case 'rejected':
         return 'bg-destructive/80';
+      case 'extra_hours':
+        return 'bg-teal-500/80';
       default:
         return 'bg-secondary';
     }
@@ -285,7 +295,9 @@ export function MyVacations() {
 
     for (let day = 1; day <= daysInMonth; day++) {
       const dayVacations = getVacationForDate(day);
+      const dayExtraHours = getExtraHoursForDate(day);
       const hasVacations = dayVacations.length > 0;
+      const hasExtraHours = dayExtraHours.length > 0;
       const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       const holidayName = getHolidayName(dateStr);
       const isNational = isNationalHoliday(dateStr);
@@ -296,7 +308,19 @@ export function MyVacations() {
       let title = '';
 
       if (hasVacations) {
-        bgClass = `${getDateColor(dayVacations[0].status)} text-white font-semibold`;
+        bgClass = `${getDateColor(dayVacations[0].status)} text-white font-semibold cursor-help`;
+        // Show reason in tooltip
+        const reasons = dayVacations
+          .map(v => v.reason || 'Sin motivo especificado')
+          .join(' | ');
+        title = `📝 ${reasons}`;
+      } else if (hasExtraHours) {
+        bgClass = `${getDateColor('extra_hours')} text-white font-semibold cursor-help`;
+        const hours = dayExtraHours.reduce((sum, r) => sum + Number(r.hours_requested), 0);
+        const reasons = dayExtraHours
+          .map(r => r.reason || 'Sin motivo')
+          .join(' | ');
+        title = `⏰ ${hours}h - ${reasons}`;
       } else if (isHolidayDay) {
         bgClass = isNational 
           ? 'bg-indigo-600/80 text-white font-semibold' 
@@ -311,7 +335,10 @@ export function MyVacations() {
           title={title}
         >
           <span>{day}</span>
-          {isHolidayDay && !hasVacations && (
+          {hasExtraHours && !hasVacations && (
+            <span className="text-[6px] sm:text-[8px]">⏰</span>
+          )}
+          {isHolidayDay && !hasVacations && !hasExtraHours && (
             <span className="text-[6px] sm:text-[8px]">{isNational ? '🇪🇸' : '🏛️'}</span>
           )}
         </div>
@@ -617,6 +644,7 @@ export function MyVacations() {
               <Badge className="bg-accent text-white text-[10px] sm:text-xs">Pendientes</Badge>
               <Badge className="bg-success text-white text-[10px] sm:text-xs">Aprobadas</Badge>
               <Badge className="bg-destructive text-white text-[10px] sm:text-xs">Rechazadas</Badge>
+              <Badge className="bg-teal-500 text-white text-[10px] sm:text-xs">⏰ Horas Extra</Badge>
               <Badge className="bg-indigo-600 text-white text-[10px] sm:text-xs">🇪🇸 Nacional</Badge>
               <Badge className="bg-pink-500 text-white text-[10px] sm:text-xs">🏛️ Extremadura</Badge>
             </div>

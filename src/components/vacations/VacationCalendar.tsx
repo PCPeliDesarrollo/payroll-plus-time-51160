@@ -82,8 +82,12 @@ export function VacationCalendar({ vacations }: VacationCalendarProps) {
       let title = '';
 
       if (hasVacations) {
-        bgClass = `${getDateColor(dayVacations[0].status)} text-white font-semibold cursor-pointer`;
-        title = dayVacations.map(v => `${v.employeeName} (${v.status})`).join('\n');
+        bgClass = `${getDateColor(dayVacations[0].status)} text-white font-semibold cursor-help`;
+        // Show employee name and reason in tooltip
+        title = dayVacations.map(v => {
+          const reason = v.reason ? ` - 📝 ${v.reason}` : '';
+          return `${v.employeeName}${reason}`;
+        }).join('\n');
       } else if (isHolidayDay) {
         bgClass = isNational 
           ? 'bg-indigo-600/80 hover:bg-indigo-600/90 text-white font-semibold' 
