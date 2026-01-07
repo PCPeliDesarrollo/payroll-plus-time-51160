@@ -52,9 +52,13 @@ export const useExtraHours = () => {
     const totalUsed = extraHoursRequests
       .filter(r => r.status === 'approved')
       .reduce((sum, r) => sum + Number(r.hours_requested), 0);
+    const totalPending = extraHoursRequests
+      .filter(r => r.status === 'pending')
+      .reduce((sum, r) => sum + Number(r.hours_requested), 0);
     return {
       earned: totalAvailable,
       used: totalUsed,
+      pending: totalPending,
       available: totalAvailable - totalUsed,
       // Helper for displaying equivalent days
       earnedDays: Math.floor(totalAvailable / 8),

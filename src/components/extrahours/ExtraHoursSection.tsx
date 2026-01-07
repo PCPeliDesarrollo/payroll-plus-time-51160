@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, Plus, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { Clock, Plus, Trash2, CheckCircle, XCircle, Hourglass } from "lucide-react";
 import { ExtraHour, ExtraHoursRequest } from "@/hooks/useExtraHours";
 import { AddExtraHoursDialog } from "./AddExtraHoursDialog";
 import { RequestExtraHoursDialog } from "./RequestExtraHoursDialog";
@@ -9,7 +9,7 @@ import { RequestExtraHoursDialog } from "./RequestExtraHoursDialog";
 interface ExtraHoursSectionProps {
   extraHours: ExtraHour[];
   extraHoursRequests: ExtraHoursRequest[];
-  balance: { earned: number; used: number; available: number; earnedDays?: number; availableDays?: number };
+  balance: { earned: number; used: number; pending?: number; available: number; earnedDays?: number; availableDays?: number };
   isAdmin: boolean;
   userId?: string;
   onAddHours?: (data: { user_id: string; hours: number; date: string; reason: string }) => Promise<void>;
@@ -64,7 +64,7 @@ export function ExtraHoursSection({
   return (
     <div className="space-y-4">
       {/* Balance de Horas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -72,6 +72,17 @@ export function ExtraHoursSection({
               <div>
                 <p className="text-sm text-muted-foreground">Horas Acumuladas</p>
                 <p className="text-xl font-bold text-success">{formatHoursWithDays(balance.earned)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Hourglass className="h-4 w-4 text-orange-500" />
+              <div>
+                <p className="text-sm text-muted-foreground">Horas Solicitadas</p>
+                <p className="text-xl font-bold text-orange-500">{formatHoursWithDays(balance.pending || 0)}</p>
               </div>
             </div>
           </CardContent>
