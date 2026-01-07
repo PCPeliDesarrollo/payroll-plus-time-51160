@@ -75,6 +75,7 @@ function generateHolidaysForYear(year: number): Holiday[] {
   
   // === FESTIVOS LOCALES DE ALBURQUERQUE ===
   holidays.push({ date: `${year}-05-22`, name: 'Fiesta Local Alburquerque', type: 'regional' });
+  holidays.push({ date: `${year}-09-09`, name: 'Fiesta Local Alburquerque', type: 'regional' });
   
   return holidays;
 }
