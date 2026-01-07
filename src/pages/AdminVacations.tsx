@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { EmployeeVacationList } from "@/components/vacations/EmployeeVacationList";
 import { EmployeeVacationDetail } from "@/components/vacations/EmployeeVacationDetail";
+import { VacationPeriodsCard } from "@/components/vacations/VacationPeriodsCard";
 import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -156,6 +157,9 @@ export default function AdminVacations({ onBack }: AdminVacationsProps = {}) {
           Selecciona un empleado para ver y gestionar sus vacaciones
         </p>
       </div>
+
+      {/* Vacation Periods Card */}
+      <VacationPeriodsCard />
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />

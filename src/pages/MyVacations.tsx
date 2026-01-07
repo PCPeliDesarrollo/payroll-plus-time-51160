@@ -142,10 +142,7 @@ export function MyVacations() {
       await createVacationRequest({
         start_date: startDate.toISOString().split('T')[0],
         end_date: endDate.toISOString().split('T')[0],
-        reason,
-        approved_at: null,
-        approved_by: null, 
-        comments: null,
+        reason: reason || null,
       });
 
       toast({
@@ -394,6 +391,56 @@ export function MyVacations() {
                   />
                 </div>
               </div>
+              
+              {/* Period indicator */}
+              {startDate && endDate && (() => {
+                const now = new Date();
+                const currentPeriodYear = now.getMonth() >= 2 ? now.getFullYear() : now.getFullYear() - 1;
+                const currentPeriodStart = new Date(currentPeriodYear, 2, 1);
+                const currentPeriodEnd = new Date(currentPeriodYear + 1, 1, 28);
+                const nextPeriodStart = new Date(currentPeriodYear + 1, 2, 1);
+                const nextPeriodEnd = new Date(currentPeriodYear + 2, 1, 28);
+                
+                const isInCurrentPeriod = startDate >= currentPeriodStart && startDate <= currentPeriodEnd &&
+                                          endDate >= currentPeriodStart && endDate <= currentPeriodEnd;
+                const isInNextPeriod = startDate >= nextPeriodStart && startDate <= nextPeriodEnd &&
+                                       endDate >= nextPeriodStart && endDate <= nextPeriodEnd;
+                const isMixedPeriods = !isInCurrentPeriod && !isInNextPeriod && 
+                                       startDate >= currentPeriodStart && endDate <= nextPeriodEnd;
+                
+                if (isMixedPeriods) {
+                  return (
+                    <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+                      <p className="text-sm text-destructive font-medium">
+                        ⚠️ Las fechas mezclan días de diferentes periodos. Todas las fechas deben pertenecer al mismo periodo.
+                      </p>
+                    </div>
+                  );
+                }
+                
+                if (isInCurrentPeriod || isInNextPeriod) {
+                  const periodYear = isInCurrentPeriod ? currentPeriodYear : currentPeriodYear + 1;
+                  return (
+                    <div className={`p-3 rounded-lg ${isInCurrentPeriod ? 'bg-primary/10 border border-primary/30' : 'bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700'}`}>
+                      <p className="text-sm">
+                        <span className="font-medium">Periodo: </span>
+                        <Badge variant={isInCurrentPeriod ? "default" : "outline"} className={isInCurrentPeriod ? "bg-primary" : ""}>
+                          {periodYear} {isInCurrentPeriod ? "(Actual)" : "(Próximo)"}
+                        </Badge>
+                      </p>
+                    </div>
+                  );
+                }
+                
+                return (
+                  <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+                    <p className="text-sm text-destructive">
+                      ⚠️ Las fechas están fuera de los periodos disponibles.
+                    </p>
+                  </div>
+                );
+              })()}
+              
               <div className="space-y-2">
                 <Label htmlFor="reason">Motivo (opcional)</Label>
                 <Textarea

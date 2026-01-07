@@ -111,13 +111,21 @@ export function useVacations() {
     };
   };
 
-  const createVacationRequest = async (request: Omit<VacationRequest, 'id' | 'user_id' | 'status' | 'created_at' | 'updated_at' | 'total_days' | 'company_id'>) => {
+  const createVacationRequest = async (request: {
+    start_date: string;
+    end_date: string;
+    reason?: string | null;
+    period_id?: string | null;
+  }) => {
     if (!user) throw new Error('No user logged in');
 
     try {
       const startDate = new Date(request.start_date);
       const endDate = new Date(request.end_date);
       
+      const timeDiff = endDate.getTime() - startDate.getTime();
+      const totalDays = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
+
       // Determine which period the request belongs to (current or next)
       const now = new Date();
       const currentPeriodYear = now.getMonth() >= 2 ? now.getFullYear() : now.getFullYear() - 1;
@@ -127,33 +135,17 @@ export function useVacations() {
       const currentPeriodStart = new Date(currentPeriodYear, 2, 1);
       const currentPeriodEnd = new Date(currentPeriodYear + 1, 1, 28);
       
-      // Next period: March nextYear - Feb (nextYear+1)
-      const nextPeriodStart = new Date(nextPeriodYear, 2, 1);
-      const nextPeriodEnd = new Date(nextPeriodYear + 1, 1, 28);
-      
       // Check if dates are within current period
       const isInCurrentPeriod = startDate >= currentPeriodStart && startDate <= currentPeriodEnd &&
                                  endDate >= currentPeriodStart && endDate <= currentPeriodEnd;
       
-      // Check if dates are within next period
-      const isInNextPeriod = startDate >= nextPeriodStart && startDate <= nextPeriodEnd &&
-                              endDate >= nextPeriodStart && endDate <= nextPeriodEnd;
-      
-      if (!isInCurrentPeriod && !isInNextPeriod) {
-        const formatDate = (d: Date) => d.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
-        throw new Error(`Las fechas deben estar dentro del periodo actual (${formatDate(currentPeriodStart)} - ${formatDate(currentPeriodEnd)}) o el próximo periodo (${formatDate(nextPeriodStart)} - ${formatDate(nextPeriodEnd)})`);
-      }
-      
-      const timeDiff = endDate.getTime() - startDate.getTime();
-      const totalDays = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
-
       // Get the appropriate balance for validation
       if (isInCurrentPeriod) {
         // Validate against current period balance
         if (vacationBalance && totalDays > vacationBalance.remaining_days) {
           throw new Error(`No puede solicitar más días (${totalDays}) de los disponibles (${vacationBalance.remaining_days}) en el periodo actual`);
         }
-      } else if (isInNextPeriod) {
+      } else {
         // For next period, calculate the future balance
         const futureBalance = calculateFuturePeriodBalance(nextPeriodYear, profile?.hire_date || null);
         if (totalDays > futureBalance.remaining_days) {
@@ -164,7 +156,10 @@ export function useVacations() {
       const { data, error } = await supabase
         .from('vacation_requests')
         .insert({
-          ...request,
+          start_date: request.start_date,
+          end_date: request.end_date,
+          reason: request.reason || null,
+          period_id: request.period_id || null,
           user_id: user.id,
           company_id: profile?.company_id || null,
           total_days: totalDays,
