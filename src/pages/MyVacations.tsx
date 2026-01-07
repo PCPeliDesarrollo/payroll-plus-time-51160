@@ -299,8 +299,8 @@ export function MyVacations() {
         bgClass = `${getDateColor(dayVacations[0].status)} text-white font-semibold`;
       } else if (isHolidayDay) {
         bgClass = isNational 
-          ? 'bg-red-500/80 text-white font-semibold' 
-          : 'bg-orange-400/80 text-white font-semibold';
+          ? 'bg-indigo-600/80 text-white font-semibold' 
+          : 'bg-pink-500/80 text-white font-semibold';
         title = holidayName || '';
       }
 
@@ -617,8 +617,8 @@ export function MyVacations() {
               <Badge className="bg-accent text-white text-[10px] sm:text-xs">Pendientes</Badge>
               <Badge className="bg-success text-white text-[10px] sm:text-xs">Aprobadas</Badge>
               <Badge className="bg-destructive text-white text-[10px] sm:text-xs">Rechazadas</Badge>
-              <Badge className="bg-red-500 text-white text-[10px] sm:text-xs">🇪🇸 Nacional</Badge>
-              <Badge className="bg-orange-400 text-white text-[10px] sm:text-xs">🏛️ Extremadura</Badge>
+              <Badge className="bg-indigo-600 text-white text-[10px] sm:text-xs">🇪🇸 Nacional</Badge>
+              <Badge className="bg-pink-500 text-white text-[10px] sm:text-xs">🏛️ Extremadura</Badge>
             </div>
           </div>
         </CardHeader>

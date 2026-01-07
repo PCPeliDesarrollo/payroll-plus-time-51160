@@ -88,8 +88,8 @@ export function VacationCalendar({ vacations }: VacationCalendarProps) {
         title = dayVacations.map(v => `${v.employeeName} (${v.status})`).join('\n');
       } else if (isHolidayDay) {
         bgClass = isNational 
-          ? 'bg-red-500/80 hover:bg-red-500/90 text-white font-semibold' 
-          : 'bg-orange-400/80 hover:bg-orange-400/90 text-white font-semibold';
+          ? 'bg-indigo-600/80 hover:bg-indigo-600/90 text-white font-semibold' 
+          : 'bg-pink-500/80 hover:bg-pink-500/90 text-white font-semibold';
         title = holidayName || '';
       }
 
@@ -158,8 +158,8 @@ export function VacationCalendar({ vacations }: VacationCalendarProps) {
           <Badge className="bg-success text-white text-xs">Aprobadas</Badge>
           <Badge className="bg-destructive text-white text-xs">Rechazadas</Badge>
           <Badge className="bg-blue-500 text-white text-xs">Días Libres</Badge>
-          <Badge className="bg-red-500 text-white text-xs">🇪🇸 Festivo Nacional</Badge>
-          <Badge className="bg-orange-400 text-white text-xs">🏛️ Festivo Extremadura</Badge>
+          <Badge className="bg-indigo-600 text-white text-xs">🇪🇸 Festivo Nacional</Badge>
+          <Badge className="bg-pink-500 text-white text-xs">🏛️ Festivo Extremadura</Badge>
         </div>
       </CardHeader>
       <CardContent className="p-2 sm:p-6">
