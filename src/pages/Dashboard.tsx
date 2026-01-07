@@ -6,6 +6,7 @@ import { Clock, Users, FileText, Calendar, CheckCircle, XCircle, Play, Square } 
 import { useTimeEntries } from "@/hooks/useTimeEntries";
 import { useVacations } from "@/hooks/useVacations";
 import { useEmployees } from "@/hooks/useEmployees";
+import { useVacationPeriods } from "@/hooks/useVacationPeriods";
 import { usePayroll } from "@/hooks/usePayroll";
 import { useMemo, useState, useEffect } from "react";
 import { format, isToday, isThisMonth } from "date-fns";
@@ -163,6 +164,7 @@ export function Dashboard({ userRole, onPageChange }: DashboardProps) {
   const { vacationBalance, vacationRequests } = useVacations();
   const { employees } = useEmployees();
   const { payrollRecords } = usePayroll();
+  const { periods: vacationPeriods } = useVacationPeriods();
 
   // Refresh data every 30 seconds to keep dashboard updated
   useEffect(() => {
@@ -321,12 +323,19 @@ export function Dashboard({ userRole, onPageChange }: DashboardProps) {
               <div className="space-y-4">
                 {adminStats.pendingVacationRequests.length > 0 ? adminStats.pendingVacationRequests.map((request) => {
                   const employee = employees.find(emp => emp.id === request.user_id);
+                  const period = vacationPeriods.find(p => p.id === request.period_id);
+                  const periodLabel = period 
+                    ? `Periodo ${format(new Date(period.period_start), 'MMM yyyy', { locale: es })} - ${format(new Date(period.period_end), 'MMM yyyy', { locale: es })}`
+                    : 'Sin periodo asignado';
                   return (
                     <div key={request.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
                       <div>
                         <p className="font-medium">{employee?.full_name || 'Empleado desconocido'}</p>
                         <p className="text-sm text-muted-foreground">
                           Vacaciones - {format(new Date(request.start_date), 'dd/MM', { locale: es })} al {format(new Date(request.end_date), 'dd/MM/yyyy', { locale: es })} ({request.total_days} días)
+                        </p>
+                        <p className="text-xs text-primary font-medium">
+                          📅 {periodLabel}
                         </p>
                       </div>
                       <div className="flex gap-2">
