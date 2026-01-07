@@ -617,6 +617,8 @@ export function MyVacations() {
               <Badge className="bg-accent text-white text-[10px] sm:text-xs">Pendientes</Badge>
               <Badge className="bg-success text-white text-[10px] sm:text-xs">Aprobadas</Badge>
               <Badge className="bg-destructive text-white text-[10px] sm:text-xs">Rechazadas</Badge>
+              <Badge className="bg-red-500 text-white text-[10px] sm:text-xs">🇪🇸 Nacional</Badge>
+              <Badge className="bg-orange-400 text-white text-[10px] sm:text-xs">🏛️ Extremadura</Badge>
             </div>
           </div>
         </CardHeader>
