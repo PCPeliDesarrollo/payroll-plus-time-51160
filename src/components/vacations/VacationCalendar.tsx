@@ -7,7 +7,7 @@ import { isHoliday, isNationalHoliday, isRegionalHoliday, getHolidayName } from 
 
 interface VacationDay {
   date: string;
-  status: 'pending' | 'approved' | 'rejected' | 'compensatory';
+  status: 'pending' | 'approved' | 'rejected';
   employeeName: string;
   reason?: string;
 }
@@ -52,8 +52,6 @@ export function VacationCalendar({ vacations }: VacationCalendarProps) {
         return 'bg-success/80 hover:bg-success/90';
       case 'rejected':
         return 'bg-destructive/80 hover:bg-destructive/90';
-      case 'compensatory':
-        return 'bg-blue-500/80 hover:bg-blue-500/90';
       default:
         return 'bg-secondary';
     }
@@ -157,7 +155,6 @@ export function VacationCalendar({ vacations }: VacationCalendarProps) {
           <Badge className="bg-amber-500 text-white text-xs">Solicitadas</Badge>
           <Badge className="bg-success text-white text-xs">Aprobadas</Badge>
           <Badge className="bg-destructive text-white text-xs">Rechazadas</Badge>
-          <Badge className="bg-blue-500 text-white text-xs">Días Libres</Badge>
           <Badge className="bg-indigo-600 text-white text-xs">🇪🇸 Festivo Nacional</Badge>
           <Badge className="bg-pink-500 text-white text-xs">🏛️ Festivo Extremadura</Badge>
         </div>
