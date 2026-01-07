@@ -14,6 +14,12 @@ interface AdminVacationsProps {
   onBack?: () => void;
 }
 
+// Get current period year
+const getCurrentPeriodYear = (): number => {
+  const now = new Date();
+  return now.getMonth() >= 2 ? now.getFullYear() : now.getFullYear() - 1;
+};
+
 export default function AdminVacations({ onBack }: AdminVacationsProps = {}) {
   const { vacationRequests, approveVacationRequest, rejectVacationRequest, loading } = useVacations();
   const { employees } = useEmployees();
@@ -21,6 +27,7 @@ export default function AdminVacations({ onBack }: AdminVacationsProps = {}) {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [employeeBalance, setEmployeeBalance] = useState<any>(null);
+  const [selectedPeriodYear, setSelectedPeriodYear] = useState<number>(getCurrentPeriodYear());
 
   const handleEmployeeClick = async (employeeId: string) => {
     setSelectedEmployeeId(employeeId);
@@ -159,7 +166,10 @@ export default function AdminVacations({ onBack }: AdminVacationsProps = {}) {
       </div>
 
       {/* Vacation Periods Card */}
-      <VacationPeriodsCard />
+      <VacationPeriodsCard 
+        selectedPeriodYear={selectedPeriodYear} 
+        onPeriodChange={setSelectedPeriodYear} 
+      />
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />

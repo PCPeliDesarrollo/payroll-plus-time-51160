@@ -6,7 +6,7 @@ interface Holiday {
   type: 'national' | 'regional'; // nacional o regional (Extremadura)
 }
 
-// Función para calcular Viernes Santo y Jueves Santo (dependen de Pascua)
+// Función para calcular Domingo de Pascua (algoritmo de Butcher)
 function getEasterDate(year: number): Date {
   const a = year % 19;
   const b = Math.floor(year / 100);
@@ -59,10 +59,14 @@ function generateHolidaysForYear(year: number): Holiday[] {
   holidays.push({ date: formatDate(goodFriday), name: 'Viernes Santo', type: 'national' });
   
   // === FESTIVOS REGIONALES DE EXTREMADURA ===
-  holidays.push({ date: `${year}-02-20`, name: 'Carnaval (Extremadura)', type: 'regional' });
+  // Día de Extremadura (fijo)
   holidays.push({ date: `${year}-09-08`, name: 'Día de Extremadura', type: 'regional' });
   
-  // Lunes después de Pascua (algunas localidades de Extremadura)
+  // Carnaval - Martes de Carnaval (47 días antes de Pascua)
+  const carnival = addDays(easter, -47);
+  holidays.push({ date: formatDate(carnival), name: 'Martes de Carnaval', type: 'regional' });
+  
+  // Lunes de Pascua (día después de Pascua - algunas localidades)
   const easterMonday = addDays(easter, 1);
   holidays.push({ date: formatDate(easterMonday), name: 'Lunes de Pascua', type: 'regional' });
   

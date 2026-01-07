@@ -1,22 +1,20 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Calendar } from "lucide-react";
 import { useVacationPeriods } from "@/hooks/useVacationPeriods";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
-export function VacationPeriodsCard() {
+interface VacationPeriodsCardProps {
+  selectedPeriodYear?: number;
+  onPeriodChange?: (year: number) => void;
+}
+
+export function VacationPeriodsCard({ selectedPeriodYear, onPeriodChange }: VacationPeriodsCardProps) {
   const { periods, loading } = useVacationPeriods();
 
-  if (loading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Get current period year
+  const now = new Date();
+  const currentPeriodYear = now.getMonth() >= 2 ? now.getFullYear() : now.getFullYear() - 1;
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-ES', {
@@ -26,70 +24,70 @@ export function VacationPeriodsCard() {
     });
   };
 
-  // Get current period year
-  const now = new Date();
-  const currentPeriodYear = now.getMonth() >= 2 ? now.getFullYear() : now.getFullYear() - 1;
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-center">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (periods.length === 0) {
+    return (
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm text-muted-foreground">No hay periodos configurados</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const selectedPeriod = periods.find(p => p.year === selectedPeriodYear) || periods.find(p => p.year === currentPeriodYear) || periods[0];
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Calendar className="h-5 w-5 text-primary" />
-          Periodos de Vacaciones
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {periods.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No hay periodos configurados</p>
-          ) : (
-            <div className="grid gap-2">
-              {periods.map((period) => {
-                const isCurrentPeriod = period.year === currentPeriodYear;
-                const isPastPeriod = period.year < currentPeriodYear;
-                const isFuturePeriod = period.year > currentPeriodYear;
-                
-                return (
-                  <div 
-                    key={period.id}
-                    className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 rounded-lg border ${
-                      isCurrentPeriod 
-                        ? 'bg-primary/10 border-primary/30' 
-                        : isPastPeriod 
-                          ? 'bg-muted/50 border-muted' 
-                          : 'bg-card border-border'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 mb-2 sm:mb-0">
-                      <span className="font-medium text-card-foreground">
-                        Periodo {period.year}
-                      </span>
-                      {isCurrentPeriod && (
-                        <Badge variant="default" className="bg-primary text-primary-foreground text-xs">
-                          Actual
-                        </Badge>
-                      )}
-                      {isPastPeriod && (
-                        <Badge variant="secondary" className="text-xs">
-                          Pasado
-                        </Badge>
-                      )}
-                      {isFuturePeriod && period.year === currentPeriodYear + 1 && (
-                        <Badge variant="outline" className="text-xs border-accent text-accent-foreground">
-                          Próximo
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>{formatDate(period.period_start)}</span>
-                      <span>→</span>
-                      <span>{formatDate(period.period_end)}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+      <CardContent className="p-4">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-primary" />
+            <span className="font-medium text-sm">Periodo:</span>
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1">
+            <Select
+              value={String(selectedPeriod?.year || currentPeriodYear)}
+              onValueChange={(value) => onPeriodChange?.(Number(value))}
+            >
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder="Seleccionar periodo" />
+              </SelectTrigger>
+              <SelectContent>
+                {periods.map((period) => {
+                  const isCurrentPeriod = period.year === currentPeriodYear;
+                  return (
+                    <SelectItem key={period.id} value={String(period.year)}>
+                      <div className="flex items-center gap-2">
+                        <span>Periodo {period.year}</span>
+                        {isCurrentPeriod && (
+                          <Badge variant="default" className="bg-primary text-primary-foreground text-xs ml-1">
+                            Actual
+                          </Badge>
+                        )}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            {selectedPeriod && (
+              <span className="text-sm text-muted-foreground">
+                {formatDate(selectedPeriod.period_start)} → {formatDate(selectedPeriod.period_end)}
+              </span>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>
