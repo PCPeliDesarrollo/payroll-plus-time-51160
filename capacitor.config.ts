@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.pcpeli.rrhh',
+  appId: 'com.lovable.payrollplustime',
   appName: 'RRHH PcPeli',
   webDir: 'dist',
   // Logo configuration
