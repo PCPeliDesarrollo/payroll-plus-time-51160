@@ -34,7 +34,7 @@ export function Header({ user, onLogout, onPageChange }: HeaderProps) {
   };
   
   return (
-    <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 md:px-6">
+    <header className="min-h-[4rem] bg-card border-b border-border flex items-center justify-between px-3 sm:px-4 md:px-6 pt-[env(safe-area-inset-top)]">
       <div className="flex items-center gap-2 md:gap-3 md:ml-0 ml-14">
         <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl p-2 backdrop-blur-sm border border-primary/20">
           <img src="/logo.png" alt="Peli Soluciones Informáticas" className="h-10 md:h-12 w-auto drop-shadow-[0_0_8px_rgba(176,98,248,0.4)]" />

@@ -22,7 +22,7 @@ export function AppLayout({
   children 
 }: AppLayoutProps) {
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex min-h-screen bg-background overflow-hidden">
       <Sidebar
         userRole={user.role}
         currentPage={currentPage}
