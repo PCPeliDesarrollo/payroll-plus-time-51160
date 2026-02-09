@@ -7,12 +7,11 @@ workflows:
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.pcpeli.rrhh
+      groups:
+        - appstore_credentials
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
-        APP_STORE_CONNECT_ISSUER_ID: 8a0a9b62-f554-4ff3-9bb1-4d3bf6faa81c
-        APP_STORE_CONNECT_KEY_IDENTIFIER: 8DYNXS8954
-        APP_STORE_CONNECT_PRIVATE_KEY: Encrypted(...)
       node: 18
       xcode: latest
       cocoapods: default
@@ -45,9 +44,8 @@ workflows:
       - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
     publishing:
       app_store_connect:
-        auth: api_key
-        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
         key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
-        key: $APP_STORE_CONNECT_PRIVATE_KEY
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
         submit_to_testflight: true
         submit_to_app_store: false
