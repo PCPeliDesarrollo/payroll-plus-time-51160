@@ -26,6 +26,13 @@ workflows:
         script: |
           npx cap add ios || true
           npx cap sync ios
+      - name: Auto-increment build number
+        script: |
+          cd ios/App
+          LATEST_BUILD=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_CONNECT_ISSUER_ID" "$APP_STORE_CONNECT_KEY_IDENTIFIER" "$APP_STORE_CONNECT_PRIVATE_KEY" --bundle-id "com.pcpeli.rrhh" 2>/dev/null || echo "0")
+          NEW_BUILD=$((LATEST_BUILD + 1))
+          agvtool new-version -all $NEW_BUILD
+          echo "Build number set to $NEW_BUILD"
       - name: Install CocoaPods dependencies
         script: |
           cd ios/App
