@@ -29,11 +29,14 @@ workflows:
       - name: Auto-increment build number
         script: |
           cd ios/App
-          LATEST=$(app-store-connect get-latest-testflight-build-number com.pcpeli.rrhh || echo "0")
+          LATEST=$(app-store-connect get-latest-testflight-build-number com.pcpeli.rrhh 2>/dev/null || echo "1")
           echo "Latest TestFlight build: $LATEST"
           NEW_BUILD=$((LATEST + 1))
+          echo "Setting new build number: $NEW_BUILD"
           agvtool new-version -all $NEW_BUILD
-          echo "New build number: $NEW_BUILD"
+          # Also set via PlistBuddy as fallback
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $NEW_BUILD" App/Info.plist || true
+          echo "Build number confirmed: $NEW_BUILD"
       - name: Install CocoaPods dependencies
         script: |
           cd ios/App
