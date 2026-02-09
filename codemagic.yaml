@@ -9,7 +9,6 @@ workflows:
         bundle_identifier: com.pcpeli.rrhh
       groups:
         - appstore_credentials
-        - supabase_credentials
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
