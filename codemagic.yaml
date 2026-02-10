@@ -74,28 +74,44 @@ workflows:
           pod install
       - name: Auto-increment build number
         script: |
-          LATEST=$(app-store-connect get-latest-testflight-build-number com.pcpeli.rrhh 2>/dev/null || echo "1")
+          LATEST=$(app-store-connect get-latest-testflight-build-number com.pcpeli.rrhh 2>/dev/null || echo "0")
           echo "Latest TestFlight build: $LATEST"
+          
+          # Ensure we always get a valid number, minimum 2
+          if [ -z "$LATEST" ] || [ "$LATEST" = "" ]; then
+            LATEST=1
+          fi
           NEW_BUILD=$((LATEST + 1))
+          if [ "$NEW_BUILD" -lt 3 ]; then
+            NEW_BUILD=3
+          fi
           echo "Setting new build number to: $NEW_BUILD"
           
           PLIST="$CM_BUILD_DIR/ios/App/App/Info.plist"
           PBXPROJ="$CM_BUILD_DIR/ios/App/App.xcodeproj/project.pbxproj"
           
-          # Update Info.plist
+          # Method 1: PlistBuddy
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $NEW_BUILD" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0" "$PLIST"
           
-          # Update CURRENT_PROJECT_VERSION in pbxproj
-          sed -i '' "s/CURRENT_PROJECT_VERSION = [0-9]*;/CURRENT_PROJECT_VERSION = $NEW_BUILD;/g" "$PBXPROJ"
+          # Method 2: sed on pbxproj - match any version format
+          sed -i '' "s/CURRENT_PROJECT_VERSION = .*;/CURRENT_PROJECT_VERSION = $NEW_BUILD;/g" "$PBXPROJ"
+          sed -i '' "s/MARKETING_VERSION = .*;/MARKETING_VERSION = 1.0;/g" "$PBXPROJ"
           
-          # Update MARKETING_VERSION if needed
-          sed -i '' "s/MARKETING_VERSION = [0-9.]*;/MARKETING_VERSION = 1.0.$NEW_BUILD;/g" "$PBXPROJ"
+          # Method 3: agvtool (most reliable for Xcode)
+          cd "$CM_BUILD_DIR/ios/App"
+          agvtool new-version -all $NEW_BUILD || true
+          agvtool new-marketing-version 1.0 || true
           
-          # Verify changes
+          # Verify all changes
           echo "=== Info.plist CFBundleVersion ==="
           /usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$PLIST"
+          echo "=== Info.plist CFBundleShortVersionString ==="
+          /usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$PLIST"
           echo "=== pbxproj CURRENT_PROJECT_VERSION ==="
           grep "CURRENT_PROJECT_VERSION" "$PBXPROJ" | head -5
+          echo "=== agvtool what-version ==="
+          agvtool what-version || true
       - name: Set up code signing settings on Xcode project
         script: |
           xcode-project use-profiles
