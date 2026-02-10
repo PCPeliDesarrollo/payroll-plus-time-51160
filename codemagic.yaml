@@ -64,8 +64,8 @@ workflows:
             LATEST=1
           fi
           NEW_BUILD=$((LATEST + 1))
-          if [ "$NEW_BUILD" -lt 3 ]; then
-            NEW_BUILD=3
+          if [ "$NEW_BUILD" -lt 5 ]; then
+            NEW_BUILD=5
           fi
           echo "Setting new build number to: $NEW_BUILD"
           
