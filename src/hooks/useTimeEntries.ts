@@ -72,6 +72,7 @@ export function useTimeEntries() {
 
     const today = new Date().toISOString().split('T')[0];
     
+    setLoading(true);
     try {
       // Obtener el company_id del usuario
       const { data: profile, error: profileError } = await supabase
@@ -152,6 +153,8 @@ export function useTimeEntries() {
     } catch (error) {
       console.error('Error checking in:', error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -159,6 +162,8 @@ export function useTimeEntries() {
     if (!user) {
       throw new Error('Debes iniciar sesión para fichar');
     }
+
+    setLoading(true);
     
     if (!currentEntry || currentEntry.status !== 'checked_in') {
       throw new Error('No tienes un fichaje de entrada activo');
@@ -216,6 +221,8 @@ export function useTimeEntries() {
     } catch (error) {
       console.error('Error checking out:', error);
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
