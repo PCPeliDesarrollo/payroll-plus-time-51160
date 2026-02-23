@@ -163,11 +163,11 @@ export function useTimeEntries() {
       throw new Error('Debes iniciar sesión para fichar');
     }
 
-    setLoading(true);
-    
     if (!currentEntry || currentEntry.status !== 'checked_in') {
       throw new Error('No tienes un fichaje de entrada activo');
     }
+
+    setLoading(true);
 
     const now = new Date().toISOString();
 
@@ -190,7 +190,6 @@ export function useTimeEntries() {
       }
     } catch (geoError) {
       console.warn('No se pudo obtener la geolocalización:', geoError);
-      // Continuar sin geolocalización
     }
 
     try {
@@ -208,13 +207,8 @@ export function useTimeEntries() {
 
       if (error) throw error;
       
-      // Update state immediately
       setCurrentEntry(data);
-      
-      // Fetch all entries
       await fetchTimeEntries();
-      
-      // Force refresh today's entry
       await fetchTodayEntry();
       
       return data;
