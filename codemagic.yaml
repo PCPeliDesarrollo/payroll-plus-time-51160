@@ -64,9 +64,9 @@ workflows:
             LATEST=1
           fi
           NEW_BUILD=$((LATEST + 1))
-          if [ "$NEW_BUILD" -lt 5 ]; then
-            NEW_BUILD=5
-          fi
+           if [ "$NEW_BUILD" -lt 6 ]; then
+             NEW_BUILD=6
+           fi
           echo "Setting new build number to: $NEW_BUILD"
           
           PLIST="$CM_BUILD_DIR/ios/App/App/Info.plist"
