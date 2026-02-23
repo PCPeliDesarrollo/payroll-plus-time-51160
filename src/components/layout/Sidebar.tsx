@@ -104,7 +104,7 @@ export function Sidebar({ userRole, currentPage, onPageChange, onLogout }: Sideb
 
       {/* Mobile Sidebar */}
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger asChild className="md:hidden fixed top-4 left-4 z-50">
+        <SheetTrigger asChild className="md:hidden fixed left-4 z-50" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 0.75rem)' }}>
           <Button variant="outline" size="icon" className="bg-card shadow-lg border-primary/20">
             <Menu className="h-5 w-5 text-primary" />
           </Button>
