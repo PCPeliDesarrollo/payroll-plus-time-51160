@@ -55,11 +55,18 @@ export function useTimeEntries() {
         .select('*')
         .eq('user_id', user.id)
         .eq('date', today)
-        .eq('status', 'checked_in')
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') throw error;
-      setCurrentEntry(data);
+      
+      // Only set as current entry if it's actively checked in
+      if (data?.status === 'checked_in') {
+        setCurrentEntry(data);
+      } else {
+        setCurrentEntry(null);
+      }
     } catch (error) {
       console.error('Error fetching today entry:', error);
     }
@@ -163,36 +170,54 @@ export function useTimeEntries() {
       throw new Error('Debes iniciar sesión para fichar');
     }
 
-    if (!currentEntry || currentEntry.status !== 'checked_in') {
-      throw new Error('No tienes un fichaje de entrada activo');
-    }
-
     setLoading(true);
 
-    const now = new Date().toISOString();
-
-    // Obtener geolocalización con máxima precisión
-    let latitude = null;
-    let longitude = null;
-    
     try {
-      if ('geolocation' in navigator) {
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            timeout: 10000,
-            maximumAge: 0,
-            enableHighAccuracy: true
-          });
-        });
-        latitude = position.coords.latitude;
-        longitude = position.coords.longitude;
-        console.log('Check-out location captured:', { latitude, longitude, accuracy: position.coords.accuracy });
+      // Always query DB directly to avoid stale state on mobile
+      const today = new Date().toISOString().split('T')[0];
+      let activeEntry = currentEntry;
+      
+      if (!activeEntry || activeEntry.status !== 'checked_in') {
+        console.log('currentEntry stale, querying DB directly for active entry...');
+        const { data: dbEntry, error: fetchError } = await supabase
+          .from('time_entries')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('date', today)
+          .eq('status', 'checked_in')
+          .maybeSingle();
+        
+        if (fetchError) throw fetchError;
+        
+        if (!dbEntry) {
+          throw new Error('No tienes un fichaje de entrada activo');
+        }
+        activeEntry = dbEntry;
       }
-    } catch (geoError) {
-      console.warn('No se pudo obtener la geolocalización:', geoError);
-    }
 
-    try {
+      const now = new Date().toISOString();
+
+      // Obtener geolocalización con máxima precisión
+      let latitude = null;
+      let longitude = null;
+      
+      try {
+        if ('geolocation' in navigator) {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              timeout: 10000,
+              maximumAge: 0,
+              enableHighAccuracy: true
+            });
+          });
+          latitude = position.coords.latitude;
+          longitude = position.coords.longitude;
+          console.log('Check-out location captured:', { latitude, longitude, accuracy: position.coords.accuracy });
+        }
+      } catch (geoError) {
+        console.warn('No se pudo obtener la geolocalización:', geoError);
+      }
+
       const { data, error } = await supabase
         .from('time_entries')
         .update({
@@ -201,13 +226,13 @@ export function useTimeEntries() {
           check_out_latitude: latitude,
           check_out_longitude: longitude
         })
-        .eq('id', currentEntry.id)
+        .eq('id', activeEntry.id)
         .select()
         .single();
 
       if (error) throw error;
       
-      setCurrentEntry(data);
+      setCurrentEntry(null);
       await fetchTimeEntries();
       await fetchTodayEntry();
       
