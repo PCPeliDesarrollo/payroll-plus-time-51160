@@ -55,6 +55,7 @@ All colors MUST be HSL.
     --shadow-purple: 0 4px 20px -2px hsl(276 91% 68% / 0.3);
 
     --radius: 0.75rem;
+    --mobile-header-offset: 1rem;
 
     --sidebar-background: 0 0% 98%;
 
