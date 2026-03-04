@@ -56,17 +56,24 @@ workflows:
           pod install
       - name: Auto-increment build number
         script: |
-          LATEST=$(app-store-connect get-latest-testflight-build-number com.pcpeli.rrhh 2>/dev/null || echo "0")
-          echo "Latest TestFlight build: $LATEST"
-          
-          # Ensure we always get a valid number, minimum 2
-          if [ -z "$LATEST" ] || [ "$LATEST" = "" ]; then
-            LATEST=1
+          LATEST_RAW=$(app-store-connect get-latest-testflight-build-number com.pcpeli.rrhh 2>/dev/null || true)
+          LATEST=$(echo "$LATEST_RAW" | tr -dc '0-9')
+          echo "Latest TestFlight build (raw): $LATEST_RAW"
+
+          # If ASC lookup fails/returns empty, fallback to a unique UTC timestamp build number
+          if [ -n "$LATEST" ] && [ "$LATEST" -gt 0 ]; then
+            NEW_BUILD=$((LATEST + 1))
+            echo "Using App Store Connect latest build + 1"
+          else
+            NEW_BUILD=$(date -u +%Y%m%d%H%M)
+            echo "ASC lookup failed; using UTC timestamp fallback"
           fi
-          NEW_BUILD=$((LATEST + 1))
-           if [ "$NEW_BUILD" -lt 6 ]; then
-             NEW_BUILD=6
-           fi
+
+          # Safety floor
+          if [ "$NEW_BUILD" -le 6 ]; then
+            NEW_BUILD=7
+          fi
+
           echo "Setting new build number to: $NEW_BUILD"
           
           PLIST="$CM_BUILD_DIR/ios/App/App/Info.plist"
