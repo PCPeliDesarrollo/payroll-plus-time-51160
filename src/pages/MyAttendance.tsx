@@ -146,13 +146,16 @@ export function MyAttendance() {
               <Button
                 onClick={handleCheckInOut}
                 size="lg"
+                disabled={loading}
                 className={`h-16 px-8 text-lg font-semibold w-full ${
                   isCheckedIn 
                     ? "bg-destructive hover:bg-destructive/90 text-destructive-foreground" 
                     : "bg-white hover:bg-white/90 text-primary"
                 }`}
               >
-                {isCheckedIn ? (
+                {loading ? (
+                  "Procesando..."
+                ) : isCheckedIn ? (
                   <>
                     <Square className="mr-2 h-6 w-6" />
                     Fichar Salida

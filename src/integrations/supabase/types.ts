@@ -474,7 +474,7 @@ export type Database = {
           id: string
           notes: string | null
           status: string | null
-          total_hours: unknown
+          total_hours: string | null
           updated_at: string | null
           user_id: string
         }
@@ -491,7 +491,7 @@ export type Database = {
           id?: string
           notes?: string | null
           status?: string | null
-          total_hours?: unknown
+          total_hours?: string | null
           updated_at?: string | null
           user_id: string
         }
@@ -508,7 +508,7 @@ export type Database = {
           id?: string
           notes?: string | null
           status?: string | null
-          total_hours?: unknown
+          total_hours?: string | null
           updated_at?: string | null
           user_id?: string
         }
