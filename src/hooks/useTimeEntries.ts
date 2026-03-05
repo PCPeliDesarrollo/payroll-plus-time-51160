@@ -65,6 +65,14 @@ const getSafeCoordinates = async (): Promise<Coordinates> => {
   }
 };
 
+const getLocalDateString = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+};
+
 export function useTimeEntries() {
   const { user } = useAuth();
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
@@ -108,7 +116,7 @@ export function useTimeEntries() {
     if (!user) return;
 
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDateString();
       const { data, error } = await supabase
         .from('time_entries')
         .select('*')
@@ -135,35 +143,49 @@ export function useTimeEntries() {
       throw new Error('Debes iniciar sesión para fichar');
     }
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString();
 
     setLoading(true);
     try {
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('company_id')
+        .select('company_id, role')
         .eq('id', user.id)
         .single();
 
       if (profileError) throw profileError;
-      if (!profile?.company_id) {
-        throw new Error('No se encontró el company_id del usuario');
-      }
-
-      const { data: existingEntry, error: existingEntryError } = await supabase
-        .from('time_entries')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('date', today)
-        .eq('status', 'checked_in')
-        .maybeSingle();
-
-      if (existingEntryError && existingEntryError.code !== 'PGRST116') throw existingEntryError;
-      if (existingEntry) {
-        throw new Error('Ya tienes un fichaje de entrada activo. Por favor, ficha la salida');
+      if (!profile?.company_id && profile?.role !== 'super_admin') {
+        throw new Error('No se encontró la empresa del usuario para registrar el fichaje');
       }
 
       const now = new Date().toISOString();
+
+      const { error: closeStaleError } = await supabase
+        .from('time_entries')
+        .update({
+          check_out_time: now,
+          status: 'checked_out',
+        })
+        .eq('user_id', user.id)
+        .eq('status', 'checked_in')
+        .lt('date', today);
+
+      if (closeStaleError) {
+        console.warn('No se pudieron cerrar fichajes antiguos abiertos:', closeStaleError);
+      }
+
+      const { count: openEntriesToday, error: openEntriesError } = await supabase
+        .from('time_entries')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('date', today)
+        .eq('status', 'checked_in');
+
+      if (openEntriesError) throw openEntriesError;
+      if ((openEntriesToday ?? 0) > 0) {
+        throw new Error('Ya tienes un fichaje de entrada activo. Por favor, ficha la salida');
+      }
+
       const { latitude, longitude } = await getSafeCoordinates();
 
       const { data, error } = await supabase
@@ -203,7 +225,6 @@ export function useTimeEntries() {
     setLoading(true);
 
     try {
-      const today = new Date().toISOString().split('T')[0];
       let activeEntry = currentEntry;
 
       if (!activeEntry || activeEntry.status !== 'checked_in') {
@@ -212,8 +233,9 @@ export function useTimeEntries() {
           .from('time_entries')
           .select('*')
           .eq('user_id', user.id)
-          .eq('date', today)
           .eq('status', 'checked_in')
+          .order('check_in_time', { ascending: false })
+          .limit(1)
           .maybeSingle();
 
         if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
@@ -235,9 +257,10 @@ export function useTimeEntries() {
           check_out_latitude: latitude,
           check_out_longitude: longitude,
         })
-        .eq('id', activeEntry.id)
-        .select()
-        .single();
+        .eq('user_id', user.id)
+        .eq('date', activeEntry.date)
+        .eq('status', 'checked_in')
+        .select();
 
       if (error) throw error;
 
