@@ -81,16 +81,16 @@ workflows:
           
           # Method 1: PlistBuddy
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $NEW_BUILD" "$PLIST"
-           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.2" "$PLIST"
+           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.2.1" "$PLIST"
           
           # Method 2: sed on pbxproj - match any version format
           sed -i '' "s/CURRENT_PROJECT_VERSION = .*;/CURRENT_PROJECT_VERSION = $NEW_BUILD;/g" "$PBXPROJ"
-          sed -i '' "s/MARKETING_VERSION = .*;/MARKETING_VERSION = 1.2;/g" "$PBXPROJ"
+          sed -i '' "s/MARKETING_VERSION = .*;/MARKETING_VERSION = 1.2.1;/g" "$PBXPROJ"
           
           # Method 3: agvtool (most reliable for Xcode)
           cd "$CM_BUILD_DIR/ios/App"
           agvtool new-version -all $NEW_BUILD || true
-          agvtool new-marketing-version 1.2 || true
+          agvtool new-marketing-version 1.2.1 || true
           
           # Verify all changes
           echo "=== Info.plist CFBundleVersion ==="
