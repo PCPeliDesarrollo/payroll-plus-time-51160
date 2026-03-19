@@ -755,9 +755,14 @@ export function MyVacations() {
                               <div key={request.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors gap-3">
                                 <div className="flex items-center gap-4">
                                   {getStatusIcon(request.status)}
-                                  <div>
+                                   <div>
                                     <p className="font-medium">
-                                      {formatDate(request.start_date)} - {formatDate(request.end_date)}
+                                      {(request as any).request_type === 'morning' 
+                                        ? `${formatDate(request.start_date)} — Mañana`
+                                        : (request as any).request_type === 'afternoon'
+                                          ? `${formatDate(request.start_date)} — Tarde`
+                                          : `${formatDate(request.start_date)} - ${formatDate(request.end_date)}`
+                                      }
                                     </p>
                                     <p className="text-sm text-muted-foreground">
                                       {request.reason || 'Sin motivo especificado'}
@@ -770,7 +775,7 @@ export function MyVacations() {
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2 justify-between sm:justify-end">
-                                  <p className="font-semibold text-lg">{request.total_days} días</p>
+                                  <p className="font-semibold text-lg">{Number(request.total_days)} {Number(request.total_days) === 0.5 ? 'día' : 'días'}</p>
                                   {getStatusBadge(request.status)}
                                   {(request.status === 'approved' || request.status === 'rejected') && (
                                     <Button
