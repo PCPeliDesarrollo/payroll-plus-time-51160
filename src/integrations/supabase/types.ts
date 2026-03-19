@@ -50,6 +50,47 @@ export type Database = {
         }
         Relationships: []
       }
+      company_schedules: {
+        Row: {
+          check_in_time: string | null
+          check_out_time: string | null
+          company_id: string
+          created_at: string | null
+          day_of_week: number
+          id: string
+          is_working_day: boolean
+          updated_at: string | null
+        }
+        Insert: {
+          check_in_time?: string | null
+          check_out_time?: string | null
+          company_id: string
+          created_at?: string | null
+          day_of_week: number
+          id?: string
+          is_working_day?: boolean
+          updated_at?: string | null
+        }
+        Update: {
+          check_in_time?: string | null
+          check_out_time?: string | null
+          company_id?: string
+          created_at?: string | null
+          day_of_week?: number
+          id?: string
+          is_working_day?: boolean
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_schedules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compensatory_days: {
         Row: {
           company_id: string | null
@@ -659,6 +700,7 @@ export type Database = {
           id: string
           period_id: string | null
           reason: string | null
+          request_type: string
           start_date: string
           status: string | null
           total_days: number
@@ -675,6 +717,7 @@ export type Database = {
           id?: string
           period_id?: string | null
           reason?: string | null
+          request_type?: string
           start_date: string
           status?: string | null
           total_days: number
@@ -691,6 +734,7 @@ export type Database = {
           id?: string
           period_id?: string | null
           reason?: string | null
+          request_type?: string
           start_date?: string
           status?: string | null
           total_days?: number

@@ -56,6 +56,7 @@ export function MyVacations() {
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [reason, setReason] = useState("");
+  const [requestType, setRequestType] = useState<'full_day' | 'morning' | 'afternoon'>('full_day');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
@@ -93,16 +94,28 @@ export function MyVacations() {
   const handleSubmitRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!startDate || !endDate) {
+    if (!startDate) {
       toast({
         title: "Error",
-        description: "Debes seleccionar las fechas de inicio y fin",
+        description: "Debes seleccionar la fecha de inicio",
         variant: "destructive",
       });
       return;
     }
 
-    if (endDate <= startDate) {
+    // For half-day requests, end_date = start_date
+    const effectiveEndDate = requestType !== 'full_day' ? startDate : endDate;
+
+    if (!effectiveEndDate) {
+      toast({
+        title: "Error",
+        description: "Debes seleccionar la fecha de fin",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (requestType === 'full_day' && effectiveEndDate <= startDate) {
       toast({
         title: "Error", 
         description: "La fecha de fin debe ser posterior a la fecha de inicio",
@@ -113,16 +126,12 @@ export function MyVacations() {
 
     // Validar que no haya solapamiento con solicitudes existentes (pendientes o aprobadas)
     const requestedStart = startDate.toISOString().split('T')[0];
-    const requestedEnd = endDate.toISOString().split('T')[0];
+    const requestedEnd = effectiveEndDate.toISOString().split('T')[0];
     
     const overlappingRequests = vacationRequests.filter(req => {
-      // Solo considerar solicitudes pendientes o aprobadas
       if (req.status === 'rejected') return false;
-      
       const existingStart = req.start_date;
       const existingEnd = req.end_date;
-      
-      // Verificar si hay solapamiento de fechas
       return (
         (requestedStart >= existingStart && requestedStart <= existingEnd) ||
         (requestedEnd >= existingStart && requestedEnd <= existingEnd) ||
@@ -146,18 +155,22 @@ export function MyVacations() {
     try {
       await createVacationRequest({
         start_date: startDate.toISOString().split('T')[0],
-        end_date: endDate.toISOString().split('T')[0],
+        end_date: effectiveEndDate.toISOString().split('T')[0],
         reason: reason || null,
+        request_type: requestType,
       });
 
       toast({
         title: "¡Solicitud enviada!",
-        description: "Tu solicitud de vacaciones ha sido enviada correctamente",
+        description: requestType !== 'full_day' 
+          ? `Tu solicitud de ${requestType === 'morning' ? 'mañana' : 'tarde'} libre ha sido enviada`
+          : "Tu solicitud de vacaciones ha sido enviada correctamente",
       });
 
       setStartDate(undefined);
       setEndDate(undefined);
       setReason("");
+      setRequestType('full_day');
       setIsDialogOpen(false);
     } catch (error: any) {
       toast({
@@ -410,9 +423,24 @@ export function MyVacations() {
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmitRequest} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              {/* Request Type Selector */}
+              <div className="space-y-2">
+                <Label>Tipo de solicitud</Label>
+                <Select value={requestType} onValueChange={(v) => setRequestType(v as 'full_day' | 'morning' | 'afternoon')}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="full_day">Día(s) completo(s)</SelectItem>
+                    <SelectItem value="morning">Solo mañana (0.5 días)</SelectItem>
+                    <SelectItem value="afternoon">Solo tarde (0.5 días)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className={`grid gap-4 ${requestType === 'full_day' ? 'grid-cols-2' : 'grid-cols-1'}`}>
                 <div className="space-y-2">
-                  <Label htmlFor="start-date">Fecha de inicio</Label>
+                  <Label htmlFor="start-date">{requestType === 'full_day' ? 'Fecha de inicio' : 'Fecha'}</Label>
                   <Input
                     id="start-date"
                     type="date"
@@ -428,23 +456,25 @@ export function MyVacations() {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="end-date">Fecha de fin</Label>
-                  <Input
-                    id="end-date"
-                    type="date"
-                    value={endDate && !isNaN(endDate.getTime()) ? endDate.toISOString().split('T')[0] : ''}
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        const date = new Date(e.target.value);
-                        setEndDate(!isNaN(date.getTime()) ? date : undefined);
-                      } else {
-                        setEndDate(undefined);
-                      }
-                    }}
-                    required
-                  />
-                </div>
+                {requestType === 'full_day' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="end-date">Fecha de fin</Label>
+                    <Input
+                      id="end-date"
+                      type="date"
+                      value={endDate && !isNaN(endDate.getTime()) ? endDate.toISOString().split('T')[0] : ''}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          const date = new Date(e.target.value);
+                          setEndDate(!isNaN(date.getTime()) ? date : undefined);
+                        } else {
+                          setEndDate(undefined);
+                        }
+                      }}
+                      required
+                    />
+                  </div>
+                )}
               </div>
               
               {/* Period indicator */}
@@ -725,9 +755,14 @@ export function MyVacations() {
                               <div key={request.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors gap-3">
                                 <div className="flex items-center gap-4">
                                   {getStatusIcon(request.status)}
-                                  <div>
+                                   <div>
                                     <p className="font-medium">
-                                      {formatDate(request.start_date)} - {formatDate(request.end_date)}
+                                      {(request as any).request_type === 'morning' 
+                                        ? `${formatDate(request.start_date)} — Mañana`
+                                        : (request as any).request_type === 'afternoon'
+                                          ? `${formatDate(request.start_date)} — Tarde`
+                                          : `${formatDate(request.start_date)} - ${formatDate(request.end_date)}`
+                                      }
                                     </p>
                                     <p className="text-sm text-muted-foreground">
                                       {request.reason || 'Sin motivo especificado'}
@@ -740,7 +775,7 @@ export function MyVacations() {
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-2 justify-between sm:justify-end">
-                                  <p className="font-semibold text-lg">{request.total_days} días</p>
+                                  <p className="font-semibold text-lg">{Number(request.total_days)} {Number(request.total_days) === 0.5 ? 'día' : 'días'}</p>
                                   {getStatusBadge(request.status)}
                                   {(request.status === 'approved' || request.status === 'rejected') && (
                                     <Button
