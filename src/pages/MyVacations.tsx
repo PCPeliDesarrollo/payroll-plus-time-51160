@@ -423,9 +423,24 @@ export function MyVacations() {
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmitRequest} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              {/* Request Type Selector */}
+              <div className="space-y-2">
+                <Label>Tipo de solicitud</Label>
+                <Select value={requestType} onValueChange={(v) => setRequestType(v as 'full_day' | 'morning' | 'afternoon')}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="full_day">Día(s) completo(s)</SelectItem>
+                    <SelectItem value="morning">Solo mañana (0.5 días)</SelectItem>
+                    <SelectItem value="afternoon">Solo tarde (0.5 días)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className={`grid gap-4 ${requestType === 'full_day' ? 'grid-cols-2' : 'grid-cols-1'}`}>
                 <div className="space-y-2">
-                  <Label htmlFor="start-date">Fecha de inicio</Label>
+                  <Label htmlFor="start-date">{requestType === 'full_day' ? 'Fecha de inicio' : 'Fecha'}</Label>
                   <Input
                     id="start-date"
                     type="date"
@@ -441,23 +456,25 @@ export function MyVacations() {
                     required
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="end-date">Fecha de fin</Label>
-                  <Input
-                    id="end-date"
-                    type="date"
-                    value={endDate && !isNaN(endDate.getTime()) ? endDate.toISOString().split('T')[0] : ''}
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        const date = new Date(e.target.value);
-                        setEndDate(!isNaN(date.getTime()) ? date : undefined);
-                      } else {
-                        setEndDate(undefined);
-                      }
-                    }}
-                    required
-                  />
-                </div>
+                {requestType === 'full_day' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="end-date">Fecha de fin</Label>
+                    <Input
+                      id="end-date"
+                      type="date"
+                      value={endDate && !isNaN(endDate.getTime()) ? endDate.toISOString().split('T')[0] : ''}
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          const date = new Date(e.target.value);
+                          setEndDate(!isNaN(date.getTime()) ? date : undefined);
+                        } else {
+                          setEndDate(undefined);
+                        }
+                      }}
+                      required
+                    />
+                  </div>
+                )}
               </div>
               
               {/* Period indicator */}
