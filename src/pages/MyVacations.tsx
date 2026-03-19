@@ -95,16 +95,28 @@ export function MyVacations() {
   const handleSubmitRequest = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!startDate || !endDate) {
+    if (!startDate) {
       toast({
         title: "Error",
-        description: "Debes seleccionar las fechas de inicio y fin",
+        description: "Debes seleccionar la fecha de inicio",
         variant: "destructive",
       });
       return;
     }
 
-    if (endDate <= startDate) {
+    // For half-day requests, end_date = start_date
+    const effectiveEndDate = requestType !== 'full_day' ? startDate : endDate;
+
+    if (!effectiveEndDate) {
+      toast({
+        title: "Error",
+        description: "Debes seleccionar la fecha de fin",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (requestType === 'full_day' && effectiveEndDate <= startDate) {
       toast({
         title: "Error", 
         description: "La fecha de fin debe ser posterior a la fecha de inicio",
@@ -115,16 +127,12 @@ export function MyVacations() {
 
     // Validar que no haya solapamiento con solicitudes existentes (pendientes o aprobadas)
     const requestedStart = startDate.toISOString().split('T')[0];
-    const requestedEnd = endDate.toISOString().split('T')[0];
+    const requestedEnd = effectiveEndDate.toISOString().split('T')[0];
     
     const overlappingRequests = vacationRequests.filter(req => {
-      // Solo considerar solicitudes pendientes o aprobadas
       if (req.status === 'rejected') return false;
-      
       const existingStart = req.start_date;
       const existingEnd = req.end_date;
-      
-      // Verificar si hay solapamiento de fechas
       return (
         (requestedStart >= existingStart && requestedStart <= existingEnd) ||
         (requestedEnd >= existingStart && requestedEnd <= existingEnd) ||
@@ -148,18 +156,22 @@ export function MyVacations() {
     try {
       await createVacationRequest({
         start_date: startDate.toISOString().split('T')[0],
-        end_date: endDate.toISOString().split('T')[0],
+        end_date: effectiveEndDate.toISOString().split('T')[0],
         reason: reason || null,
+        request_type: requestType,
       });
 
       toast({
         title: "¡Solicitud enviada!",
-        description: "Tu solicitud de vacaciones ha sido enviada correctamente",
+        description: requestType !== 'full_day' 
+          ? `Tu solicitud de ${requestType === 'morning' ? 'mañana' : 'tarde'} libre ha sido enviada`
+          : "Tu solicitud de vacaciones ha sido enviada correctamente",
       });
 
       setStartDate(undefined);
       setEndDate(undefined);
       setReason("");
+      setRequestType('full_day');
       setIsDialogOpen(false);
     } catch (error: any) {
       toast({
