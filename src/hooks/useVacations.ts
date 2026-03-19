@@ -123,9 +123,10 @@ export function useVacations() {
     try {
       const startDate = new Date(request.start_date);
       const endDate = new Date(request.end_date);
+      const reqType = request.request_type || 'full_day';
       
       const timeDiff = endDate.getTime() - startDate.getTime();
-      const totalDays = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
+      const totalDays = reqType !== 'full_day' ? 0.5 : Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
 
       // Determine which period the request belongs to (current or next)
       const now = new Date();
