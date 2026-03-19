@@ -166,6 +166,7 @@ export function useVacations() {
           company_id: profile?.company_id || null,
           total_days: totalDays,
           status: 'pending',
+          request_type: reqType,
         })
         .select()
         .single();
