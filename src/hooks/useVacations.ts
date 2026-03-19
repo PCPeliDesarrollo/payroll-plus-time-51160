@@ -116,6 +116,7 @@ export function useVacations() {
     end_date: string;
     reason?: string | null;
     period_id?: string | null;
+    request_type?: 'full_day' | 'morning' | 'afternoon';
   }) => {
     if (!user) throw new Error('No user logged in');
 
