@@ -57,6 +57,7 @@ export function MyVacations() {
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
   const [reason, setReason] = useState("");
+  const [requestType, setRequestType] = useState<'full_day' | 'morning' | 'afternoon'>('full_day');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
