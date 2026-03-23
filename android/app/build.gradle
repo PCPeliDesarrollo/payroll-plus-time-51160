@@ -1,14 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.lovable.payrollplustime"
+    namespace "com.pcpeli.rrhh"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.lovable.payrollplustime"
+        applicationId "com.pcpeli.rrhh"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 9
-        versionName "1.1.9"
+        versionCode 10
+        versionName "1.2.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
