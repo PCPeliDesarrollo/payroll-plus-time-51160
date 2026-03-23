@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">RRHH PcPeli</string>
     <string name="title_activity_main">RRHH PcPeli</string>
-    <string name="package_name">com.lovable.payrollplustime</string>
-    <string name="custom_url_scheme">com.lovable.payrollplustime</string>
+    <string name="package_name">com.pcpeli.rrhh</string>
+    <string name="custom_url_scheme">com.pcpeli.rrhh</string>
 </resources>

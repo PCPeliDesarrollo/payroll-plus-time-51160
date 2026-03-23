@@ -1,4 +1,63 @@
 workflows:
+  android-capacitor:
+    name: Android Capacitor Build
+    max_build_duration: 120
+    instance_type: linux_x2
+    environment:
+      groups:
+        - google_play
+      node: 20
+      java: 17
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          npm install
+      - name: Build web assets
+        script: |
+          npm run build
+      - name: Sync Android platform
+        script: |
+          npx cap sync android
+      - name: Set Android version and package
+        script: |
+          BUILD_GRADLE="$CM_BUILD_DIR/android/app/build.gradle"
+          APP_NAME="RRHH PcPeli"
+          PACKAGE_NAME="com.pcpeli.rrhh"
+          VERSION_NAME="1.2.0"
+
+          LATEST_BUILD=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME" --tracks=internal 2>/dev/null || true)
+          LATEST_BUILD=$(echo "$LATEST_BUILD" | tr -dc '0-9')
+
+          if [ -n "$LATEST_BUILD" ] && [ "$LATEST_BUILD" -gt 0 ]; then
+            VERSION_CODE=$((LATEST_BUILD + 1))
+          else
+            VERSION_CODE=$(date -u +%Y%m%d%H%M)
+          fi
+
+          sed -i "s/namespace \".*\"/namespace \"$PACKAGE_NAME\"/" "$BUILD_GRADLE"
+          sed -i "s/applicationId \".*\"/applicationId \"$PACKAGE_NAME\"/" "$BUILD_GRADLE"
+          sed -i "s/versionCode [0-9]\+/versionCode $VERSION_CODE/" "$BUILD_GRADLE"
+          sed -i "s/versionName \".*\"/versionName \"$VERSION_NAME\"/" "$BUILD_GRADLE"
+
+          STRINGS_FILE="$CM_BUILD_DIR/android/app/src/main/res/values/strings.xml"
+          sed -i "s#<string name=\"package_name\">.*</string>#<string name=\"package_name\">$PACKAGE_NAME</string>#" "$STRINGS_FILE"
+          sed -i "s#<string name=\"custom_url_scheme\">.*</string>#<string name=\"custom_url_scheme\">$PACKAGE_NAME</string>#" "$STRINGS_FILE"
+          sed -i "s#<string name=\"app_name\">.*</string>#<string name=\"app_name\">$APP_NAME</string>#" "$STRINGS_FILE"
+          sed -i "s#<string name=\"title_activity_main\">.*</string>#<string name=\"title_activity_main\">$APP_NAME</string>#" "$STRINGS_FILE"
+
+          echo "Android VERSION_CODE=$VERSION_CODE"
+          echo "Android VERSION_NAME=$VERSION_NAME"
+      - name: Build Android App Bundle
+        script: |
+          cd android && ./gradlew bundleRelease
+    artifacts:
+      - android/app/build/outputs/**/*.aab
+      - android/app/build/outputs/**/mapping.txt
+    publishing:
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
+
   ios-capacitor:
     name: iOS Capacitor Build
     max_build_duration: 120
