@@ -1,4 +1,4 @@
-package com.lovable.payrollplustime;
+package com.pcpeli.rrhh;
 
 import com.getcapacitor.BridgeActivity;
 
