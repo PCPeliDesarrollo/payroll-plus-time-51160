@@ -3,12 +3,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Clock, Search, Calendar, ArrowLeft } from "lucide-react";
+import { Clock, Search, Calendar, ArrowLeft, MapPin, Pencil, Trash2, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { ExportDataDialog } from "@/components/admin/ExportDataDialog";
+import { AddManualEntryDialog } from "@/components/attendance/AddManualEntryDialog";
+import { EditTimeEntryDialog } from "@/components/attendance/EditTimeEntryDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface TimeEntry {
   id: string;
@@ -22,6 +34,7 @@ interface TimeEntry {
   check_out_longitude: number | null;
   total_hours: any;
   status: string;
+  created_by: string | null;
 }
 
 interface Employee {
@@ -41,6 +54,9 @@ export function AdminAttendance({ onBack }: AdminAttendanceProps = {}) {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<TimeEntry | null>(null);
+  const [deletingEntryId, setDeletingEntryId] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -79,7 +95,6 @@ export function AdminAttendance({ onBack }: AdminAttendanceProps = {}) {
   const fetchTimeEntries = async (employeeId: string) => {
     try {
       setLoading(true);
-      // Calcular correctamente el último día del mes
       const [year, month] = selectedMonth.split('-').map(Number);
       const lastDay = new Date(year, month, 0).getDate();
       const startDate = `${selectedMonth}-01`;
@@ -105,6 +120,28 @@ export function AdminAttendance({ onBack }: AdminAttendanceProps = {}) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleDeleteEntry = async () => {
+    if (!deletingEntryId) return;
+    try {
+      const { error } = await supabase
+        .from('time_entries')
+        .delete()
+        .eq('id', deletingEntryId);
+
+      if (error) throw error;
+      toast({ title: "Fichaje eliminado", description: "El registro se ha eliminado correctamente" });
+      setDeletingEntryId(null);
+      if (selectedEmployee) fetchTimeEntries(selectedEmployee.id);
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+      toast({ title: "Error", description: "No se pudo eliminar el fichaje", variant: "destructive" });
+    }
+  };
+
+  const openInMap = (lat: number, lng: number) => {
+    window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
   };
 
   const getStatusBadge = (status: string) => {
@@ -151,13 +188,13 @@ export function AdminAttendance({ onBack }: AdminAttendanceProps = {}) {
             ← Volver al Dashboard
           </Button>
         )}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Gestión de Fichajes</h2>
-          <p className="text-sm sm:text-base text-muted-foreground">Selecciona un empleado para ver sus fichajes</p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Gestión de Fichajes</h2>
+            <p className="text-sm sm:text-base text-muted-foreground">Selecciona un empleado para ver sus fichajes</p>
+          </div>
+          <ExportDataDialog />
         </div>
-        <ExportDataDialog />
-      </div>
 
         <Card>
           <CardHeader>
@@ -237,13 +274,17 @@ export function AdminAttendance({ onBack }: AdminAttendanceProps = {}) {
               {selectedEmployee.department || 'Sin departamento'}
             </p>
           </div>
-          <div className="w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <Input
               type="month"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="h-9 md:h-10 text-xs md:text-sm"
+              className="h-9 md:h-10 text-xs md:text-sm flex-1 sm:flex-initial"
             />
+            <Button size="sm" onClick={() => setShowAddDialog(true)}>
+              <Plus className="h-4 w-4 mr-1" />
+              Añadir
+            </Button>
           </div>
         </div>
       </div>
@@ -273,75 +314,83 @@ export function AdminAttendance({ onBack }: AdminAttendanceProps = {}) {
               {timeEntries.map((entry) => (
                 <div 
                   key={entry.id} 
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3 md:p-4 bg-secondary/50 rounded-lg border gap-3"
+                  className="flex flex-col p-3 md:p-4 bg-secondary/50 rounded-lg border gap-3"
                 >
-                  <div className="flex flex-col gap-1 min-w-0">
-                    <p className="font-medium text-base md:text-lg">
-                      {format(new Date(entry.date), "EEEE, d 'de' MMMM", { locale: es })}
-                    </p>
-                    <p className="text-xs md:text-sm text-muted-foreground">
-                      {format(new Date(entry.date), 'dd/MM/yyyy')}
-                    </p>
+                  {/* Header row: date + badges + actions */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium text-base md:text-lg">
+                        {format(new Date(entry.date), "EEEE, d 'de' MMMM", { locale: es })}
+                      </p>
+                      <span className="text-xs md:text-sm text-muted-foreground">
+                        {format(new Date(entry.date), 'dd/MM/yyyy')}
+                      </span>
+                      {entry.created_by && entry.created_by !== entry.user_id && (
+                        <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700 text-xs">
+                          MANUAL
+                        </Badge>
+                      )}
+                      {getStatusBadge(entry.status)}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => setEditingEntry(entry)}
+                        title="Editar fichaje"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => setDeletingEntryId(entry.id)}
+                        title="Eliminar fichaje"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  
-                  <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-4 md:gap-6 w-full">
-                    <div className="flex-1 min-w-[200px]">
+
+                  {/* Details row */}
+                  <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-4 md:gap-6">
+                    <div className="flex-1 min-w-[180px]">
                       <p className="text-xs md:text-sm text-muted-foreground mb-1">Entrada</p>
-                      <p className="font-medium text-sm md:text-base mb-2">{formatTime(entry.check_in_time)}</p>
+                      <p className="font-medium text-sm md:text-base">{formatTime(entry.check_in_time)}</p>
                       {entry.check_in_latitude && entry.check_in_longitude && (
-                        <div className="space-y-1">
-                          <p className="text-xs text-muted-foreground font-mono">
-                            📍 {entry.check_in_latitude.toFixed(6)}, {entry.check_in_longitude.toFixed(6)}
-                          </p>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(`${entry.check_in_latitude},${entry.check_in_longitude}`);
-                              toast({
-                                title: "Coordenadas copiadas",
-                                description: "Las coordenadas se han copiado al portapapeles",
-                              });
-                            }}
-                            className="text-xs text-primary hover:underline"
-                          >
-                            Copiar coordenadas
-                          </button>
-                        </div>
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="h-auto p-0 text-xs mt-1"
+                          onClick={() => openInMap(entry.check_in_latitude!, entry.check_in_longitude!)}
+                        >
+                          <MapPin className="h-3 w-3 mr-1" />
+                          Ver ubicación
+                        </Button>
                       )}
                     </div>
                     
-                    <div className="flex-1 min-w-[200px]">
+                    <div className="flex-1 min-w-[180px]">
                       <p className="text-xs md:text-sm text-muted-foreground mb-1">Salida</p>
-                      <p className="font-medium text-sm md:text-base mb-2">{formatTime(entry.check_out_time)}</p>
+                      <p className="font-medium text-sm md:text-base">{formatTime(entry.check_out_time)}</p>
                       {entry.check_out_latitude && entry.check_out_longitude && (
-                        <div className="space-y-1">
-                          <p className="text-xs text-muted-foreground font-mono">
-                            📍 {entry.check_out_latitude.toFixed(6)}, {entry.check_out_longitude.toFixed(6)}
-                          </p>
-                          <button
-                            onClick={() => {
-                              navigator.clipboard.writeText(`${entry.check_out_latitude},${entry.check_out_longitude}`);
-                              toast({
-                                title: "Coordenadas copiadas",
-                                description: "Las coordenadas se han copiado al portapapeles",
-                              });
-                            }}
-                            className="text-xs text-primary hover:underline"
-                          >
-                            Copiar coordenadas
-                          </button>
-                        </div>
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="h-auto p-0 text-xs mt-1"
+                          onClick={() => openInMap(entry.check_out_latitude!, entry.check_out_longitude!)}
+                        >
+                          <MapPin className="h-3 w-3 mr-1" />
+                          Ver ubicación
+                        </Button>
                       )}
                     </div>
                     
-                    <div className="flex items-center gap-4">
-                      <div className="text-center">
-                        <p className="text-xs md:text-sm text-muted-foreground">Total</p>
-                        <p className="font-medium text-sm md:text-base">{formatDuration(entry.total_hours)}</p>
-                      </div>
-                      
-                      <div className="text-center">
-                        {getStatusBadge(entry.status)}
-                      </div>
+                    <div className="text-center min-w-[80px]">
+                      <p className="text-xs md:text-sm text-muted-foreground">Total</p>
+                      <p className="font-medium text-sm md:text-base">{formatDuration(entry.total_hours)}</p>
                     </div>
                   </div>
                 </div>
@@ -350,6 +399,43 @@ export function AdminAttendance({ onBack }: AdminAttendanceProps = {}) {
           )}
         </CardContent>
       </Card>
+
+      {/* Dialog para añadir fichaje manual */}
+      <AddManualEntryDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        employeeId={selectedEmployee.id}
+        employeeName={selectedEmployee.full_name}
+        onSuccess={() => fetchTimeEntries(selectedEmployee.id)}
+      />
+
+      {/* Dialog para editar fichaje */}
+      {editingEntry && (
+        <EditTimeEntryDialog
+          open={!!editingEntry}
+          onOpenChange={(open) => !open && setEditingEntry(null)}
+          entry={editingEntry}
+          onSuccess={() => fetchTimeEntries(selectedEmployee.id)}
+        />
+      )}
+
+      {/* Dialog de confirmación para eliminar */}
+      <AlertDialog open={!!deletingEntryId} onOpenChange={(open) => !open && setDeletingEntryId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar fichaje?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El registro de fichaje será eliminado permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteEntry} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
