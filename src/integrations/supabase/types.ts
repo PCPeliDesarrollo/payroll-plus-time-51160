@@ -511,6 +511,7 @@ export type Database = {
           check_out_time: string | null
           company_id: string | null
           created_at: string | null
+          created_by: string | null
           date: string
           id: string
           notes: string | null
@@ -528,6 +529,7 @@ export type Database = {
           check_out_time?: string | null
           company_id?: string | null
           created_at?: string | null
+          created_by?: string | null
           date?: string
           id?: string
           notes?: string | null
@@ -545,6 +547,7 @@ export type Database = {
           check_out_time?: string | null
           company_id?: string | null
           created_at?: string | null
+          created_by?: string | null
           date?: string
           id?: string
           notes?: string | null
