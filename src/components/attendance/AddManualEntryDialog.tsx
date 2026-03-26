@@ -36,14 +36,21 @@ export function AddManualEntryDialog({ open, onOpenChange, employeeId, employeeN
       const minutes = Math.floor((diffMs % 3600000) / 60000);
       const totalHours = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`;
 
+      // Get employee's company_id
+      const { data: empProfile } = await supabase
+        .from('profiles')
+        .select('company_id')
+        .eq('id', employeeId)
+        .single();
+
       const { error } = await supabase.from('time_entries').insert({
         user_id: employeeId,
+        company_id: empProfile?.company_id,
         date,
         check_in_time: checkInTime,
         check_out_time: checkOutTime,
         total_hours: totalHours,
         status: 'checked_out',
-        created_by: user.id,
       } as any);
 
       if (error) throw error;

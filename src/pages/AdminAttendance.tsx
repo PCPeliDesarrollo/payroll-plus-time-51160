@@ -325,11 +325,6 @@ export function AdminAttendance({ onBack }: AdminAttendanceProps = {}) {
                       <span className="text-xs md:text-sm text-muted-foreground">
                         {format(new Date(entry.date), 'dd/MM/yyyy')}
                       </span>
-                      {entry.created_by && entry.created_by !== entry.user_id && (
-                        <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700 text-xs">
-                          MANUAL
-                        </Badge>
-                      )}
                       {getStatusBadge(entry.status)}
                     </div>
                     <div className="flex items-center gap-1">
