@@ -166,7 +166,7 @@ export function CreateCompanyDialog() {
             <div className="space-y-2">
               {DAYS_OF_WEEK.map(day => (
                 <div key={day.value} className="flex items-center gap-3 p-2 rounded-lg border bg-card">
-                  <div className="w-24 font-medium text-sm">{day.label}</div>
+                  <div className="w-24 font-medium text-sm text-foreground">{day.label}</div>
                   <Switch
                     checked={schedules[day.value].is_working_day}
                     onCheckedChange={(checked) => updateSchedule(day.value, 'is_working_day', checked)}
