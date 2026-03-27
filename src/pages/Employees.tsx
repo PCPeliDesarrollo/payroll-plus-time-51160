@@ -239,6 +239,16 @@ export function Employees({ onBack }: EmployeesProps = {}) {
         open={isDetailsDialogOpen}
         onOpenChange={setIsDetailsDialogOpen}
       />
+
+      {scheduleEmployee && (
+        <EmployeeScheduleDialog
+          open={isScheduleDialogOpen}
+          onOpenChange={setIsScheduleDialogOpen}
+          employeeId={scheduleEmployee.id}
+          employeeName={scheduleEmployee.full_name}
+          companyId={scheduleEmployee.company_id || ''}
+        />
+      )}
     </div>
   );
 }
