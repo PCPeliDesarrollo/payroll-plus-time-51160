@@ -162,16 +162,16 @@ export function CreateCompanyDialog() {
 
           {/* Schedule Configuration */}
           <div className="space-y-3">
-            <Label className="text-base font-semibold">Horarios por Día</Label>
+            <Label className="text-base font-semibold text-white">Horarios por Día</Label>
             <div className="space-y-2">
               {DAYS_OF_WEEK.map(day => (
                 <div key={day.value} className="flex items-center gap-3 p-2 rounded-lg border bg-card">
-                  <div className="w-24 font-medium text-sm text-foreground">{day.label}</div>
+                  <div className="w-24 font-medium text-sm text-card-foreground">{day.label}</div>
                   <Switch
                     checked={schedules[day.value].is_working_day}
                     onCheckedChange={(checked) => updateSchedule(day.value, 'is_working_day', checked)}
                   />
-                  <span className="text-xs text-muted-foreground w-12">
+                  <span className="text-xs text-card-foreground w-12">
                     {schedules[day.value].is_working_day ? 'Laboral' : 'Libre'}
                   </span>
                   {schedules[day.value].is_working_day && (
@@ -182,7 +182,7 @@ export function CreateCompanyDialog() {
                         onChange={(e) => updateSchedule(day.value, 'check_in_time', e.target.value)}
                         className="w-28 h-8 text-sm"
                       />
-                      <span className="text-muted-foreground text-sm">—</span>
+                      <span className="text-card-foreground text-sm">—</span>
                       <Input
                         type="time"
                         value={schedules[day.value].check_out_time}
