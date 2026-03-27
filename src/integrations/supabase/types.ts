@@ -135,6 +135,57 @@ export type Database = {
           },
         ]
       }
+      employee_schedules: {
+        Row: {
+          check_in_time: string | null
+          check_out_time: string | null
+          company_id: string | null
+          created_at: string | null
+          day_of_week: number
+          employee_id: string
+          id: string
+          is_working_day: boolean
+          updated_at: string | null
+        }
+        Insert: {
+          check_in_time?: string | null
+          check_out_time?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          day_of_week: number
+          employee_id: string
+          id?: string
+          is_working_day?: boolean
+          updated_at?: string | null
+        }
+        Update: {
+          check_in_time?: string | null
+          check_out_time?: string | null
+          company_id?: string | null
+          created_at?: string | null
+          day_of_week?: number
+          employee_id?: string
+          id?: string
+          is_working_day?: boolean
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employee_schedules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_schedules_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       extra_hours: {
         Row: {
           company_id: string | null

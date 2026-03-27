@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CreateEmployeeDialog } from "@/components/employees/CreateEmployeeDialog";
 import { EmployeeDetailsDialog } from "@/components/employees/EmployeeDetailsDialog";
+import { EmployeeScheduleDialog } from "@/components/employees/EmployeeScheduleDialog";
 import { useEmployees } from "@/hooks/useEmployees";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -37,6 +38,8 @@ export function Employees({ onBack }: EmployeesProps = {}) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState<Profile | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const [scheduleEmployee, setScheduleEmployee] = useState<Profile | null>(null);
   const { employees, loading, deactivateEmployee, deleteEmployee } = useEmployees();
   const { toast } = useToast();
   
@@ -152,8 +155,18 @@ export function Employees({ onBack }: EmployeesProps = {}) {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Ver Perfil</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setSelectedEmployee(employee);
+                            setIsDetailsDialogOpen(true);
+                          }}>Ver Perfil</DropdownMenuItem>
                           <DropdownMenuItem>Editar</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setScheduleEmployee(employee);
+                            setIsScheduleDialogOpen(true);
+                          }}>
+                            <Clock className="h-4 w-4 mr-2" />
+                            Horario Individual
+                          </DropdownMenuItem>
                           <DropdownMenuItem>Ver Fichajes</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
@@ -226,6 +239,16 @@ export function Employees({ onBack }: EmployeesProps = {}) {
         open={isDetailsDialogOpen}
         onOpenChange={setIsDetailsDialogOpen}
       />
+
+      {scheduleEmployee && (
+        <EmployeeScheduleDialog
+          open={isScheduleDialogOpen}
+          onOpenChange={setIsScheduleDialogOpen}
+          employeeId={scheduleEmployee.id}
+          employeeName={scheduleEmployee.full_name}
+          companyId={scheduleEmployee.company_id || ''}
+        />
+      )}
     </div>
   );
 }

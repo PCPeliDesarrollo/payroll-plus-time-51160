@@ -8,6 +8,25 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertCircle, Clock } from "lucide-react";
 
+interface ScheduleDay {
+  day_of_week: number;
+  is_working_day: boolean;
+  check_in_time: string;
+  check_out_time: string;
+}
+
+function parseTimeToHours(timeStr: string): number {
+  const [h, m] = timeStr.split(':').map(Number);
+  return h + (m || 0) / 60;
+}
+
+function buildCheckInOut(dateStr: string, checkIn: string, checkOut: string) {
+  return {
+    check_in_time: `${dateStr}T${checkIn}:00`,
+    check_out_time: `${dateStr}T${checkOut}:00`,
+  };
+}
+
 export function AdminRegularization() {
   const { employees } = useEmployees();
   const { toast } = useToast();
@@ -16,11 +35,7 @@ export function AdminRegularization() {
 
   const handleAutoRegularize = async () => {
     if (!selectedEmployee) {
-      toast({
-        title: "Error",
-        description: "Por favor selecciona un empleado",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Por favor selecciona un empleado", variant: "destructive" });
       return;
     }
 
@@ -35,16 +50,64 @@ export function AdminRegularization() {
 
       if (employeeError) throw employeeError;
       if (!employeeData?.company_id) {
-        toast({
-          title: "Error",
-          description: "El empleado no tiene una empresa asignada",
-          variant: "destructive",
-        });
+        toast({ title: "Error", description: "El empleado no tiene una empresa asignada", variant: "destructive" });
         setLoading(false);
         return;
       }
 
-      // Get current month's entries for the selected employee
+      // First try employee-specific schedules, fallback to company schedules
+      const { data: empSchedules } = await supabase
+        .from('employee_schedules')
+        .select('day_of_week, is_working_day, check_in_time, check_out_time')
+        .eq('employee_id', selectedEmployee);
+
+      let scheduleMap: Record<number, ScheduleDay> = {};
+
+      if (empSchedules && empSchedules.length > 0) {
+        empSchedules.forEach((s: any) => {
+          scheduleMap[s.day_of_week] = {
+            day_of_week: s.day_of_week,
+            is_working_day: s.is_working_day,
+            check_in_time: s.check_in_time?.slice(0, 5) || '09:00',
+            check_out_time: s.check_out_time?.slice(0, 5) || '17:00',
+          };
+        });
+      } else {
+        // Fallback to company schedules
+        const { data: compSchedules } = await supabase
+          .from('company_schedules')
+          .select('day_of_week, is_working_day, check_in_time, check_out_time')
+          .eq('company_id', employeeData.company_id);
+
+        if (compSchedules && compSchedules.length > 0) {
+          compSchedules.forEach((s: any) => {
+            scheduleMap[s.day_of_week] = {
+              day_of_week: s.day_of_week,
+              is_working_day: s.is_working_day,
+              check_in_time: s.check_in_time?.slice(0, 5) || '09:00',
+              check_out_time: s.check_out_time?.slice(0, 5) || '17:00',
+            };
+          });
+        } else {
+          // Default: Mon-Fri 9-17, Sat-Sun off
+          for (let d = 1; d <= 5; d++) {
+            scheduleMap[d] = { day_of_week: d, is_working_day: true, check_in_time: '09:00', check_out_time: '17:00' };
+          }
+          scheduleMap[6] = { day_of_week: 6, is_working_day: false, check_in_time: '09:00', check_out_time: '14:00' };
+          scheduleMap[0] = { day_of_week: 0, is_working_day: false, check_in_time: '09:00', check_out_time: '14:00' };
+        }
+      }
+
+      // Calculate target hours from schedule
+      let targetWeeklyHours = 0;
+      for (const day of Object.values(scheduleMap)) {
+        if (day.is_working_day) {
+          targetWeeklyHours += parseTimeToHours(day.check_out_time) - parseTimeToHours(day.check_in_time);
+        }
+      }
+      const targetMonthlyHours = targetWeeklyHours * 4; // ~4 weeks
+
+      // Get current month's entries
       const now = new Date();
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -58,69 +121,54 @@ export function AdminRegularization() {
 
       if (fetchError) throw fetchError;
 
-      // Calculate total hours worked
       let totalHours = 0;
       const existingDates = new Set<string>();
-      
+
       entries?.forEach(entry => {
         existingDates.add(entry.date);
         if (entry.total_hours) {
           const timeStr = entry.total_hours.toString();
           const match = timeStr.match(/(\d+):(\d+):(\d+)/);
           if (match) {
-            const hours = parseInt(match[1]);
-            const minutes = parseInt(match[2]);
-            totalHours += hours + (minutes / 60);
+            totalHours += parseInt(match[1]) + parseInt(match[2]) / 60;
           }
         }
       });
 
-      // Calculate remaining hours needed (40 hours per week = 160 hours per month)
-      const targetHours = 160;
-      const remainingHours = targetHours - totalHours;
+      const remainingHours = targetMonthlyHours - totalHours;
 
       if (remainingHours <= 0) {
-        toast({
-          title: "Sin fichajes pendientes",
-          description: "Este empleado ya tiene 160 horas o más este mes",
-        });
+        toast({ title: "Sin fichajes pendientes", description: `Este empleado ya tiene ${targetMonthlyHours}h o más este mes` });
         setLoading(false);
         return;
       }
 
-      // Get all days of the month that are valid work days
+      // Build available slots from schedule
       const daysInMonth = lastDayOfMonth.getDate();
-      const availableSlots: { date: string; type: 'weekday_morning' | 'weekday_afternoon' | 'saturday'; hours: number }[] = [];
+      const availableSlots: { date: string; checkIn: string; checkOut: string; hours: number }[] = [];
 
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(now.getFullYear(), now.getMonth(), day);
         const dateStr = date.toISOString().split('T')[0];
-        const dayOfWeek = date.getDay(); // 0 = Sunday, 6 = Saturday
-        
-        // Skip if date is in the future or already has entries
+        const dayOfWeek = date.getDay(); // 0=Sunday, 6=Saturday
+
         if (date > now || existingDates.has(dateStr)) continue;
-        
-        // Skip Sunday (day 0) - NO work on Sundays
-        if (dayOfWeek === 0) continue;
-        
-        // Saturday: 11:00-14:00 (3 hours)
-        if (dayOfWeek === 6) {
-          availableSlots.push({ date: dateStr, type: 'saturday', hours: 3 });
-        } else {
-          // Monday to Friday: Morning 9:00-14:00 (5h) + Afternoon 17:00-20:00 (3h)
-          availableSlots.push({ date: dateStr, type: 'weekday_morning', hours: 5 });
-          availableSlots.push({ date: dateStr, type: 'weekday_afternoon', hours: 3 });
+
+        const schedule = scheduleMap[dayOfWeek];
+        if (!schedule || !schedule.is_working_day) continue;
+
+        const hours = parseTimeToHours(schedule.check_out_time) - parseTimeToHours(schedule.check_in_time);
+        if (hours > 0) {
+          availableSlots.push({
+            date: dateStr,
+            checkIn: schedule.check_in_time,
+            checkOut: schedule.check_out_time,
+            hours,
+          });
         }
       }
 
-      // Sort slots: weekdays first (morning then afternoon), then Saturdays
-      availableSlots.sort((a, b) => {
-        if (a.type === 'saturday' && b.type !== 'saturday') return 1;
-        if (a.type !== 'saturday' && b.type === 'saturday') return -1;
-        return a.date.localeCompare(b.date);
-      });
-
-      // Create entries until we reach remaining hours
+      // Create entries until we fill remaining hours
       let hoursToCreate = remainingHours;
       const newEntries: Array<{
         user_id: string;
@@ -134,60 +182,33 @@ export function AdminRegularization() {
       for (const slot of availableSlots) {
         if (hoursToCreate <= 0) break;
 
-        let checkIn: string;
-        let checkOut: string;
-        let hoursForThisEntry: number;
+        const hoursForEntry = Math.min(slot.hours, hoursToCreate);
+        const { check_in_time, check_out_time } = buildCheckInOut(slot.date, slot.checkIn, slot.checkOut);
 
-        if (slot.type === 'weekday_morning') {
-          // Turno mañana: 9:00 - 14:00 (5 horas)
-          checkIn = `${slot.date}T09:00:00`;
-          checkOut = `${slot.date}T14:00:00`;
-          hoursForThisEntry = Math.min(5, hoursToCreate);
-          // Adjust checkout if we need less than 5 hours
-          if (hoursForThisEntry < 5) {
-            const endHour = 9 + Math.floor(hoursForThisEntry);
-            const endMinutes = Math.round((hoursForThisEntry - Math.floor(hoursForThisEntry)) * 60);
-            checkOut = `${slot.date}T${String(endHour).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}:00`;
-          }
-        } else if (slot.type === 'weekday_afternoon') {
-          // Turno tarde: 17:00 - 20:00 (3 horas)
-          checkIn = `${slot.date}T17:00:00`;
-          checkOut = `${slot.date}T20:00:00`;
-          hoursForThisEntry = Math.min(3, hoursToCreate);
-          if (hoursForThisEntry < 3) {
-            const endHour = 17 + Math.floor(hoursForThisEntry);
-            const endMinutes = Math.round((hoursForThisEntry - Math.floor(hoursForThisEntry)) * 60);
-            checkOut = `${slot.date}T${String(endHour).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}:00`;
-          }
-        } else {
-          // Sábado: 11:00 - 14:00 (3 horas)
-          checkIn = `${slot.date}T11:00:00`;
-          checkOut = `${slot.date}T14:00:00`;
-          hoursForThisEntry = Math.min(3, hoursToCreate);
-          if (hoursForThisEntry < 3) {
-            const endHour = 11 + Math.floor(hoursForThisEntry);
-            const endMinutes = Math.round((hoursForThisEntry - Math.floor(hoursForThisEntry)) * 60);
-            checkOut = `${slot.date}T${String(endHour).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}:00`;
-          }
+        // If we need fewer hours than the slot, adjust checkout
+        let finalCheckOut = check_out_time;
+        if (hoursForEntry < slot.hours) {
+          const inHours = parseTimeToHours(slot.checkIn);
+          const endHour = inHours + hoursForEntry;
+          const h = Math.floor(endHour);
+          const m = Math.round((endHour - h) * 60);
+          finalCheckOut = `${slot.date}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
         }
 
         newEntries.push({
           user_id: selectedEmployee,
           company_id: employeeData.company_id,
           date: slot.date,
-          check_in_time: checkIn,
-          check_out_time: checkOut,
-          status: 'checked_out'
+          check_in_time,
+          check_out_time: finalCheckOut,
+          status: 'checked_out',
         });
 
-        hoursToCreate -= hoursForThisEntry;
+        hoursToCreate -= hoursForEntry;
       }
 
       if (newEntries.length === 0) {
-        toast({
-          title: "Sin días disponibles",
-          description: "No hay días laborables disponibles para regularizar este mes",
-        });
+        toast({ title: "Sin días disponibles", description: "No hay días laborables disponibles para regularizar este mes" });
         setLoading(false);
         return;
       }
@@ -200,16 +221,12 @@ export function AdminRegularization() {
 
       toast({
         title: "Regularización completada",
-        description: `Se han creado ${newEntries.length} fichajes automáticamente (${remainingHours.toFixed(1)} horas)`,
+        description: `Se han creado ${newEntries.length} fichajes (${(targetMonthlyHours - (targetMonthlyHours - remainingHours + (remainingHours - hoursToCreate))).toFixed(1)}h → ${remainingHours.toFixed(1)}h restantes cubiertas)`,
       });
 
       setSelectedEmployee("");
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Hubo un problema al regularizar los fichajes",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: error.message || "Hubo un problema al regularizar", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -221,7 +238,7 @@ export function AdminRegularization() {
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold text-foreground">Regularización Automática</h2>
-        <p className="text-muted-foreground">Completa automáticamente los fichajes faltantes hasta 160 horas mensuales</p>
+        <p className="text-muted-foreground">Completa automáticamente los fichajes faltantes según el horario asignado</p>
       </div>
 
       <Card>
@@ -231,7 +248,7 @@ export function AdminRegularization() {
             Regularizar Fichajes
           </CardTitle>
           <CardDescription>
-            Selecciona un empleado para completar automáticamente sus fichajes del mes actual
+            Selecciona un empleado para completar sus fichajes del mes actual según su horario
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -251,8 +268,8 @@ export function AdminRegularization() {
             </Select>
           </div>
 
-          <Button 
-            onClick={handleAutoRegularize} 
+          <Button
+            onClick={handleAutoRegularize}
             disabled={loading || !selectedEmployee}
             className="w-full"
           >
@@ -271,25 +288,20 @@ export function AdminRegularization() {
         <CardContent className="space-y-2 text-sm">
           <p className="flex items-start gap-2">
             <span className="text-primary font-bold">1.</span>
-            <span>Calcula las horas trabajadas del empleado en el mes actual</span>
+            <span>Usa el horario individual del empleado, o el horario de la empresa si no tiene uno asignado</span>
           </p>
           <p className="flex items-start gap-2">
             <span className="text-primary font-bold">2.</span>
-            <span>Determina las horas faltantes para llegar a 160 horas mensuales (40 horas semanales)</span>
+            <span>Calcula las horas faltantes para cubrir las horas mensuales según el horario configurado</span>
           </p>
           <p className="flex items-start gap-2">
             <span className="text-primary font-bold">3.</span>
-            <span>Crea fichajes respetando el horario real: L-V mañana (9-14h) y tarde (17-20h), sábados (11-14h)</span>
+            <span>Solo crea fichajes en los días marcados como laborables y dentro del horario configurado</span>
           </p>
           <p className="flex items-start gap-2">
             <span className="text-primary font-bold">4.</span>
-            <span>Nunca crea fichajes en domingo ni fuera del horario laboral</span>
+            <span>Nunca crea fichajes en días libres, días futuros ni días con fichajes existentes</span>
           </p>
-          <div className="mt-4 p-3 bg-warning/10 border border-warning/20 rounded-lg">
-            <p className="text-warning-foreground">
-              <strong>Nota:</strong> Solo se crearán fichajes en días sin registro previo y hasta la fecha actual. L-V genera hasta 2 fichajes por día (mañana y tarde).
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>
