@@ -155,8 +155,18 @@ export function Employees({ onBack }: EmployeesProps = {}) {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Ver Perfil</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setSelectedEmployee(employee);
+                            setIsDetailsDialogOpen(true);
+                          }}>Ver Perfil</DropdownMenuItem>
                           <DropdownMenuItem>Editar</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setScheduleEmployee(employee);
+                            setIsScheduleDialogOpen(true);
+                          }}>
+                            <Clock className="h-4 w-4 mr-2" />
+                            Horario Individual
+                          </DropdownMenuItem>
                           <DropdownMenuItem>Ver Fichajes</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
