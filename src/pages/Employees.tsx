@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { CreateEmployeeDialog } from "@/components/employees/CreateEmployeeDialog";
 import { EmployeeDetailsDialog } from "@/components/employees/EmployeeDetailsDialog";
+import { EmployeeScheduleDialog } from "@/components/employees/EmployeeScheduleDialog";
 import { useEmployees } from "@/hooks/useEmployees";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -37,6 +38,8 @@ export function Employees({ onBack }: EmployeesProps = {}) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState<Profile | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [isScheduleDialogOpen, setIsScheduleDialogOpen] = useState(false);
+  const [scheduleEmployee, setScheduleEmployee] = useState<Profile | null>(null);
   const { employees, loading, deactivateEmployee, deleteEmployee } = useEmployees();
   const { toast } = useToast();
   
