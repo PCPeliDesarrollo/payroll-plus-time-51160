@@ -18,12 +18,19 @@ workflows:
       - name: Sync Android platform
         script: |
           npx cap sync android
+      - name: Validate Android signing
+        script: |
+          if [ -z "$CM_KEYSTORE_PATH" ] || [ -z "$CM_KEYSTORE_PASSWORD" ] || [ -z "$CM_KEY_ALIAS" ] || [ -z "$CM_KEY_PASSWORD" ]; then
+            echo "Falta la configuración de firma Android en Codemagic."
+            echo "Debes conectar el upload keystore de esta misma app antes de volver a publicar en Google Play."
+            exit 1
+          fi
       - name: Set Android version and package
         script: |
           BUILD_GRADLE="$CM_BUILD_DIR/android/app/build.gradle"
           APP_NAME="RRHH PcPeli"
           PACKAGE_NAME="com.pcpeli.rrhh"
-          VERSION_NAME="1.2.0"
+          VERSION_NAME="1.2.2"
 
           LATEST_BUILD=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME" --tracks=internal 2>/dev/null || true)
           LATEST_BUILD=$(echo "$LATEST_BUILD" | tr -dc '0-9')
@@ -49,7 +56,7 @@ workflows:
           echo "Android VERSION_NAME=$VERSION_NAME"
       - name: Build Android App Bundle
         script: |
-          cd android && ./gradlew bundleRelease
+          cd android && ./gradlew clean bundleRelease
     artifacts:
       - android/app/build/outputs/**/*.aab
       - android/app/build/outputs/**/mapping.txt
