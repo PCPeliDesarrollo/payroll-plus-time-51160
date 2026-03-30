@@ -29,7 +29,7 @@ workflows:
         script: |
           BUILD_GRADLE="$CM_BUILD_DIR/android/app/build.gradle"
           APP_NAME="RRHH PcPeli"
-          PACKAGE_NAME="com.lovable.payrollplustime"
+          PACKAGE_NAME="com.pcpeli.rrhh"
           VERSION_NAME="1.2.2"
 
           LATEST_BUILD=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME" --tracks=internal 2>/dev/null || true)
