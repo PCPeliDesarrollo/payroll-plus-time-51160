@@ -29,7 +29,7 @@ workflows:
         script: |
           BUILD_GRADLE="$CM_BUILD_DIR/android/app/build.gradle"
           APP_NAME="RRHH PcPeli"
-          PACKAGE_NAME="com.pcpeli.rrhh"
+          PACKAGE_NAME="com.lovable.payrollplustime"
           VERSION_NAME="1.2.2"
 
           LATEST_BUILD=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME" --tracks=internal 2>/dev/null || true)
@@ -41,7 +41,7 @@ workflows:
             VERSION_CODE=$(date -u +%Y%m%d%H%M)
           fi
 
-          sed -i "s/namespace \".*\"/namespace \"$PACKAGE_NAME\"/" "$BUILD_GRADLE"
+          sed -i "s/namespace \".*\"/namespace \"com.pcpeli.rrhh\"/" "$BUILD_GRADLE"
           sed -i "s/applicationId \".*\"/applicationId \"$PACKAGE_NAME\"/" "$BUILD_GRADLE"
           sed -i "s/versionCode [0-9]\+/versionCode $VERSION_CODE/" "$BUILD_GRADLE"
           sed -i "s/versionName \".*\"/versionName \"$VERSION_NAME\"/" "$BUILD_GRADLE"
