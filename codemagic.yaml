@@ -41,7 +41,7 @@ workflows:
             VERSION_CODE=$(date -u +%Y%m%d%H%M)
           fi
 
-          sed -i "s/namespace \".*\"/namespace \"$PACKAGE_NAME\"/" "$BUILD_GRADLE"
+          sed -i "s/namespace \".*\"/namespace \"com.pcpeli.rrhh\"/" "$BUILD_GRADLE"
           sed -i "s/applicationId \".*\"/applicationId \"$PACKAGE_NAME\"/" "$BUILD_GRADLE"
           sed -i "s/versionCode [0-9]\+/versionCode $VERSION_CODE/" "$BUILD_GRADLE"
           sed -i "s/versionName \".*\"/versionName \"$VERSION_NAME\"/" "$BUILD_GRADLE"
