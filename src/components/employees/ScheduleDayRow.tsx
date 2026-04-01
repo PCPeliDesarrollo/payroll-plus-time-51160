@@ -52,14 +52,14 @@ export function ScheduleDayRow({ dayValue, dayLabel, schedule, onUpdate }: Sched
   };
 
   return (
-    <div className="p-2.5 rounded-lg border border-border bg-card space-y-2">
+    <div className="rounded-lg border border-border bg-card p-2.5 text-foreground space-y-2">
       <div className="flex items-center gap-3">
-        <div className="w-28 shrink-0 font-semibold text-sm text-white dark:text-white">{dayLabel}</div>
+        <div className="w-28 shrink-0 font-semibold text-sm text-foreground">{dayLabel}</div>
         <Switch
           checked={schedule.is_working_day}
           onCheckedChange={(checked) => onUpdate(dayValue, 'is_working_day', checked)}
         />
-        <span className={`text-xs font-semibold w-14 ${schedule.is_working_day ? 'text-white' : 'text-white/70'}`}>
+        <span className={`w-14 text-xs font-semibold ${schedule.is_working_day ? 'text-foreground' : 'text-muted-foreground'}`}>
           {schedule.is_working_day ? 'Laboral' : 'Libre'}
         </span>
         {schedule.is_working_day && (
@@ -70,7 +70,7 @@ export function ScheduleDayRow({ dayValue, dayLabel, schedule, onUpdate }: Sched
               onChange={(e) => onUpdate(dayValue, 'check_in_time', e.target.value)}
               className="w-28 h-8 text-sm"
             />
-            <span className="text-muted-foreground text-sm">—</span>
+            <span className="text-foreground text-sm">—</span>
             <Input
               type="time"
               value={schedule.check_out_time}
@@ -86,15 +86,15 @@ export function ScheduleDayRow({ dayValue, dayLabel, schedule, onUpdate }: Sched
         )}
       </div>
       {schedule.is_working_day && hasAfternoon && (
-        <div className="flex items-center gap-3 pl-[calc(6rem+12px+3.5rem+24px)]">
-          <span className="text-xs text-white/80 font-semibold w-12">Tarde:</span>
+        <div className="flex items-center gap-3 pl-[calc(7rem+12px+3.5rem+24px)] text-foreground">
+          <span className="w-12 text-xs font-semibold text-foreground">Tarde:</span>
           <Input
             type="time"
             value={schedule.check_in_time_2}
             onChange={(e) => onUpdate(dayValue, 'check_in_time_2', e.target.value)}
             className="w-28 h-8 text-sm"
           />
-          <span className="text-muted-foreground text-sm">—</span>
+          <span className="text-foreground text-sm">—</span>
           <Input
             type="time"
             value={schedule.check_out_time_2}
