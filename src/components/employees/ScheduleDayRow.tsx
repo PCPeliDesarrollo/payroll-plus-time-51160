@@ -70,7 +70,7 @@ export function ScheduleDayRow({ dayValue, dayLabel, schedule, onUpdate }: Sched
               onChange={(e) => onUpdate(dayValue, 'check_in_time', e.target.value)}
               className="w-28 h-8 text-sm"
             />
-            <span className="text-foreground text-sm">—</span>
+            <span className="text-card-foreground text-sm">—</span>
             <Input
               type="time"
               value={schedule.check_out_time}
