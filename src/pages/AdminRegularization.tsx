@@ -137,7 +137,7 @@ export function AdminRegularization() {
 
       // Build available slots from schedule
       const daysInMonth = lastDayOfMonth.getDate();
-      const availableSlots: { date: string; checkIn: string; checkOut: string; hours: number }[] = [];
+      const availableSlots: { date: string; checkIn: string; checkOut: string; checkIn2: string; checkOut2: string; hours: number }[] = [];
 
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(now.getFullYear(), now.getMonth(), day);
