@@ -13,6 +13,8 @@ interface ScheduleDay {
   is_working_day: boolean;
   check_in_time: string;
   check_out_time: string;
+  check_in_time_2: string;
+  check_out_time_2: string;
 }
 
 function parseTimeToHours(timeStr: string): number {
