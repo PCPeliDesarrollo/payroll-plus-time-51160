@@ -52,7 +52,7 @@ export function ScheduleDayRow({ dayValue, dayLabel, schedule, onUpdate }: Sched
   };
 
   return (
-    <div className="rounded-lg border border-border bg-card p-2.5 text-foreground space-y-2">
+    <div className="rounded-lg border border-border bg-card p-2.5 text-card-foreground space-y-2">
       <div className="flex items-center gap-3">
         <div className="w-28 shrink-0 font-semibold text-sm text-foreground">{dayLabel}</div>
         <Switch
