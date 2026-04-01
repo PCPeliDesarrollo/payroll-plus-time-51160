@@ -60,7 +60,7 @@ export function AdminRegularization() {
       // Load employee's individual schedule (required)
       const { data: empSchedules } = await supabase
         .from('employee_schedules')
-        .select('day_of_week, is_working_day, check_in_time, check_out_time')
+        .select('day_of_week, is_working_day, check_in_time, check_out_time, check_in_time_2, check_out_time_2')
         .eq('employee_id', selectedEmployee);
 
       let scheduleMap: Record<number, ScheduleDay> = {};
