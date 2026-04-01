@@ -72,6 +72,8 @@ export function AdminRegularization() {
             is_working_day: s.is_working_day,
             check_in_time: s.check_in_time?.slice(0, 5) || '09:00',
             check_out_time: s.check_out_time?.slice(0, 5) || '17:00',
+            check_in_time_2: s.check_in_time_2?.slice(0, 5) || '',
+            check_out_time_2: s.check_out_time_2?.slice(0, 5) || '',
           };
         });
       } else {
