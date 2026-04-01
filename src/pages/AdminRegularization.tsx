@@ -149,13 +149,19 @@ export function AdminRegularization() {
         const schedule = scheduleMap[dayOfWeek];
         if (!schedule || !schedule.is_working_day) continue;
 
-        const hours = parseTimeToHours(schedule.check_out_time) - parseTimeToHours(schedule.check_in_time);
-        if (hours > 0) {
+        const hours1 = parseTimeToHours(schedule.check_out_time) - parseTimeToHours(schedule.check_in_time);
+        let totalDayHours = hours1;
+        if (schedule.check_in_time_2 && schedule.check_out_time_2) {
+          totalDayHours += parseTimeToHours(schedule.check_out_time_2) - parseTimeToHours(schedule.check_in_time_2);
+        }
+        if (totalDayHours > 0) {
           availableSlots.push({
             date: dateStr,
             checkIn: schedule.check_in_time,
             checkOut: schedule.check_out_time,
-            hours,
+            checkIn2: schedule.check_in_time_2,
+            checkOut2: schedule.check_out_time_2,
+            hours: totalDayHours,
           });
         }
       }
