@@ -4,38 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Plus } from "lucide-react";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
-const DAYS_OF_WEEK = [
-  { value: 1, label: 'Lunes' },
-  { value: 2, label: 'Martes' },
-  { value: 3, label: 'Miércoles' },
-  { value: 4, label: 'Jueves' },
-  { value: 5, label: 'Viernes' },
-  { value: 6, label: 'Sábado' },
-  { value: 0, label: 'Domingo' },
-];
-
-interface DaySchedule {
-  is_working_day: boolean;
-  check_in_time: string;
-  check_out_time: string;
-}
-
-const DEFAULT_SCHEDULES: Record<number, DaySchedule> = {
-  1: { is_working_day: true, check_in_time: '09:00', check_out_time: '17:00' },
-  2: { is_working_day: true, check_in_time: '09:00', check_out_time: '17:00' },
-  3: { is_working_day: true, check_in_time: '09:00', check_out_time: '17:00' },
-  4: { is_working_day: true, check_in_time: '09:00', check_out_time: '17:00' },
-  5: { is_working_day: true, check_in_time: '09:00', check_out_time: '17:00' },
-  6: { is_working_day: false, check_in_time: '09:00', check_out_time: '14:00' },
-  0: { is_working_day: false, check_in_time: '09:00', check_out_time: '14:00' },
-};
+import { ScheduleDayRow, DaySchedule, DAYS_OF_WEEK, DEFAULT_SCHEDULES } from "./ScheduleDayRow";
 
 export function CreateEmployeeDialog() {
   const [open, setOpen] = useState(false);
@@ -68,7 +42,6 @@ export function CreateEmployeeDialog() {
     setLoading(true);
 
     try {
-      // Get admin's company_id
       const { data: adminProfile } = await supabase
         .from('profiles')
         .select('company_id')
@@ -79,7 +52,6 @@ export function CreateEmployeeDialog() {
 
       const result = await createEmployee(formData);
       
-      // After employee is created, save their schedule
       if (result?.user?.id && companyId) {
         const scheduleRows = DAYS_OF_WEEK.map(day => ({
           employee_id: result.user.id,
@@ -88,6 +60,8 @@ export function CreateEmployeeDialog() {
           is_working_day: schedules[day.value].is_working_day,
           check_in_time: schedules[day.value].check_in_time,
           check_out_time: schedules[day.value].check_out_time,
+          check_in_time_2: schedules[day.value].check_in_time_2 || null,
+          check_out_time_2: schedules[day.value].check_out_time_2 || null,
         }));
 
         const { error: scheduleError } = await supabase
@@ -146,7 +120,7 @@ export function CreateEmployeeDialog() {
           Nuevo Empleado
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Crear Nuevo Empleado</DialogTitle>
         </DialogHeader>
@@ -238,36 +212,16 @@ export function CreateEmployeeDialog() {
           {/* Schedule Configuration */}
           <div className="space-y-3 border-t pt-4">
             <Label className="text-base font-semibold">Horario del Empleado</Label>
-            <p className="text-xs text-muted-foreground">Configura el horario laboral individual. Se usará para la regularización de fichajes.</p>
+            <p className="text-xs text-muted-foreground">Configura el horario laboral individual. Puedes añadir turno de tarde si lo necesita.</p>
             <div className="space-y-2">
               {DAYS_OF_WEEK.map(day => (
-                <div key={day.value} className="flex items-center gap-3 p-2 rounded-lg border bg-card">
-                  <div className="w-24 font-medium text-sm text-card-foreground">{day.label}</div>
-                  <Switch
-                    checked={schedules[day.value].is_working_day}
-                    onCheckedChange={(checked) => updateSchedule(day.value, 'is_working_day', checked)}
-                  />
-                  <span className="text-xs text-muted-foreground w-12">
-                    {schedules[day.value].is_working_day ? 'Laboral' : 'Libre'}
-                  </span>
-                  {schedules[day.value].is_working_day && (
-                    <>
-                      <Input
-                        type="time"
-                        value={schedules[day.value].check_in_time}
-                        onChange={(e) => updateSchedule(day.value, 'check_in_time', e.target.value)}
-                        className="w-28 h-8 text-sm"
-                      />
-                      <span className="text-muted-foreground text-sm">—</span>
-                      <Input
-                        type="time"
-                        value={schedules[day.value].check_out_time}
-                        onChange={(e) => updateSchedule(day.value, 'check_out_time', e.target.value)}
-                        className="w-28 h-8 text-sm"
-                      />
-                    </>
-                  )}
-                </div>
+                <ScheduleDayRow
+                  key={day.value}
+                  dayValue={day.value}
+                  dayLabel={day.label}
+                  schedule={schedules[day.value]}
+                  onUpdate={updateSchedule}
+                />
               ))}
             </div>
           </div>
