@@ -87,7 +87,7 @@ export function ScheduleDayRow({ dayValue, dayLabel, schedule, onUpdate }: Sched
       </div>
       {schedule.is_working_day && hasAfternoon && (
         <div className="flex items-center gap-3 pl-[calc(6rem+12px+3.5rem+24px)]">
-          <span className="text-xs text-muted-foreground font-medium w-12">Tarde:</span>
+          <span className="text-xs text-white/80 font-semibold w-12">Tarde:</span>
           <Input
             type="time"
             value={schedule.check_in_time_2}
