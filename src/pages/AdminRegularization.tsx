@@ -55,7 +55,7 @@ export function AdminRegularization() {
         return;
       }
 
-      // First try employee-specific schedules, fallback to company schedules
+      // Load employee's individual schedule (required)
       const { data: empSchedules } = await supabase
         .from('employee_schedules')
         .select('day_of_week, is_working_day, check_in_time, check_out_time')
@@ -73,29 +73,14 @@ export function AdminRegularization() {
           };
         });
       } else {
-        // Fallback to company schedules
-        const { data: compSchedules } = await supabase
-          .from('company_schedules')
-          .select('day_of_week, is_working_day, check_in_time, check_out_time')
-          .eq('company_id', employeeData.company_id);
-
-        if (compSchedules && compSchedules.length > 0) {
-          compSchedules.forEach((s: any) => {
-            scheduleMap[s.day_of_week] = {
-              day_of_week: s.day_of_week,
-              is_working_day: s.is_working_day,
-              check_in_time: s.check_in_time?.slice(0, 5) || '09:00',
-              check_out_time: s.check_out_time?.slice(0, 5) || '17:00',
-            };
-          });
-        } else {
-          // Default: Mon-Fri 9-17, Sat-Sun off
-          for (let d = 1; d <= 5; d++) {
-            scheduleMap[d] = { day_of_week: d, is_working_day: true, check_in_time: '09:00', check_out_time: '17:00' };
-          }
-          scheduleMap[6] = { day_of_week: 6, is_working_day: false, check_in_time: '09:00', check_out_time: '14:00' };
-          scheduleMap[0] = { day_of_week: 0, is_working_day: false, check_in_time: '09:00', check_out_time: '14:00' };
-        }
+        // No schedule configured — inform admin
+        toast({
+          title: "Sin horario configurado",
+          description: "Este empleado no tiene un horario asignado. Configúralo primero desde la sección de Empleados.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
       }
 
       // Calculate target hours from schedule
@@ -105,7 +90,7 @@ export function AdminRegularization() {
           targetWeeklyHours += parseTimeToHours(day.check_out_time) - parseTimeToHours(day.check_in_time);
         }
       }
-      const targetMonthlyHours = targetWeeklyHours * 4; // ~4 weeks
+      const targetMonthlyHours = targetWeeklyHours * 4;
 
       // Get current month's entries
       const now = new Date();
@@ -150,7 +135,7 @@ export function AdminRegularization() {
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(now.getFullYear(), now.getMonth(), day);
         const dateStr = date.toISOString().split('T')[0];
-        const dayOfWeek = date.getDay(); // 0=Sunday, 6=Saturday
+        const dayOfWeek = date.getDay();
 
         if (date > now || existingDates.has(dateStr)) continue;
 
@@ -185,7 +170,6 @@ export function AdminRegularization() {
         const hoursForEntry = Math.min(slot.hours, hoursToCreate);
         const { check_in_time, check_out_time } = buildCheckInOut(slot.date, slot.checkIn, slot.checkOut);
 
-        // If we need fewer hours than the slot, adjust checkout
         let finalCheckOut = check_out_time;
         if (hoursForEntry < slot.hours) {
           const inHours = parseTimeToHours(slot.checkIn);
@@ -221,7 +205,7 @@ export function AdminRegularization() {
 
       toast({
         title: "Regularización completada",
-        description: `Se han creado ${newEntries.length} fichajes (${(targetMonthlyHours - (targetMonthlyHours - remainingHours + (remainingHours - hoursToCreate))).toFixed(1)}h → ${remainingHours.toFixed(1)}h restantes cubiertas)`,
+        description: `Se han creado ${newEntries.length} fichajes automáticamente`,
       });
 
       setSelectedEmployee("");
@@ -238,7 +222,7 @@ export function AdminRegularization() {
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold text-foreground">Regularización Automática</h2>
-        <p className="text-muted-foreground">Completa automáticamente los fichajes faltantes según el horario asignado</p>
+        <p className="text-muted-foreground">Completa automáticamente los fichajes faltantes según el horario individual de cada empleado</p>
       </div>
 
       <Card>
@@ -248,7 +232,7 @@ export function AdminRegularization() {
             Regularizar Fichajes
           </CardTitle>
           <CardDescription>
-            Selecciona un empleado para completar sus fichajes del mes actual según su horario
+            Selecciona un empleado para completar sus fichajes del mes actual según su horario individual
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -288,15 +272,15 @@ export function AdminRegularization() {
         <CardContent className="space-y-2 text-sm">
           <p className="flex items-start gap-2">
             <span className="text-primary font-bold">1.</span>
-            <span>Usa el horario individual del empleado, o el horario de la empresa si no tiene uno asignado</span>
+            <span>Usa el horario individual asignado al empleado al crearlo o editarlo</span>
           </p>
           <p className="flex items-start gap-2">
             <span className="text-primary font-bold">2.</span>
-            <span>Calcula las horas faltantes para cubrir las horas mensuales según el horario configurado</span>
+            <span>Si el empleado no tiene horario configurado, se pedirá que lo configures primero</span>
           </p>
           <p className="flex items-start gap-2">
             <span className="text-primary font-bold">3.</span>
-            <span>Solo crea fichajes en los días marcados como laborables y dentro del horario configurado</span>
+            <span>Calcula las horas faltantes y crea fichajes solo en días laborables del horario</span>
           </p>
           <p className="flex items-start gap-2">
             <span className="text-primary font-bold">4.</span>
