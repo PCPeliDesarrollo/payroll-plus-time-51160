@@ -92,6 +92,9 @@ export function AdminRegularization() {
       for (const day of Object.values(scheduleMap)) {
         if (day.is_working_day) {
           targetWeeklyHours += parseTimeToHours(day.check_out_time) - parseTimeToHours(day.check_in_time);
+          if (day.check_in_time_2 && day.check_out_time_2) {
+            targetWeeklyHours += parseTimeToHours(day.check_out_time_2) - parseTimeToHours(day.check_in_time_2);
+          }
         }
       }
       const targetMonthlyHours = targetWeeklyHours * 4;
