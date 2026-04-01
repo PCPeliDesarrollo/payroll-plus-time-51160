@@ -13,6 +13,8 @@ interface ScheduleDay {
   is_working_day: boolean;
   check_in_time: string;
   check_out_time: string;
+  check_in_time_2: string;
+  check_out_time_2: string;
 }
 
 function parseTimeToHours(timeStr: string): number {
@@ -58,7 +60,7 @@ export function AdminRegularization() {
       // Load employee's individual schedule (required)
       const { data: empSchedules } = await supabase
         .from('employee_schedules')
-        .select('day_of_week, is_working_day, check_in_time, check_out_time')
+        .select('day_of_week, is_working_day, check_in_time, check_out_time, check_in_time_2, check_out_time_2')
         .eq('employee_id', selectedEmployee);
 
       let scheduleMap: Record<number, ScheduleDay> = {};
@@ -70,6 +72,8 @@ export function AdminRegularization() {
             is_working_day: s.is_working_day,
             check_in_time: s.check_in_time?.slice(0, 5) || '09:00',
             check_out_time: s.check_out_time?.slice(0, 5) || '17:00',
+            check_in_time_2: s.check_in_time_2?.slice(0, 5) || '',
+            check_out_time_2: s.check_out_time_2?.slice(0, 5) || '',
           };
         });
       } else {
@@ -88,6 +92,9 @@ export function AdminRegularization() {
       for (const day of Object.values(scheduleMap)) {
         if (day.is_working_day) {
           targetWeeklyHours += parseTimeToHours(day.check_out_time) - parseTimeToHours(day.check_in_time);
+          if (day.check_in_time_2 && day.check_out_time_2) {
+            targetWeeklyHours += parseTimeToHours(day.check_out_time_2) - parseTimeToHours(day.check_in_time_2);
+          }
         }
       }
       const targetMonthlyHours = targetWeeklyHours * 4;
@@ -130,7 +137,7 @@ export function AdminRegularization() {
 
       // Build available slots from schedule
       const daysInMonth = lastDayOfMonth.getDate();
-      const availableSlots: { date: string; checkIn: string; checkOut: string; hours: number }[] = [];
+      const availableSlots: { date: string; checkIn: string; checkOut: string; checkIn2: string; checkOut2: string; hours: number }[] = [];
 
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(now.getFullYear(), now.getMonth(), day);
@@ -142,13 +149,19 @@ export function AdminRegularization() {
         const schedule = scheduleMap[dayOfWeek];
         if (!schedule || !schedule.is_working_day) continue;
 
-        const hours = parseTimeToHours(schedule.check_out_time) - parseTimeToHours(schedule.check_in_time);
-        if (hours > 0) {
+        const hours1 = parseTimeToHours(schedule.check_out_time) - parseTimeToHours(schedule.check_in_time);
+        let totalDayHours = hours1;
+        if (schedule.check_in_time_2 && schedule.check_out_time_2) {
+          totalDayHours += parseTimeToHours(schedule.check_out_time_2) - parseTimeToHours(schedule.check_in_time_2);
+        }
+        if (totalDayHours > 0) {
           availableSlots.push({
             date: dateStr,
             checkIn: schedule.check_in_time,
             checkOut: schedule.check_out_time,
-            hours,
+            checkIn2: schedule.check_in_time_2,
+            checkOut2: schedule.check_out_time_2,
+            hours: totalDayHours,
           });
         }
       }

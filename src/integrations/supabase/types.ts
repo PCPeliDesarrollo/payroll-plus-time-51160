@@ -138,7 +138,9 @@ export type Database = {
       employee_schedules: {
         Row: {
           check_in_time: string | null
+          check_in_time_2: string | null
           check_out_time: string | null
+          check_out_time_2: string | null
           company_id: string | null
           created_at: string | null
           day_of_week: number
@@ -149,7 +151,9 @@ export type Database = {
         }
         Insert: {
           check_in_time?: string | null
+          check_in_time_2?: string | null
           check_out_time?: string | null
+          check_out_time_2?: string | null
           company_id?: string | null
           created_at?: string | null
           day_of_week: number
@@ -160,7 +164,9 @@ export type Database = {
         }
         Update: {
           check_in_time?: string | null
+          check_in_time_2?: string | null
           check_out_time?: string | null
+          check_out_time_2?: string | null
           company_id?: string | null
           created_at?: string | null
           day_of_week?: number
