@@ -54,12 +54,12 @@ export function ScheduleDayRow({ dayValue, dayLabel, schedule, onUpdate }: Sched
   return (
     <div className="p-2.5 rounded-lg border border-border bg-card space-y-2">
       <div className="flex items-center gap-3">
-        <div className="w-24 font-semibold text-sm text-foreground">{dayLabel}</div>
+        <div className="w-28 shrink-0 font-semibold text-sm text-white dark:text-white">{dayLabel}</div>
         <Switch
           checked={schedule.is_working_day}
           onCheckedChange={(checked) => onUpdate(dayValue, 'is_working_day', checked)}
         />
-        <span className={`text-xs font-medium w-14 ${schedule.is_working_day ? 'text-primary' : 'text-muted-foreground'}`}>
+        <span className={`text-xs font-semibold w-14 ${schedule.is_working_day ? 'text-white' : 'text-white/70'}`}>
           {schedule.is_working_day ? 'Laboral' : 'Libre'}
         </span>
         {schedule.is_working_day && (
@@ -87,7 +87,7 @@ export function ScheduleDayRow({ dayValue, dayLabel, schedule, onUpdate }: Sched
       </div>
       {schedule.is_working_day && hasAfternoon && (
         <div className="flex items-center gap-3 pl-[calc(6rem+12px+3.5rem+24px)]">
-          <span className="text-xs text-muted-foreground font-medium w-12">Tarde:</span>
+          <span className="text-xs text-white/80 font-semibold w-12">Tarde:</span>
           <Input
             type="time"
             value={schedule.check_in_time_2}
