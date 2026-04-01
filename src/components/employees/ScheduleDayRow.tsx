@@ -59,7 +59,7 @@ export function ScheduleDayRow({ dayValue, dayLabel, schedule, onUpdate }: Sched
           checked={schedule.is_working_day}
           onCheckedChange={(checked) => onUpdate(dayValue, 'is_working_day', checked)}
         />
-        <span className={`text-xs font-medium w-14 ${schedule.is_working_day ? 'text-primary' : 'text-muted-foreground'}`}>
+        <span className={`text-xs font-semibold w-14 ${schedule.is_working_day ? 'text-white' : 'text-white/70'}`}>
           {schedule.is_working_day ? 'Laboral' : 'Libre'}
         </span>
         {schedule.is_working_day && (
