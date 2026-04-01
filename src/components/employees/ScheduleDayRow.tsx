@@ -54,7 +54,7 @@ export function ScheduleDayRow({ dayValue, dayLabel, schedule, onUpdate }: Sched
   return (
     <div className="p-2.5 rounded-lg border border-border bg-card space-y-2">
       <div className="flex items-center gap-3">
-        <div className="w-24 font-semibold text-sm text-foreground">{dayLabel}</div>
+        <div className="w-28 shrink-0 font-semibold text-sm text-white dark:text-white">{dayLabel}</div>
         <Switch
           checked={schedule.is_working_day}
           onCheckedChange={(checked) => onUpdate(dayValue, 'is_working_day', checked)}
