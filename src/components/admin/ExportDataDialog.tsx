@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -9,13 +9,36 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { exportAttendancePDF, exportVacationsPDF, exportScheduleChangesPDF } from "@/lib/pdfExport";
 
+interface Employee {
+  id: string;
+  full_name: string;
+  employee_id: string | null;
+}
+
 export function ExportDataDialog() {
   const [open, setOpen] = useState(false);
   const [exportType, setExportType] = useState<'attendance' | 'vacations' | 'schedule_changes'>('attendance');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [isExporting, setIsExporting] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<string>('all');
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (open && exportType === 'attendance') {
+      fetchEmployees();
+    }
+  }, [open, exportType]);
+
+  const fetchEmployees = async () => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('id, full_name, employee_id')
+      .eq('is_active', true)
+      .order('full_name');
+    setEmployees(data || []);
+  };
 
   const handleExport = async () => {
     if (!startDate || !endDate) {
@@ -31,14 +54,25 @@ export function ExportDataDialog() {
 
     try {
       if (exportType === 'attendance') {
-        const { data, error } = await supabase
+        let query = supabase
           .from('time_entries')
           .select(`*, profiles:user_id (full_name, employee_id, department)`)
           .gte('date', startDate)
           .lte('date', endDate)
           .order('date', { ascending: false });
+
+        if (selectedEmployee !== 'all') {
+          query = query.eq('user_id', selectedEmployee);
+        }
+
+        const { data, error } = await query;
         if (error) throw error;
-        exportAttendancePDF(data || [], startDate, endDate);
+
+        const employeeName = selectedEmployee !== 'all'
+          ? employees.find(e => e.id === selectedEmployee)?.full_name
+          : undefined;
+
+        exportAttendancePDF(data || [], startDate, endDate, employeeName);
       } else if (exportType === 'vacations') {
         const { data, error } = await supabase
           .from('vacation_requests')
@@ -91,7 +125,7 @@ export function ExportDataDialog() {
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="export-type">Tipo de datos</Label>
-            <Select value={exportType} onValueChange={(value: any) => setExportType(value)}>
+            <Select value={exportType} onValueChange={(value: any) => { setExportType(value); setSelectedEmployee('all'); }}>
               <SelectTrigger id="export-type">
                 <SelectValue placeholder="Selecciona el tipo de datos" />
               </SelectTrigger>
@@ -102,6 +136,25 @@ export function ExportDataDialog() {
               </SelectContent>
             </Select>
           </div>
+
+          {exportType === 'attendance' && (
+            <div className="space-y-2">
+              <Label htmlFor="employee-select">Empleado</Label>
+              <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                <SelectTrigger id="employee-select">
+                  <SelectValue placeholder="Selecciona empleado" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos los empleados</SelectItem>
+                  {employees.map(emp => (
+                    <SelectItem key={emp.id} value={emp.id}>
+                      {emp.full_name} {emp.employee_id ? `(${emp.employee_id})` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

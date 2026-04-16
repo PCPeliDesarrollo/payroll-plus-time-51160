@@ -51,7 +51,7 @@ function addFooter(doc: jsPDF) {
 
     doc.setFontSize(8);
     doc.setTextColor(...MUTED_COLOR);
-    doc.text('PayrollPlus RRHH', 14, pageHeight - 8);
+    doc.text('RRHH PcPeli', 14, pageHeight - 8);
     doc.text(`Página ${i} de ${pageCount}`, pageWidth - 14, pageHeight - 8, { align: 'right' });
   }
 }
@@ -81,9 +81,10 @@ function addSummaryBox(doc: jsPDF, items: { label: string; value: string }[], st
   return startY + boxHeight + 8;
 }
 
-export function exportAttendancePDF(data: any[], startDate: string, endDate: string) {
+export function exportAttendancePDF(data: any[], startDate: string, endDate: string, employeeName?: string) {
   const doc = new jsPDF('landscape');
-  addHeader(doc, 'Informe de Fichajes', startDate, endDate);
+  const title = employeeName ? `Fichajes — ${employeeName}` : 'Informe de Fichajes';
+  addHeader(doc, title, startDate, endDate);
 
   const totalEntries = data.length;
   const withCheckout = data.filter(d => d.check_out_time).length;
@@ -148,7 +149,10 @@ export function exportAttendancePDF(data: any[], startDate: string, endDate: str
   });
 
   addFooter(doc);
-  doc.save(`fichajes_${startDate}_${endDate}.pdf`);
+  const fileName = employeeName
+    ? `fichajes_${employeeName.replace(/\s+/g, '_')}_${startDate}_${endDate}.pdf`
+    : `fichajes_${startDate}_${endDate}.pdf`;
+  doc.save(fileName);
 }
 
 export function exportVacationsPDF(data: any[], startDate: string, endDate: string) {
