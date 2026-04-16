@@ -51,7 +51,7 @@ function addFooter(doc: jsPDF) {
 
     doc.setFontSize(8);
     doc.setTextColor(...MUTED_COLOR);
-    doc.text('PayrollPlus RRHH', 14, pageHeight - 8);
+    doc.text('RRHH PcPeli', 14, pageHeight - 8);
     doc.text(`Página ${i} de ${pageCount}`, pageWidth - 14, pageHeight - 8, { align: 'right' });
   }
 }
