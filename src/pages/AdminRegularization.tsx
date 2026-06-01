@@ -99,17 +99,7 @@ export function AdminRegularization() {
         return;
       }
 
-      // Target monthly hours from schedule
-      let targetWeeklyHours = 0;
-      for (const day of Object.values(scheduleMap)) {
-        if (day.is_working_day) {
-          targetWeeklyHours += parseTimeToHours(day.check_out_time) - parseTimeToHours(day.check_in_time);
-          if (day.check_in_time_2 && day.check_out_time_2) {
-            targetWeeklyHours += parseTimeToHours(day.check_out_time_2) - parseTimeToHours(day.check_in_time_2);
-          }
-        }
-      }
-      const targetMonthlyHours = targetWeeklyHours * 4;
+      const WEEKLY_TARGET = 40;
 
       const firstDayOfMonth = new Date(year, month, 1);
       const lastDayOfMonth = new Date(year, month + 1, 0);
@@ -123,56 +113,36 @@ export function AdminRegularization() {
 
       if (fetchError) throw fetchError;
 
-      let totalHours = 0;
       const existingDates = new Set<string>();
+      // Hours already worked per ISO week key
+      const hoursByWeek: Record<string, number> = {};
+
+      // ISO week key (Mon-Sun) using year-month-day
+      const weekKey = (d: Date) => {
+        const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+        const day = tmp.getUTCDay() || 7; // Mon=1..Sun=7
+        tmp.setUTCDate(tmp.getUTCDate() + 4 - day);
+        const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+        const weekNo = Math.ceil(((+tmp - +yearStart) / 86400000 + 1) / 7);
+        return `${tmp.getUTCFullYear()}-W${weekNo}`;
+      };
 
       entries?.forEach(entry => {
         existingDates.add(entry.date);
         if (entry.total_hours) {
-          const timeStr = entry.total_hours.toString();
-          const match = timeStr.match(/(\d+):(\d+):(\d+)/);
+          const match = entry.total_hours.toString().match(/(\d+):(\d+):(\d+)/);
           if (match) {
-            totalHours += parseInt(match[1]) + parseInt(match[2]) / 60;
+            const h = parseInt(match[1]) + parseInt(match[2]) / 60;
+            const [yy, mm, dd] = entry.date.split('-').map(Number);
+            const k = weekKey(new Date(yy, mm - 1, dd));
+            hoursByWeek[k] = (hoursByWeek[k] || 0) + h;
           }
         }
       });
 
-      const remainingHours = targetMonthlyHours - totalHours;
-
-      if (remainingHours <= 0) {
-        toast({ title: "Sin fichajes pendientes", description: `Este empleado ya tiene ${targetMonthlyHours}h o más en ${MONTHS_ES[month]} ${year}` });
-        setLoading(false);
-        return;
-      }
-
-      // Build available slots from schedule — always use full schedule shifts
       const daysInMonth = lastDayOfMonth.getDate();
       const isCurrentOrFutureMonth = year > today.getFullYear() || (year === today.getFullYear() && month >= today.getMonth());
 
-      const availableSlots: { date: string; schedule: ScheduleDay; hours: number }[] = [];
-
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month, day);
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const dayOfWeek = date.getDay();
-
-        // For current/future month, skip future days
-        if (isCurrentOrFutureMonth && date > today) continue;
-        if (existingDates.has(dateStr)) continue;
-
-        const schedule = scheduleMap[dayOfWeek];
-        if (!schedule || !schedule.is_working_day) continue;
-
-        let hours = parseTimeToHours(schedule.check_out_time) - parseTimeToHours(schedule.check_in_time);
-        if (schedule.check_in_time_2 && schedule.check_out_time_2) {
-          hours += parseTimeToHours(schedule.check_out_time_2) - parseTimeToHours(schedule.check_in_time_2);
-        }
-        if (hours > 0) {
-          availableSlots.push({ date: dateStr, schedule, hours });
-        }
-      }
-
-      // Create full-shift entries until remaining hours covered (no partial / no fractional times)
       const newEntries: Array<{
         user_id: string;
         company_id: string;
@@ -182,37 +152,58 @@ export function AdminRegularization() {
         status: string;
       }> = [];
 
-      let hoursToCreate = remainingHours;
-      for (const slot of availableSlots) {
-        if (hoursToCreate <= 0) break;
+      // Walk days in order; fill each week up to 40h using employee schedule shifts
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = new Date(year, month, day);
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const dayOfWeek = date.getDay();
 
-        // First shift
+        if (isCurrentOrFutureMonth && date > today) continue;
+        if (existingDates.has(dateStr)) continue;
+
+        const schedule = scheduleMap[dayOfWeek];
+        if (!schedule || !schedule.is_working_day) continue;
+
+        const k = weekKey(date);
+        const used = hoursByWeek[k] || 0;
+        if (used >= WEEKLY_TARGET) continue;
+
+        const shift1 = parseTimeToHours(schedule.check_out_time) - parseTimeToHours(schedule.check_in_time);
+        const shift2 = (schedule.check_in_time_2 && schedule.check_out_time_2)
+          ? parseTimeToHours(schedule.check_out_time_2) - parseTimeToHours(schedule.check_in_time_2)
+          : 0;
+        const dayHours = shift1 + shift2;
+        if (dayHours <= 0) continue;
+
+        // Only add full shifts that fit within remaining weekly target
+        const remainingWeek = WEEKLY_TARGET - used;
+        if (dayHours > remainingWeek + 0.01) continue;
+
         newEntries.push({
           user_id: selectedEmployee,
           company_id: employeeData.company_id,
-          date: slot.date,
-          check_in_time: `${slot.date}T${slot.schedule.check_in_time}:00`,
-          check_out_time: `${slot.date}T${slot.schedule.check_out_time}:00`,
+          date: dateStr,
+          check_in_time: `${dateStr}T${schedule.check_in_time}:00`,
+          check_out_time: `${dateStr}T${schedule.check_out_time}:00`,
           status: 'checked_out',
         });
 
-        // Second shift (split shift) — separate entry on same date if present
-        if (slot.schedule.check_in_time_2 && slot.schedule.check_out_time_2) {
+        if (shift2 > 0) {
           newEntries.push({
             user_id: selectedEmployee,
             company_id: employeeData.company_id,
-            date: slot.date,
-            check_in_time: `${slot.date}T${slot.schedule.check_in_time_2}:00`,
-            check_out_time: `${slot.date}T${slot.schedule.check_out_time_2}:00`,
+            date: dateStr,
+            check_in_time: `${dateStr}T${schedule.check_in_time_2}:00`,
+            check_out_time: `${dateStr}T${schedule.check_out_time_2}:00`,
             status: 'checked_out',
           });
         }
 
-        hoursToCreate -= slot.hours;
+        hoursByWeek[k] = used + dayHours;
       }
 
       if (newEntries.length === 0) {
-        toast({ title: "Sin días disponibles", description: "No hay días laborables disponibles para regularizar en este mes" });
+        toast({ title: "Sin fichajes pendientes", description: `No hay días por regularizar: ya alcanzan las 40h semanales o no quedan huecos en el horario en ${MONTHS_ES[month]} ${year}` });
         setLoading(false);
         return;
       }
