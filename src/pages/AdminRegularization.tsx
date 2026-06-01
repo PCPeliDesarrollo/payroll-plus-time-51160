@@ -22,18 +22,30 @@ function parseTimeToHours(timeStr: string): number {
   return h + (m || 0) / 60;
 }
 
-function buildCheckInOut(dateStr: string, checkIn: string, checkOut: string) {
-  return {
-    check_in_time: `${dateStr}T${checkIn}:00`,
-    check_out_time: `${dateStr}T${checkOut}:00`,
-  };
-}
+const MONTHS_ES = [
+  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+];
 
 export function AdminRegularization() {
   const { employees } = useEmployees();
   const { toast } = useToast();
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
+  const today = new Date();
+  const [selectedMonth, setSelectedMonth] = useState<string>(String(today.getMonth()));
+  const [selectedYear, setSelectedYear] = useState<string>(String(today.getFullYear()));
   const [loading, setLoading] = useState(false);
+
+  // Build last 24 months as options (current + previous)
+  const monthOptions: { year: number; month: number; label: string }[] = [];
+  for (let i = 0; i < 24; i++) {
+    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    monthOptions.push({
+      year: d.getFullYear(),
+      month: d.getMonth(),
+      label: `${MONTHS_ES[d.getMonth()]} ${d.getFullYear()}`,
+    });
+  }
 
   const handleAutoRegularize = async () => {
     if (!selectedEmployee) {
@@ -43,7 +55,9 @@ export function AdminRegularization() {
 
     setLoading(true);
     try {
-      // Get employee's company_id
+      const year = parseInt(selectedYear);
+      const month = parseInt(selectedMonth);
+
       const { data: employeeData, error: employeeError } = await supabase
         .from('profiles')
         .select('company_id')
@@ -57,13 +71,12 @@ export function AdminRegularization() {
         return;
       }
 
-      // Load employee's individual schedule (required)
       const { data: empSchedules } = await supabase
         .from('employee_schedules')
         .select('day_of_week, is_working_day, check_in_time, check_out_time, check_in_time_2, check_out_time_2')
         .eq('employee_id', selectedEmployee);
 
-      let scheduleMap: Record<number, ScheduleDay> = {};
+      const scheduleMap: Record<number, ScheduleDay> = {};
 
       if (empSchedules && empSchedules.length > 0) {
         empSchedules.forEach((s: any) => {
@@ -77,7 +90,6 @@ export function AdminRegularization() {
           };
         });
       } else {
-        // No schedule configured — inform admin
         toast({
           title: "Sin horario configurado",
           description: "Este empleado no tiene un horario asignado. Configúralo primero desde la sección de Empleados.",
@@ -87,7 +99,7 @@ export function AdminRegularization() {
         return;
       }
 
-      // Calculate target hours from schedule
+      // Target monthly hours from schedule
       let targetWeeklyHours = 0;
       for (const day of Object.values(scheduleMap)) {
         if (day.is_working_day) {
@@ -99,10 +111,8 @@ export function AdminRegularization() {
       }
       const targetMonthlyHours = targetWeeklyHours * 4;
 
-      // Get current month's entries
-      const now = new Date();
-      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      const firstDayOfMonth = new Date(year, month, 1);
+      const lastDayOfMonth = new Date(year, month + 1, 0);
 
       const { data: entries, error: fetchError } = await supabase
         .from('time_entries')
@@ -130,44 +140,39 @@ export function AdminRegularization() {
       const remainingHours = targetMonthlyHours - totalHours;
 
       if (remainingHours <= 0) {
-        toast({ title: "Sin fichajes pendientes", description: `Este empleado ya tiene ${targetMonthlyHours}h o más este mes` });
+        toast({ title: "Sin fichajes pendientes", description: `Este empleado ya tiene ${targetMonthlyHours}h o más en ${MONTHS_ES[month]} ${year}` });
         setLoading(false);
         return;
       }
 
-      // Build available slots from schedule
+      // Build available slots from schedule — always use full schedule shifts
       const daysInMonth = lastDayOfMonth.getDate();
-      const availableSlots: { date: string; checkIn: string; checkOut: string; checkIn2: string; checkOut2: string; hours: number }[] = [];
+      const isCurrentOrFutureMonth = year > today.getFullYear() || (year === today.getFullYear() && month >= today.getMonth());
+
+      const availableSlots: { date: string; schedule: ScheduleDay; hours: number }[] = [];
 
       for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(now.getFullYear(), now.getMonth(), day);
-        const dateStr = date.toISOString().split('T')[0];
+        const date = new Date(year, month, day);
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         const dayOfWeek = date.getDay();
 
-        if (date > now || existingDates.has(dateStr)) continue;
+        // For current/future month, skip future days
+        if (isCurrentOrFutureMonth && date > today) continue;
+        if (existingDates.has(dateStr)) continue;
 
         const schedule = scheduleMap[dayOfWeek];
         if (!schedule || !schedule.is_working_day) continue;
 
-        const hours1 = parseTimeToHours(schedule.check_out_time) - parseTimeToHours(schedule.check_in_time);
-        let totalDayHours = hours1;
+        let hours = parseTimeToHours(schedule.check_out_time) - parseTimeToHours(schedule.check_in_time);
         if (schedule.check_in_time_2 && schedule.check_out_time_2) {
-          totalDayHours += parseTimeToHours(schedule.check_out_time_2) - parseTimeToHours(schedule.check_in_time_2);
+          hours += parseTimeToHours(schedule.check_out_time_2) - parseTimeToHours(schedule.check_in_time_2);
         }
-        if (totalDayHours > 0) {
-          availableSlots.push({
-            date: dateStr,
-            checkIn: schedule.check_in_time,
-            checkOut: schedule.check_out_time,
-            checkIn2: schedule.check_in_time_2,
-            checkOut2: schedule.check_out_time_2,
-            hours: totalDayHours,
-          });
+        if (hours > 0) {
+          availableSlots.push({ date: dateStr, schedule, hours });
         }
       }
 
-      // Create entries until we fill remaining hours
-      let hoursToCreate = remainingHours;
+      // Create full-shift entries until remaining hours covered (no partial / no fractional times)
       const newEntries: Array<{
         user_id: string;
         company_id: string;
@@ -177,35 +182,37 @@ export function AdminRegularization() {
         status: string;
       }> = [];
 
+      let hoursToCreate = remainingHours;
       for (const slot of availableSlots) {
         if (hoursToCreate <= 0) break;
 
-        const hoursForEntry = Math.min(slot.hours, hoursToCreate);
-        const { check_in_time, check_out_time } = buildCheckInOut(slot.date, slot.checkIn, slot.checkOut);
-
-        let finalCheckOut = check_out_time;
-        if (hoursForEntry < slot.hours) {
-          const inHours = parseTimeToHours(slot.checkIn);
-          const endHour = inHours + hoursForEntry;
-          const h = Math.floor(endHour);
-          const m = Math.round((endHour - h) * 60);
-          finalCheckOut = `${slot.date}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
-        }
-
+        // First shift
         newEntries.push({
           user_id: selectedEmployee,
           company_id: employeeData.company_id,
           date: slot.date,
-          check_in_time,
-          check_out_time: finalCheckOut,
+          check_in_time: `${slot.date}T${slot.schedule.check_in_time}:00`,
+          check_out_time: `${slot.date}T${slot.schedule.check_out_time}:00`,
           status: 'checked_out',
         });
 
-        hoursToCreate -= hoursForEntry;
+        // Second shift (split shift) — separate entry on same date if present
+        if (slot.schedule.check_in_time_2 && slot.schedule.check_out_time_2) {
+          newEntries.push({
+            user_id: selectedEmployee,
+            company_id: employeeData.company_id,
+            date: slot.date,
+            check_in_time: `${slot.date}T${slot.schedule.check_in_time_2}:00`,
+            check_out_time: `${slot.date}T${slot.schedule.check_out_time_2}:00`,
+            status: 'checked_out',
+          });
+        }
+
+        hoursToCreate -= slot.hours;
       }
 
       if (newEntries.length === 0) {
-        toast({ title: "Sin días disponibles", description: "No hay días laborables disponibles para regularizar este mes" });
+        toast({ title: "Sin días disponibles", description: "No hay días laborables disponibles para regularizar en este mes" });
         setLoading(false);
         return;
       }
@@ -218,7 +225,7 @@ export function AdminRegularization() {
 
       toast({
         title: "Regularización completada",
-        description: `Se han creado ${newEntries.length} fichajes automáticamente`,
+        description: `Se han creado ${newEntries.length} fichajes en ${MONTHS_ES[month]} ${year} respetando el horario del empleado`,
       });
 
       setSelectedEmployee("");
@@ -235,7 +242,7 @@ export function AdminRegularization() {
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold text-foreground">Regularización Automática</h2>
-        <p className="text-muted-foreground">Completa automáticamente los fichajes faltantes según el horario individual de cada empleado</p>
+        <p className="text-muted-foreground">Completa los fichajes faltantes de cualquier mes usando siempre el horario individual del empleado</p>
       </div>
 
       <Card>
@@ -245,7 +252,7 @@ export function AdminRegularization() {
             Regularizar Fichajes
           </CardTitle>
           <CardDescription>
-            Selecciona un empleado para completar sus fichajes del mes actual según su horario individual
+            Selecciona el empleado y el mes a regularizar. Los fichajes creados respetarán exactamente su horario.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -259,6 +266,29 @@ export function AdminRegularization() {
                 {activeEmployees.map((employee) => (
                   <SelectItem key={employee.id} value={employee.id}>
                     {employee.full_name} - {employee.employee_id}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Mes a regularizar</Label>
+            <Select
+              value={`${selectedYear}-${selectedMonth}`}
+              onValueChange={(v) => {
+                const [y, m] = v.split('-');
+                setSelectedYear(y);
+                setSelectedMonth(m);
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {monthOptions.map((opt) => (
+                  <SelectItem key={`${opt.year}-${opt.month}`} value={`${opt.year}-${opt.month}`}>
+                    {opt.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -285,19 +315,19 @@ export function AdminRegularization() {
         <CardContent className="space-y-2 text-sm">
           <p className="flex items-start gap-2">
             <span className="text-primary font-bold">1.</span>
-            <span>Usa el horario individual asignado al empleado al crearlo o editarlo</span>
+            <span>Puedes regularizar el mes actual o cualquier mes anterior (hasta 24 meses atrás)</span>
           </p>
           <p className="flex items-start gap-2">
             <span className="text-primary font-bold">2.</span>
-            <span>Si el empleado no tiene horario configurado, se pedirá que lo configures primero</span>
+            <span>Usa siempre el horario individual del empleado: entradas y salidas exactas, incluyendo turnos partidos</span>
           </p>
           <p className="flex items-start gap-2">
             <span className="text-primary font-bold">3.</span>
-            <span>Calcula las horas faltantes y crea fichajes solo en días laborables del horario</span>
+            <span>Crea fichajes completos solo en días laborables del horario, nunca en días libres ni días ya fichados</span>
           </p>
           <p className="flex items-start gap-2">
             <span className="text-primary font-bold">4.</span>
-            <span>Nunca crea fichajes en días libres, días futuros ni días con fichajes existentes</span>
+            <span>Los fichajes generados siempre coinciden con las horas de trabajo definidas — no se crean horarios fuera de su jornada</span>
           </p>
         </CardContent>
       </Card>
