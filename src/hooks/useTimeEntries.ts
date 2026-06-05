@@ -250,15 +250,12 @@ export function useTimeEntries() {
       }
 
       const now = new Date().toISOString();
-      const { latitude, longitude } = await getSafeCoordinates();
 
       const { data, error } = await supabase
         .from('time_entries')
         .update({
           check_out_time: now,
           status: 'checked_out',
-          check_out_latitude: latitude,
-          check_out_longitude: longitude,
         })
         .eq('user_id', user.id)
         .eq('date', activeEntry.date)
@@ -268,10 +265,16 @@ export function useTimeEntries() {
       if (error) throw error;
 
       setCurrentEntry(null);
+      // Background coords update — does not block UI
+      if (data && data[0]?.id) {
+        void updateEntryCoordsInBackground(data[0].id, 'check_out');
+      }
+
       await fetchTimeEntries();
       await fetchTodayEntry();
 
       return data;
+
     } catch (error) {
       console.error('Error checking out:', error);
       throw error;
