@@ -10,12 +10,7 @@ type Coordinates = {
   longitude: number | null;
 };
 
-const GEO_TIMEOUT_MS = 8000;
-
-const wait = (ms: number) =>
-  new Promise<never>((_, reject) => {
-    window.setTimeout(() => reject(new Error('Geolocation timeout')), ms);
-  });
+const GEO_TIMEOUT_MS = 2500;
 
 const getCurrentPosition = (options: PositionOptions) =>
   new Promise<GeolocationPosition>((resolve, reject) => {
@@ -28,40 +23,48 @@ const getSafeCoordinates = async (): Promise<Coordinates> => {
   }
 
   try {
-    const position = await Promise.race([
+    const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+      const timer = window.setTimeout(() => reject(new Error('Geolocation timeout')), GEO_TIMEOUT_MS);
       getCurrentPosition({
         timeout: GEO_TIMEOUT_MS,
-        maximumAge: 60000,
-        enableHighAccuracy: true,
-      }),
-      wait(GEO_TIMEOUT_MS + 500),
-    ]);
+        maximumAge: 300000,
+        enableHighAccuracy: false,
+      }).then(
+        (pos) => {
+          window.clearTimeout(timer);
+          resolve(pos);
+        },
+        (err) => {
+          window.clearTimeout(timer);
+          reject(err);
+        }
+      );
+    });
 
     return {
       latitude: position.coords.latitude,
       longitude: position.coords.longitude,
     };
-  } catch (highAccuracyError) {
-    console.warn('No se pudo obtener ubicación precisa, probando modo compatible:', highAccuracyError);
+  } catch (error) {
+    console.warn('No se pudo obtener la geolocalización a tiempo:', error);
+    return { latitude: null, longitude: null };
+  }
+};
 
-    try {
-      const fallbackPosition = await Promise.race([
-        getCurrentPosition({
-          timeout: 3000,
-          maximumAge: 300000,
-          enableHighAccuracy: false,
-        }),
-        wait(3500),
-      ]);
-
-      return {
-        latitude: fallbackPosition.coords.latitude,
-        longitude: fallbackPosition.coords.longitude,
-      };
-    } catch (fallbackError) {
-      console.warn('No se pudo obtener la geolocalización:', fallbackError);
-      return { latitude: null, longitude: null };
-    }
+// Fire-and-forget background coords update for an existing entry
+const updateEntryCoordsInBackground = async (
+  entryId: string,
+  field: 'check_in' | 'check_out'
+) => {
+  try {
+    const { latitude, longitude } = await getSafeCoordinates();
+    if (latitude == null && longitude == null) return;
+    const patch = field === 'check_in'
+      ? { check_in_latitude: latitude, check_in_longitude: longitude }
+      : { check_out_latitude: latitude, check_out_longitude: longitude };
+    await supabase.from('time_entries').update(patch).eq('id', entryId);
+  } catch (e) {
+    console.warn('No se pudieron actualizar las coordenadas en segundo plano:', e);
   }
 };
 
@@ -186,8 +189,6 @@ export function useTimeEntries() {
         throw new Error('Ya tienes un fichaje de entrada activo. Por favor, ficha la salida');
       }
 
-      const { latitude, longitude } = await getSafeCoordinates();
-
       const { data, error } = await supabase
         .from('time_entries')
         .insert({
@@ -196,8 +197,6 @@ export function useTimeEntries() {
           date: today,
           check_in_time: now,
           status: 'checked_in',
-          check_in_latitude: latitude,
-          check_in_longitude: longitude,
         })
         .select()
         .single();
@@ -205,10 +204,14 @@ export function useTimeEntries() {
       if (error) throw error;
 
       setCurrentEntry(data);
+      // Background coords update — does not block UI
+      void updateEntryCoordsInBackground(data.id, 'check_in');
+
       await fetchTimeEntries();
       await fetchTodayEntry();
 
       return data;
+
     } catch (error) {
       console.error('Error checking in:', error);
       throw error;
@@ -247,15 +250,12 @@ export function useTimeEntries() {
       }
 
       const now = new Date().toISOString();
-      const { latitude, longitude } = await getSafeCoordinates();
 
       const { data, error } = await supabase
         .from('time_entries')
         .update({
           check_out_time: now,
           status: 'checked_out',
-          check_out_latitude: latitude,
-          check_out_longitude: longitude,
         })
         .eq('user_id', user.id)
         .eq('date', activeEntry.date)
@@ -265,10 +265,16 @@ export function useTimeEntries() {
       if (error) throw error;
 
       setCurrentEntry(null);
+      // Background coords update — does not block UI
+      if (data && data[0]?.id) {
+        void updateEntryCoordsInBackground(data[0].id, 'check_out');
+      }
+
       await fetchTimeEntries();
       await fetchTodayEntry();
 
       return data;
+
     } catch (error) {
       console.error('Error checking out:', error);
       throw error;
