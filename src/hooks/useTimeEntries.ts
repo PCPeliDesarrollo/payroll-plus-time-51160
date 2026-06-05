@@ -10,12 +10,7 @@ type Coordinates = {
   longitude: number | null;
 };
 
-const GEO_TIMEOUT_MS = 8000;
-
-const wait = (ms: number) =>
-  new Promise<never>((_, reject) => {
-    window.setTimeout(() => reject(new Error('Geolocation timeout')), ms);
-  });
+const GEO_TIMEOUT_MS = 2500;
 
 const getCurrentPosition = (options: PositionOptions) =>
   new Promise<GeolocationPosition>((resolve, reject) => {
@@ -28,40 +23,48 @@ const getSafeCoordinates = async (): Promise<Coordinates> => {
   }
 
   try {
-    const position = await Promise.race([
+    const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+      const timer = window.setTimeout(() => reject(new Error('Geolocation timeout')), GEO_TIMEOUT_MS);
       getCurrentPosition({
         timeout: GEO_TIMEOUT_MS,
-        maximumAge: 60000,
-        enableHighAccuracy: true,
-      }),
-      wait(GEO_TIMEOUT_MS + 500),
-    ]);
+        maximumAge: 300000,
+        enableHighAccuracy: false,
+      }).then(
+        (pos) => {
+          window.clearTimeout(timer);
+          resolve(pos);
+        },
+        (err) => {
+          window.clearTimeout(timer);
+          reject(err);
+        }
+      );
+    });
 
     return {
       latitude: position.coords.latitude,
       longitude: position.coords.longitude,
     };
-  } catch (highAccuracyError) {
-    console.warn('No se pudo obtener ubicación precisa, probando modo compatible:', highAccuracyError);
+  } catch (error) {
+    console.warn('No se pudo obtener la geolocalización a tiempo:', error);
+    return { latitude: null, longitude: null };
+  }
+};
 
-    try {
-      const fallbackPosition = await Promise.race([
-        getCurrentPosition({
-          timeout: 3000,
-          maximumAge: 300000,
-          enableHighAccuracy: false,
-        }),
-        wait(3500),
-      ]);
-
-      return {
-        latitude: fallbackPosition.coords.latitude,
-        longitude: fallbackPosition.coords.longitude,
-      };
-    } catch (fallbackError) {
-      console.warn('No se pudo obtener la geolocalización:', fallbackError);
-      return { latitude: null, longitude: null };
-    }
+// Fire-and-forget background coords update for an existing entry
+const updateEntryCoordsInBackground = async (
+  entryId: string,
+  field: 'check_in' | 'check_out'
+) => {
+  try {
+    const { latitude, longitude } = await getSafeCoordinates();
+    if (latitude == null && longitude == null) return;
+    const patch = field === 'check_in'
+      ? { check_in_latitude: latitude, check_in_longitude: longitude }
+      : { check_out_latitude: latitude, check_out_longitude: longitude };
+    await supabase.from('time_entries').update(patch).eq('id', entryId);
+  } catch (e) {
+    console.warn('No se pudieron actualizar las coordenadas en segundo plano:', e);
   }
 };
 
