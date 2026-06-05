@@ -189,8 +189,6 @@ export function useTimeEntries() {
         throw new Error('Ya tienes un fichaje de entrada activo. Por favor, ficha la salida');
       }
 
-      const { latitude, longitude } = await getSafeCoordinates();
-
       const { data, error } = await supabase
         .from('time_entries')
         .insert({
@@ -199,8 +197,6 @@ export function useTimeEntries() {
           date: today,
           check_in_time: now,
           status: 'checked_in',
-          check_in_latitude: latitude,
-          check_in_longitude: longitude,
         })
         .select()
         .single();
@@ -208,10 +204,14 @@ export function useTimeEntries() {
       if (error) throw error;
 
       setCurrentEntry(data);
+      // Background coords update — does not block UI
+      void updateEntryCoordsInBackground(data.id, 'check_in');
+
       await fetchTimeEntries();
       await fetchTodayEntry();
 
       return data;
+
     } catch (error) {
       console.error('Error checking in:', error);
       throw error;
