@@ -115,10 +115,10 @@ export function MyVacations() {
       return;
     }
 
-    if (requestType === 'full_day' && effectiveEndDate <= startDate) {
+    if (requestType === 'full_day' && effectiveEndDate < startDate) {
       toast({
         title: "Error", 
-        description: "La fecha de fin debe ser posterior a la fecha de inicio",
+        description: "La fecha de fin no puede ser anterior a la fecha de inicio",
         variant: "destructive",
       });
       return;
