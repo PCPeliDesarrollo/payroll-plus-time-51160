@@ -507,12 +507,12 @@ export function MyVacations() {
                   const periodYear = isInCurrentPeriod ? currentPeriodYear : currentPeriodYear + 1;
                   return (
                     <div className={`p-3 rounded-lg ${isInCurrentPeriod ? 'bg-primary/10 border border-primary/30' : 'bg-amber-100 dark:bg-amber-900/30 border border-amber-300 dark:border-amber-700'}`}>
-                      <p className="text-sm">
+                      <div className="text-sm flex items-center gap-2 flex-wrap">
                         <span className="font-medium">Periodo: </span>
                         <Badge variant={isInCurrentPeriod ? "default" : "outline"} className={isInCurrentPeriod ? "bg-primary" : ""}>
                           {periodYear} {isInCurrentPeriod ? "(Actual)" : "(Próximo)"}
                         </Badge>
-                      </p>
+                      </div>
                     </div>
                   );
                 }
