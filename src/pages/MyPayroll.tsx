@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 export function MyPayroll() {
   const { payrollRecords, loading } = usePayroll();
   const { timeEntries } = useTimeEntries();
+  const { toast } = useToast();
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
 
