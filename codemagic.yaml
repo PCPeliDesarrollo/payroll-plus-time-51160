@@ -178,21 +178,30 @@ workflows:
       - name: Publish IPA to App Store Connect (manual CLI)
         script: |
           set -e
-          IPA_PATH=$(find $CM_BUILD_DIR/build/ios/ipa -name "*.ipa" | head -1)
+          IPA_PATH=$(find "$CM_BUILD_DIR/build/ios/ipa" -name "*.ipa" | head -1)
           echo "Publishing IPA: $IPA_PATH"
+          ls -la "$IPA_PATH"
 
-          # Write the private key to a temporary file (CLI prefers a file path)
-          KEY_FILE="$CM_BUILD_DIR/asc_api_key.p8"
-          printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY" > "$KEY_FILE"
+          echo "=== Checking ASC credentials presence (no values printed) ==="
+          test -n "$APP_STORE_CONNECT_PRIVATE_KEY" && echo "PRIVATE_KEY: set" || echo "PRIVATE_KEY: MISSING"
+          test -n "$APP_STORE_CONNECT_KEY_IDENTIFIER" && echo "KEY_ID: set" || echo "KEY_ID: MISSING"
+          test -n "$APP_STORE_CONNECT_ISSUER_ID" && echo "ISSUER_ID: set" || echo "ISSUER_ID: MISSING"
 
+          echo "=== Running app-store-connect publish (verbose) ==="
           app-store-connect publish \
             --path "$IPA_PATH" \
-            --private-key "@file:$KEY_FILE" \
+            --private-key "@env:APP_STORE_CONNECT_PRIVATE_KEY" \
             --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
             --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" \
-            --max-build-processing-wait 0
+            --max-build-processing-wait 0 \
+            --verbose 2>&1 | tee /tmp/asc_publish.log
 
-          rm -f "$KEY_FILE"
+          PUBLISH_EXIT=${PIPESTATUS[0]}
+          if [ "$PUBLISH_EXIT" -ne 0 ]; then
+            echo "=== Publish failed (exit $PUBLISH_EXIT). Last 200 lines of log: ==="
+            tail -n 200 /tmp/asc_publish.log
+            exit $PUBLISH_EXIT
+          fi
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
