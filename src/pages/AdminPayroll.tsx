@@ -281,14 +281,11 @@ export function AdminPayroll({ onBack }: AdminPayrollProps = {}) {
         throw uploadError;
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('payroll-files')
-        .getPublicUrl(filePath);
-
+      // Store the storage path (bucket is private; signed URLs are generated on demand)
       const { error: updateError } = await supabase
         .from('payroll_records')
         .update({ 
-          file_url: publicUrl,
+          file_url: filePath,
           status: 'approved' 
         })
         .eq('id', recordId);
