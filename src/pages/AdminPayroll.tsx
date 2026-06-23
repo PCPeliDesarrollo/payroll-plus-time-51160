@@ -10,6 +10,7 @@ import { FileText, Upload, Eye, Download, Plus, Search, Trash2 } from "lucide-re
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { getPayrollSignedUrl } from "@/lib/payrollFiles";
 
 interface PayrollRecord {
   id: string;
@@ -280,14 +281,11 @@ export function AdminPayroll({ onBack }: AdminPayrollProps = {}) {
         throw uploadError;
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('payroll-files')
-        .getPublicUrl(filePath);
-
+      // Store the storage path (bucket is private; signed URLs are generated on demand)
       const { error: updateError } = await supabase
         .from('payroll_records')
         .update({ 
-          file_url: publicUrl,
+          file_url: filePath,
           status: 'approved' 
         })
         .eq('id', recordId);
@@ -535,31 +533,38 @@ export function AdminPayroll({ onBack }: AdminPayrollProps = {}) {
                          <Button
                            size="sm"
                            variant="outline"
-                           onClick={() => {
-                             console.log('Opening file:', record.file_url);
-                             const url = record.file_url + '?t=' + Date.now();
-                             window.open(url, '_blank', 'noopener,noreferrer');
+                           onClick={async () => {
+                             try {
+                               const url = await getPayrollSignedUrl(record.file_url!);
+                               window.open(url, '_blank', 'noopener,noreferrer');
+                             } catch (e) {
+                               toast({ title: 'Error', description: 'No se pudo abrir el archivo', variant: 'destructive' });
+                             }
                            }}
                            className="flex-1 sm:flex-none text-xs md:text-sm h-8 md:h-9"
                          >
                            <Eye className="h-3 w-3 md:h-4 md:w-4 mr-1" />
                            Ver
                          </Button>
-                         <a
-                           href={record.file_url}
-                           download={`nomina-${selectedEmployee.full_name}-${getMonthName(record.month)}-${record.year}.pdf`}
-                           target="_blank"
-                           rel="noopener noreferrer"
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           onClick={async () => {
+                             try {
+                               const url = await getPayrollSignedUrl(record.file_url!);
+                               const link = document.createElement('a');
+                               link.href = url;
+                               link.download = `nomina-${selectedEmployee.full_name}-${getMonthName(record.month)}-${record.year}.pdf`;
+                               link.click();
+                             } catch (e) {
+                               toast({ title: 'Error', description: 'No se pudo descargar', variant: 'destructive' });
+                             }
+                           }}
+                           className="flex-1 sm:flex-none text-xs md:text-sm h-8 md:h-9"
                          >
-                           <Button
-                             size="sm"
-                             variant="outline"
-                             className="flex-1 sm:flex-none text-xs md:text-sm h-8 md:h-9"
-                           >
-                             <Download className="h-3 w-3 md:h-4 md:w-4 mr-1" />
-                             Descargar
-                           </Button>
-                         </a>
+                           <Download className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+                           Descargar
+                         </Button>
                          <Button
                            size="sm"
                            variant="destructive"

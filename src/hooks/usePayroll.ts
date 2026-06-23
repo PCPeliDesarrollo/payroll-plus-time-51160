@@ -108,13 +108,10 @@ export function usePayroll() {
 
       if (uploadError) throw uploadError;
 
-      const { data } = supabase.storage
-        .from('payroll-files')
-        .getPublicUrl(filePath);
+      // Store storage path (bucket is private)
+      await updatePayrollRecord(recordId, { file_url: filePath });
 
-      await updatePayrollRecord(recordId, { file_url: data.publicUrl });
-      
-      return data.publicUrl;
+      return filePath;
     } catch (error) {
       console.error('Error uploading payroll file:', error);
       throw error;

@@ -12,10 +12,13 @@ import {
 } from "lucide-react";
 import { usePayroll } from "@/hooks/usePayroll";
 import { useTimeEntries } from "@/hooks/useTimeEntries";
+import { getPayrollSignedUrl } from "@/lib/payrollFiles";
+import { useToast } from "@/hooks/use-toast";
 
 export function MyPayroll() {
   const { payrollRecords, loading } = usePayroll();
   const { timeEntries } = useTimeEntries();
+  const { toast } = useToast();
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
 
@@ -251,7 +254,14 @@ export function MyPayroll() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => window.open(payroll.file_url, '_blank')}
+                              onClick={async () => {
+                                try {
+                                  const url = await getPayrollSignedUrl(payroll.file_url!);
+                                  window.open(url, '_blank');
+                                } catch {
+                                  toast({ title: 'Error', description: 'No se pudo abrir el archivo', variant: 'destructive' });
+                                }
+                              }}
                               className="flex-1"
                             >
                               <Eye className="h-4 w-4 mr-2" />
@@ -260,11 +270,16 @@ export function MyPayroll() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => {
-                                const link = document.createElement('a');
-                                link.href = payroll.file_url!;
-                                link.download = `nomina-${getMonthName(payroll.month)}-${payroll.year}.pdf`;
-                                link.click();
+                              onClick={async () => {
+                                try {
+                                  const url = await getPayrollSignedUrl(payroll.file_url!);
+                                  const link = document.createElement('a');
+                                  link.href = url;
+                                  link.download = `nomina-${getMonthName(payroll.month)}-${payroll.year}.pdf`;
+                                  link.click();
+                                } catch {
+                                  toast({ title: 'Error', description: 'No se pudo descargar', variant: 'destructive' });
+                                }
                               }}
                               className="flex-1"
                             >
