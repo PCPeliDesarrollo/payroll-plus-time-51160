@@ -342,17 +342,13 @@ export function MyAttendance() {
                                       </DropdownMenuTrigger>
                                       <DropdownMenuContent align="end" className="w-56">
                                         <DropdownMenuItem
-                                          onClick={() => {
-                                            toast({
-                                              title: "Solicitud enviada",
-                                              description: "El administrador revisará tu solicitud de cambio",
-                                            });
-                                          }}
+                                          onClick={() => setEditingEntry(entry)}
                                         >
-                                          <Flag className="mr-2 h-4 w-4" />
-                                          Solicitar cambio
+                                          <Pencil className="mr-2 h-4 w-4" />
+                                          Editar fichaje
                                         </DropdownMenuItem>
                                       </DropdownMenuContent>
+
                                     </DropdownMenu>
                                   </div>
                                 </div>
