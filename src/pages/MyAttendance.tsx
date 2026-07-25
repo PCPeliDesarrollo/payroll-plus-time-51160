@@ -11,7 +11,8 @@ import {
   Play,
   Square,
   MoreVertical,
-  Flag
+  Pencil,
+  Plus
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -21,6 +22,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTimeEntries } from "@/hooks/useTimeEntries";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { EditTimeEntryDialog } from "@/components/attendance/EditTimeEntryDialog";
+import { AddManualEntryDialog } from "@/components/attendance/AddManualEntryDialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 
@@ -28,8 +32,12 @@ export function MyAttendance() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
   const [elapsedTime, setElapsedTime] = useState<string>("00:00:00");
-  const { timeEntries, currentEntry, loading, isCheckedIn, checkIn, checkOut } = useTimeEntries();
+  const { timeEntries, currentEntry, loading, isCheckedIn, checkIn, checkOut, fetchTimeEntries } = useTimeEntries();
   const { toast } = useToast();
+  const { user, profile } = useAuth();
+  const [editingEntry, setEditingEntry] = useState<any | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+
 
   // Filter entries for selected date
   const selectedDateEntries = React.useMemo(() => {
