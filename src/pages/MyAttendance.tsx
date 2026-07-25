@@ -372,6 +372,25 @@ export function MyAttendance() {
           </CardContent>
         </Card>
       </div>
+
+      {editingEntry && (
+        <EditTimeEntryDialog
+          open={!!editingEntry}
+          onOpenChange={(o) => !o && setEditingEntry(null)}
+          entry={editingEntry}
+          onSuccess={fetchTimeEntries}
+        />
+      )}
+
+      {user && (
+        <AddManualEntryDialog
+          open={addOpen}
+          onOpenChange={setAddOpen}
+          employeeId={user.id}
+          employeeName={profile?.full_name || "Yo"}
+          onSuccess={fetchTimeEntries}
+        />
+      )}
     </div>
   );
 }
