@@ -9,6 +9,8 @@ import { useEmployees } from "@/hooks/useEmployees";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertCircle, Clock } from "lucide-react";
+import { EmployeeScheduleDialog } from "@/components/employees/EmployeeScheduleDialog";
+import { DEFAULT_SCHEDULES } from "@/components/employees/ScheduleDayRow";
 
 interface ScheduleDay {
   day_of_week: number;
@@ -24,13 +26,79 @@ interface PreviewEntry {
   date: string;
   check_in_time: string;
   check_out_time: string;
+  check_in_label: string;
+  check_out_label: string;
   hours: number;
   selected: boolean;
 }
 
-function parseTimeToHours(timeStr: string): number {
-  const [h, m] = timeStr.split(':').map(Number);
-  return h + (m || 0) / 60;
+function localDateTime(dateStr: string, timeStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const [hour, minute] = timeStr.split(':').map(Number);
+  return new Date(year, month - 1, day, hour, minute || 0, 0, 0);
+}
+
+function formatLocalTime(date: Date): string {
+  return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+}
+
+function hoursBetween(start: Date, end: Date): number {
+  return (end.getTime() - start.getTime()) / 3600000;
+}
+
+function intervalsOverlap(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date): boolean {
+  return aStart < bEnd && bStart < aEnd;
+}
+
+function subtractCoveredIntervals(
+  baseStart: Date,
+  baseEnd: Date,
+  occupied: { start: Date; end: Date }[]
+): { start: Date; end: Date }[] {
+  const overlaps = occupied
+    .filter(entry => intervalsOverlap(baseStart, baseEnd, entry.start, entry.end))
+    .map(entry => ({
+      start: new Date(Math.max(baseStart.getTime(), entry.start.getTime())),
+      end: new Date(Math.min(baseEnd.getTime(), entry.end.getTime())),
+    }))
+    .filter(entry => entry.end > entry.start)
+    .sort((a, b) => a.start.getTime() - b.start.getTime());
+
+  const gaps: { start: Date; end: Date }[] = [];
+  let cursor = new Date(baseStart);
+
+  overlaps.forEach(entry => {
+    if (entry.start > cursor) {
+      gaps.push({ start: new Date(cursor), end: new Date(entry.start) });
+    }
+    if (entry.end > cursor) cursor = new Date(entry.end);
+  });
+
+  if (cursor < baseEnd) {
+    gaps.push({ start: new Date(cursor), end: new Date(baseEnd) });
+  }
+
+  return gaps;
+}
+
+function parseExistingHours(entry: { total_hours?: unknown; check_in_time?: string | null; check_out_time?: string | null }): number {
+  if (typeof entry.total_hours === 'string') {
+    const match = entry.total_hours.match(/(\d+):(\d+):(\d+)/);
+    if (match) return parseInt(match[1]) + parseInt(match[2]) / 60 + parseInt(match[3]) / 3600;
+  }
+
+  if (entry.check_in_time && entry.check_out_time) {
+    return Math.max(0, hoursBetween(new Date(entry.check_in_time), new Date(entry.check_out_time)));
+  }
+
+  return 0;
+}
+
+function formatHoursInterval(hours: number): string {
+  const totalMinutes = Math.round(hours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
 }
 
 const MONTHS_ES = [
@@ -66,6 +134,7 @@ export function AdminRegularization() {
   const [loading, setLoading] = useState(false);
   const [preview, setPreview] = useState<PreviewEntry[] | null>(null);
   const [companyId, setCompanyId] = useState<string>("");
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
 
   const monthOptions: { year: number; month: number; label: string }[] = [];
   for (let i = 0; i < 24; i++) {
@@ -136,20 +205,22 @@ export function AdminRegularization() {
 
       if (!empSchedules || empSchedules.length === 0) {
         toast({
-          title: "Sin horario configurado",
-          description: "Este empleado no tiene un horario asignado. Configúralo primero desde la sección de Empleados.",
-          variant: "destructive",
+          title: "Usando horario por defecto",
+          description: "Este empleado no tenía horario asignado; se aplicará lunes a viernes de 09:00 a 14:00 y de 17:00 a 20:00.",
         });
-        return;
       }
 
       const scheduleMap: Record<number, ScheduleDay> = {};
-      empSchedules.forEach((s: any) => {
+      Object.entries(DEFAULT_SCHEDULES).forEach(([day, schedule]) => {
+        scheduleMap[Number(day)] = { day_of_week: Number(day), ...schedule };
+      });
+
+      empSchedules?.forEach((s: any) => {
         scheduleMap[s.day_of_week] = {
           day_of_week: s.day_of_week,
           is_working_day: s.is_working_day,
           check_in_time: s.check_in_time?.slice(0, 5) || '09:00',
-          check_out_time: s.check_out_time?.slice(0, 5) || '17:00',
+          check_out_time: s.check_out_time?.slice(0, 5) || '14:00',
           check_in_time_2: s.check_in_time_2?.slice(0, 5) || '',
           check_out_time_2: s.check_out_time_2?.slice(0, 5) || '',
         };
@@ -170,18 +241,23 @@ export function AdminRegularization() {
 
       if (fetchError) throw fetchError;
 
-      const existingDates = new Set<string>();
       const hoursByWeek: Record<string, number> = {};
+      const entriesByDate: Record<string, { start: Date; end: Date }[]> = {};
 
       entries?.forEach(entry => {
-        existingDates.add(entry.date);
-        if (entry.total_hours) {
-          const match = entry.total_hours.toString().match(/(\d+):(\d+):(\d+)/);
-          if (match) {
-            const h = parseInt(match[1]) + parseInt(match[2]) / 60;
-            const [yy, mm, dd] = entry.date.split('-').map(Number);
-            hoursByWeek[weekKey(new Date(yy, mm - 1, dd))] = (hoursByWeek[weekKey(new Date(yy, mm - 1, dd))] || 0) + h;
-          }
+        if (entry.check_in_time && entry.check_out_time) {
+          if (!entriesByDate[entry.date]) entriesByDate[entry.date] = [];
+          entriesByDate[entry.date].push({
+            start: new Date(entry.check_in_time),
+            end: new Date(entry.check_out_time),
+          });
+        }
+
+        const existingHours = parseExistingHours(entry);
+        if (existingHours > 0) {
+          const [yy, mm, dd] = entry.date.split('-').map(Number);
+          const k = weekKey(new Date(yy, mm - 1, dd));
+          hoursByWeek[k] = (hoursByWeek[k] || 0) + existingHours;
         }
       });
 
@@ -193,45 +269,52 @@ export function AdminRegularization() {
         const dayOfWeek = cursor.getDay();
 
         if (cursor > today) break;
-        if (existingDates.has(dateStr)) { cursor.setDate(cursor.getDate() + 1); continue; }
 
         const schedule = scheduleMap[dayOfWeek];
         if (!schedule || !schedule.is_working_day) { cursor.setDate(cursor.getDate() + 1); continue; }
 
-        const k = weekKey(cursor);
-        const used = hoursByWeek[k] || 0;
-        if (used >= target) { cursor.setDate(cursor.getDate() + 1); continue; }
+        const scheduledShifts = [
+          { key: '1', start: schedule.check_in_time, end: schedule.check_out_time },
+          ...(schedule.check_in_time_2 && schedule.check_out_time_2
+            ? [{ key: '2', start: schedule.check_in_time_2, end: schedule.check_out_time_2 }]
+            : []),
+        ];
 
-        const shift1 = parseTimeToHours(schedule.check_out_time) - parseTimeToHours(schedule.check_in_time);
-        const shift2 = (schedule.check_in_time_2 && schedule.check_out_time_2)
-          ? parseTimeToHours(schedule.check_out_time_2) - parseTimeToHours(schedule.check_in_time_2)
-          : 0;
-        const dayHours = shift1 + shift2;
-        if (dayHours <= 0) { cursor.setDate(cursor.getDate() + 1); continue; }
+        for (const shift of scheduledShifts) {
+          const scheduledStart = localDateTime(dateStr, shift.start);
+          const scheduledEnd = localDateTime(dateStr, shift.end);
+          const scheduledHours = hoursBetween(scheduledStart, scheduledEnd);
+          if (scheduledHours <= 0) continue;
 
-        if (dayHours > (target - used) + 0.01) { cursor.setDate(cursor.getDate() + 1); continue; }
+          const gaps = subtractCoveredIntervals(scheduledStart, scheduledEnd, entriesByDate[dateStr] || []);
+          for (const gap of gaps) {
+            const k = weekKey(cursor);
+            const used = hoursByWeek[k] || 0;
+            const remaining = target - used;
+            if (remaining <= 0.01) break;
 
-        rows.push({
-          key: `${dateStr}-1`,
-          date: dateStr,
-          check_in_time: `${dateStr}T${schedule.check_in_time}:00`,
-          check_out_time: `${dateStr}T${schedule.check_out_time}:00`,
-          hours: shift1,
-          selected: true,
-        });
+            const gapHours = hoursBetween(gap.start, gap.end);
+            const hoursToCreate = Math.min(gapHours, remaining);
+            if (hoursToCreate < 0.25) continue;
 
-        if (shift2 > 0) {
-          rows.push({
-            key: `${dateStr}-2`,
-            date: dateStr,
-            check_in_time: `${dateStr}T${schedule.check_in_time_2}:00`,
-            check_out_time: `${dateStr}T${schedule.check_out_time_2}:00`,
-            hours: shift2,
-            selected: true,
-          });
+            const createdEnd = new Date(gap.start.getTime() + hoursToCreate * 3600000);
+            rows.push({
+              key: `${dateStr}-${shift.key}-${gap.start.getTime()}`,
+              date: dateStr,
+              check_in_time: gap.start.toISOString(),
+              check_out_time: createdEnd.toISOString(),
+              check_in_label: formatLocalTime(gap.start),
+              check_out_label: formatLocalTime(createdEnd),
+              hours: hoursToCreate,
+              selected: true,
+            });
+
+            if (!entriesByDate[dateStr]) entriesByDate[dateStr] = [];
+            entriesByDate[dateStr].push({ start: gap.start, end: createdEnd });
+            hoursByWeek[k] = used + hoursToCreate;
+          }
         }
 
-        hoursByWeek[k] = used + dayHours;
         cursor.setDate(cursor.getDate() + 1);
       }
 
@@ -265,6 +348,7 @@ export function AdminRegularization() {
           date: p.date,
           check_in_time: p.check_in_time,
           check_out_time: p.check_out_time,
+          total_hours: formatHoursInterval(p.hours),
           status: 'checked_out',
         }))
       );
@@ -283,6 +367,7 @@ export function AdminRegularization() {
   };
 
   const activeEmployees = employees.filter(emp => emp.is_active);
+  const selectedEmployeeRecord = activeEmployees.find(employee => employee.id === selectedEmployee);
   const totalPreviewHours = preview?.filter(p => p.selected).reduce((acc, p) => acc + p.hours, 0) ?? 0;
 
   return (
@@ -305,18 +390,28 @@ export function AdminRegularization() {
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="employee">Empleado</Label>
-            <Select value={selectedEmployee} onValueChange={(v) => { setSelectedEmployee(v); resetPreview(); }}>
-              <SelectTrigger id="employee">
-                <SelectValue placeholder="Selecciona un empleado" />
-              </SelectTrigger>
-              <SelectContent>
-                {activeEmployees.map((employee) => (
-                  <SelectItem key={employee.id} value={employee.id}>
-                    {employee.full_name} - {employee.employee_id}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Select value={selectedEmployee} onValueChange={(v) => { setSelectedEmployee(v); resetPreview(); }}>
+                <SelectTrigger id="employee" className="flex-1">
+                  <SelectValue placeholder="Selecciona un empleado" />
+                </SelectTrigger>
+                <SelectContent>
+                  {activeEmployees.map((employee) => (
+                    <SelectItem key={employee.id} value={employee.id}>
+                      {employee.full_name} - {employee.employee_id}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setScheduleDialogOpen(true)}
+                disabled={!selectedEmployeeRecord}
+              >
+                Editar horario
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -416,7 +511,7 @@ export function AdminRegularization() {
                   />
                   <span className="font-medium">{row.date}</span>
                   <span className="text-muted-foreground">
-                    {row.check_in_time.slice(11, 16)} – {row.check_out_time.slice(11, 16)}
+                    {row.check_in_label} – {row.check_out_label}
                   </span>
                   <span className="ml-auto text-muted-foreground">{row.hours.toFixed(2)} h</span>
                 </label>
@@ -465,6 +560,19 @@ export function AdminRegularization() {
           </p>
         </CardContent>
       </Card>
+
+      {selectedEmployeeRecord && (
+        <EmployeeScheduleDialog
+          open={scheduleDialogOpen}
+          onOpenChange={(open) => {
+            setScheduleDialogOpen(open);
+            if (!open) resetPreview();
+          }}
+          employeeId={selectedEmployeeRecord.id}
+          employeeName={selectedEmployeeRecord.full_name}
+          companyId={selectedEmployeeRecord.company_id || ''}
+        />
+      )}
     </div>
   );
 }

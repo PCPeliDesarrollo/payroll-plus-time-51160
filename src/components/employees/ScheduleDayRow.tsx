@@ -22,11 +22,11 @@ export const DAYS_OF_WEEK = [
 ];
 
 export const DEFAULT_SCHEDULES: Record<number, DaySchedule> = {
-  1: { is_working_day: true, check_in_time: '09:00', check_out_time: '17:00', check_in_time_2: '', check_out_time_2: '' },
-  2: { is_working_day: true, check_in_time: '09:00', check_out_time: '17:00', check_in_time_2: '', check_out_time_2: '' },
-  3: { is_working_day: true, check_in_time: '09:00', check_out_time: '17:00', check_in_time_2: '', check_out_time_2: '' },
-  4: { is_working_day: true, check_in_time: '09:00', check_out_time: '17:00', check_in_time_2: '', check_out_time_2: '' },
-  5: { is_working_day: true, check_in_time: '09:00', check_out_time: '17:00', check_in_time_2: '', check_out_time_2: '' },
+  1: { is_working_day: true, check_in_time: '09:00', check_out_time: '14:00', check_in_time_2: '17:00', check_out_time_2: '20:00' },
+  2: { is_working_day: true, check_in_time: '09:00', check_out_time: '14:00', check_in_time_2: '17:00', check_out_time_2: '20:00' },
+  3: { is_working_day: true, check_in_time: '09:00', check_out_time: '14:00', check_in_time_2: '17:00', check_out_time_2: '20:00' },
+  4: { is_working_day: true, check_in_time: '09:00', check_out_time: '14:00', check_in_time_2: '17:00', check_out_time_2: '20:00' },
+  5: { is_working_day: true, check_in_time: '09:00', check_out_time: '14:00', check_in_time_2: '17:00', check_out_time_2: '20:00' },
   6: { is_working_day: false, check_in_time: '09:00', check_out_time: '14:00', check_in_time_2: '', check_out_time_2: '' },
   0: { is_working_day: false, check_in_time: '09:00', check_out_time: '14:00', check_in_time_2: '', check_out_time_2: '' },
 };
@@ -42,7 +42,7 @@ export function ScheduleDayRow({ dayValue, dayLabel, schedule, onUpdate }: Sched
   const hasAfternoon = schedule.check_in_time_2 !== '' || schedule.check_out_time_2 !== '';
 
   const addAfternoon = () => {
-    onUpdate(dayValue, 'check_in_time_2', '16:00');
+    onUpdate(dayValue, 'check_in_time_2', '17:00');
     onUpdate(dayValue, 'check_out_time_2', '20:00');
   };
 
