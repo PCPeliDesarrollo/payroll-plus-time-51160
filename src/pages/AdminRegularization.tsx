@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEmployees } from "@/hooks/useEmployees";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +19,15 @@ interface ScheduleDay {
   check_out_time_2: string;
 }
 
+interface PreviewEntry {
+  key: string;
+  date: string;
+  check_in_time: string;
+  check_out_time: string;
+  hours: number;
+  selected: boolean;
+}
+
 function parseTimeToHours(timeStr: string): number {
   const [h, m] = timeStr.split(':').map(Number);
   return h + (m || 0) / 60;
@@ -27,16 +38,35 @@ const MONTHS_ES = [
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
 ];
 
+const toDateStr = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+// ISO week key (Mon-Sun)
+const weekKey = (d: Date) => {
+  const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = tmp.getUTCDay() || 7;
+  tmp.setUTCDate(tmp.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(((+tmp - +yearStart) / 86400000 + 1) / 7);
+  return `${tmp.getUTCFullYear()}-W${weekNo}`;
+};
+
 export function AdminRegularization() {
   const { employees } = useEmployees();
   const { toast } = useToast();
-  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const today = new Date();
+
+  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
+  const [mode, setMode] = useState<"month" | "range">("month");
   const [selectedMonth, setSelectedMonth] = useState<string>(String(today.getMonth()));
   const [selectedYear, setSelectedYear] = useState<string>(String(today.getFullYear()));
+  const [rangeStart, setRangeStart] = useState<string>(toDateStr(new Date(today.getFullYear(), today.getMonth(), 1)));
+  const [rangeEnd, setRangeEnd] = useState<string>(toDateStr(today));
+  const [weeklyTarget, setWeeklyTarget] = useState<string>("40");
   const [loading, setLoading] = useState(false);
+  const [preview, setPreview] = useState<PreviewEntry[] | null>(null);
+  const [companyId, setCompanyId] = useState<string>("");
 
-  // Build last 24 months as options (current + previous)
   const monthOptions: { year: number; month: number; label: string }[] = [];
   for (let i = 0; i < 24; i++) {
     const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
@@ -47,17 +77,45 @@ export function AdminRegularization() {
     });
   }
 
-  const handleAutoRegularize = async () => {
+  const resetPreview = () => setPreview(null);
+
+  const buildPreview = async () => {
     if (!selectedEmployee) {
       toast({ title: "Error", description: "Por favor selecciona un empleado", variant: "destructive" });
       return;
     }
 
-    setLoading(true);
-    try {
+    const target = parseFloat(weeklyTarget);
+    if (!target || target <= 0) {
+      toast({ title: "Error", description: "Introduce un objetivo semanal de horas válido", variant: "destructive" });
+      return;
+    }
+
+    let startDate: Date;
+    let endDate: Date;
+    if (mode === "month") {
       const year = parseInt(selectedYear);
       const month = parseInt(selectedMonth);
+      startDate = new Date(year, month, 1);
+      endDate = new Date(year, month + 1, 0);
+    } else {
+      if (!rangeStart || !rangeEnd) {
+        toast({ title: "Error", description: "Selecciona la fecha de inicio y fin", variant: "destructive" });
+        return;
+      }
+      const [sy, sm, sd] = rangeStart.split('-').map(Number);
+      const [ey, em, ed] = rangeEnd.split('-').map(Number);
+      startDate = new Date(sy, sm - 1, sd);
+      endDate = new Date(ey, em - 1, ed);
+      if (endDate < startDate) {
+        toast({ title: "Error", description: "La fecha de fin debe ser posterior a la de inicio", variant: "destructive" });
+        return;
+      }
+    }
 
+    setLoading(true);
+    setPreview(null);
+    try {
       const { data: employeeData, error: employeeError } = await supabase
         .from('profiles')
         .select('company_id')
@@ -67,65 +125,53 @@ export function AdminRegularization() {
       if (employeeError) throw employeeError;
       if (!employeeData?.company_id) {
         toast({ title: "Error", description: "El empleado no tiene una empresa asignada", variant: "destructive" });
-        setLoading(false);
         return;
       }
+      setCompanyId(employeeData.company_id);
 
       const { data: empSchedules } = await supabase
         .from('employee_schedules')
         .select('day_of_week, is_working_day, check_in_time, check_out_time, check_in_time_2, check_out_time_2')
         .eq('employee_id', selectedEmployee);
 
-      const scheduleMap: Record<number, ScheduleDay> = {};
-
-      if (empSchedules && empSchedules.length > 0) {
-        empSchedules.forEach((s: any) => {
-          scheduleMap[s.day_of_week] = {
-            day_of_week: s.day_of_week,
-            is_working_day: s.is_working_day,
-            check_in_time: s.check_in_time?.slice(0, 5) || '09:00',
-            check_out_time: s.check_out_time?.slice(0, 5) || '17:00',
-            check_in_time_2: s.check_in_time_2?.slice(0, 5) || '',
-            check_out_time_2: s.check_out_time_2?.slice(0, 5) || '',
-          };
-        });
-      } else {
+      if (!empSchedules || empSchedules.length === 0) {
         toast({
           title: "Sin horario configurado",
           description: "Este empleado no tiene un horario asignado. Configúralo primero desde la sección de Empleados.",
           variant: "destructive",
         });
-        setLoading(false);
         return;
       }
 
-      const WEEKLY_TARGET = 40;
+      const scheduleMap: Record<number, ScheduleDay> = {};
+      empSchedules.forEach((s: any) => {
+        scheduleMap[s.day_of_week] = {
+          day_of_week: s.day_of_week,
+          is_working_day: s.is_working_day,
+          check_in_time: s.check_in_time?.slice(0, 5) || '09:00',
+          check_out_time: s.check_out_time?.slice(0, 5) || '17:00',
+          check_in_time_2: s.check_in_time_2?.slice(0, 5) || '',
+          check_out_time_2: s.check_out_time_2?.slice(0, 5) || '',
+        };
+      });
 
-      const firstDayOfMonth = new Date(year, month, 1);
-      const lastDayOfMonth = new Date(year, month + 1, 0);
+      // Fetch existing entries covering the full ISO weeks touched by the range
+      const fetchFrom = new Date(startDate);
+      fetchFrom.setDate(fetchFrom.getDate() - 7);
+      const fetchTo = new Date(endDate);
+      fetchTo.setDate(fetchTo.getDate() + 7);
 
       const { data: entries, error: fetchError } = await supabase
         .from('time_entries')
         .select('*')
         .eq('user_id', selectedEmployee)
-        .gte('date', firstDayOfMonth.toISOString().split('T')[0])
-        .lte('date', lastDayOfMonth.toISOString().split('T')[0]);
+        .gte('date', toDateStr(fetchFrom))
+        .lte('date', toDateStr(fetchTo));
 
       if (fetchError) throw fetchError;
 
       const existingDates = new Set<string>();
-      // Hours already worked per ISO week key
       const hoursByWeek: Record<string, number> = {};
-
-      // ISO week key (Mon-Sun) using year-month-day
-      const weekKey = (d: Date) => {
-        const tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-        const day = tmp.getUTCDay() || 7; // Mon=1..Sun=7
-        tmp.setUTCDate(tmp.getUTCDate() + 4 - day);
-        const yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
-        const weekNo = Math.ceil(((+tmp - +yearStart) / 86400000 + 1) / 7);
-        return `${tmp.getUTCFullYear()}-W${weekNo}`;
-      };
 
       entries?.forEach(entry => {
         existingDates.add(entry.date);
@@ -134,92 +180,101 @@ export function AdminRegularization() {
           if (match) {
             const h = parseInt(match[1]) + parseInt(match[2]) / 60;
             const [yy, mm, dd] = entry.date.split('-').map(Number);
-            const k = weekKey(new Date(yy, mm - 1, dd));
-            hoursByWeek[k] = (hoursByWeek[k] || 0) + h;
+            hoursByWeek[weekKey(new Date(yy, mm - 1, dd))] = (hoursByWeek[weekKey(new Date(yy, mm - 1, dd))] || 0) + h;
           }
         }
       });
 
-      const daysInMonth = lastDayOfMonth.getDate();
-      const isCurrentOrFutureMonth = year > today.getFullYear() || (year === today.getFullYear() && month >= today.getMonth());
+      const rows: PreviewEntry[] = [];
+      const cursor = new Date(startDate);
 
-      const newEntries: Array<{
-        user_id: string;
-        company_id: string;
-        date: string;
-        check_in_time: string;
-        check_out_time: string;
-        status: string;
-      }> = [];
+      while (cursor <= endDate) {
+        const dateStr = toDateStr(cursor);
+        const dayOfWeek = cursor.getDay();
 
-      // Walk days in order; fill each week up to 40h using employee schedule shifts
-      for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month, day);
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-        const dayOfWeek = date.getDay();
-
-        if (isCurrentOrFutureMonth && date > today) continue;
-        if (existingDates.has(dateStr)) continue;
+        if (cursor > today) break;
+        if (existingDates.has(dateStr)) { cursor.setDate(cursor.getDate() + 1); continue; }
 
         const schedule = scheduleMap[dayOfWeek];
-        if (!schedule || !schedule.is_working_day) continue;
+        if (!schedule || !schedule.is_working_day) { cursor.setDate(cursor.getDate() + 1); continue; }
 
-        const k = weekKey(date);
+        const k = weekKey(cursor);
         const used = hoursByWeek[k] || 0;
-        if (used >= WEEKLY_TARGET) continue;
+        if (used >= target) { cursor.setDate(cursor.getDate() + 1); continue; }
 
         const shift1 = parseTimeToHours(schedule.check_out_time) - parseTimeToHours(schedule.check_in_time);
         const shift2 = (schedule.check_in_time_2 && schedule.check_out_time_2)
           ? parseTimeToHours(schedule.check_out_time_2) - parseTimeToHours(schedule.check_in_time_2)
           : 0;
         const dayHours = shift1 + shift2;
-        if (dayHours <= 0) continue;
+        if (dayHours <= 0) { cursor.setDate(cursor.getDate() + 1); continue; }
 
-        // Only add full shifts that fit within remaining weekly target
-        const remainingWeek = WEEKLY_TARGET - used;
-        if (dayHours > remainingWeek + 0.01) continue;
+        if (dayHours > (target - used) + 0.01) { cursor.setDate(cursor.getDate() + 1); continue; }
 
-        newEntries.push({
-          user_id: selectedEmployee,
-          company_id: employeeData.company_id,
+        rows.push({
+          key: `${dateStr}-1`,
           date: dateStr,
           check_in_time: `${dateStr}T${schedule.check_in_time}:00`,
           check_out_time: `${dateStr}T${schedule.check_out_time}:00`,
-          status: 'checked_out',
+          hours: shift1,
+          selected: true,
         });
 
         if (shift2 > 0) {
-          newEntries.push({
-            user_id: selectedEmployee,
-            company_id: employeeData.company_id,
+          rows.push({
+            key: `${dateStr}-2`,
             date: dateStr,
             check_in_time: `${dateStr}T${schedule.check_in_time_2}:00`,
             check_out_time: `${dateStr}T${schedule.check_out_time_2}:00`,
-            status: 'checked_out',
+            hours: shift2,
+            selected: true,
           });
         }
 
         hoursByWeek[k] = used + dayHours;
+        cursor.setDate(cursor.getDate() + 1);
       }
 
-      if (newEntries.length === 0) {
-        toast({ title: "Sin fichajes pendientes", description: `No hay días por regularizar: ya alcanzan las 40h semanales o no quedan huecos en el horario en ${MONTHS_ES[month]} ${year}` });
-        setLoading(false);
+      if (rows.length === 0) {
+        toast({ title: "Sin fichajes pendientes", description: "No hay días por regularizar en el periodo elegido: ya se alcanza el objetivo semanal o no quedan huecos en su horario" });
         return;
       }
 
-      const { error: insertError } = await supabase
-        .from('time_entries')
-        .insert(newEntries);
+      setPreview(rows);
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "Hubo un problema al calcular la regularización", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-      if (insertError) throw insertError;
+  const confirmRegularization = async () => {
+    if (!preview) return;
+    const chosen = preview.filter(p => p.selected);
+    if (chosen.length === 0) {
+      toast({ title: "Nada seleccionado", description: "Marca al menos un fichaje para crear", variant: "destructive" });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.from('time_entries').insert(
+        chosen.map(p => ({
+          user_id: selectedEmployee,
+          company_id: companyId,
+          date: p.date,
+          check_in_time: p.check_in_time,
+          check_out_time: p.check_out_time,
+          status: 'checked_out',
+        }))
+      );
+      if (error) throw error;
 
       toast({
         title: "Regularización completada",
-        description: `Se han creado ${newEntries.length} fichajes en ${MONTHS_ES[month]} ${year} respetando el horario del empleado`,
+        description: `Se han creado ${chosen.length} fichajes respetando el horario del empleado`,
       });
-
-      setSelectedEmployee("");
+      setPreview(null);
     } catch (error: any) {
       toast({ title: "Error", description: error.message || "Hubo un problema al regularizar", variant: "destructive" });
     } finally {
@@ -228,12 +283,13 @@ export function AdminRegularization() {
   };
 
   const activeEmployees = employees.filter(emp => emp.is_active);
+  const totalPreviewHours = preview?.filter(p => p.selected).reduce((acc, p) => acc + p.hours, 0) ?? 0;
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold text-foreground">Regularización Automática</h2>
-        <p className="text-muted-foreground">Completa los fichajes faltantes de cualquier mes usando siempre el horario individual del empleado</p>
+        <p className="text-muted-foreground">Completa los fichajes faltantes de cualquier periodo usando siempre el horario individual del empleado</p>
       </div>
 
       <Card>
@@ -243,13 +299,13 @@ export function AdminRegularization() {
             Regularizar Fichajes
           </CardTitle>
           <CardDescription>
-            Selecciona el empleado y el mes a regularizar. Los fichajes creados respetarán exactamente su horario.
+            Elige empleado, periodo y objetivo semanal. Podrás revisar los fichajes antes de crearlos.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="employee">Empleado</Label>
-            <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+            <Select value={selectedEmployee} onValueChange={(v) => { setSelectedEmployee(v); resetPreview(); }}>
               <SelectTrigger id="employee">
                 <SelectValue placeholder="Selecciona un empleado" />
               </SelectTrigger>
@@ -264,37 +320,120 @@ export function AdminRegularization() {
           </div>
 
           <div className="space-y-2">
-            <Label>Mes a regularizar</Label>
-            <Select
-              value={`${selectedYear}-${selectedMonth}`}
-              onValueChange={(v) => {
-                const [y, m] = v.split('-');
-                setSelectedYear(y);
-                setSelectedMonth(m);
-              }}
-            >
+            <Label>Periodo</Label>
+            <Select value={mode} onValueChange={(v) => { setMode(v as "month" | "range"); resetPreview(); }}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {monthOptions.map((opt) => (
-                  <SelectItem key={`${opt.year}-${opt.month}`} value={`${opt.year}-${opt.month}`}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
+                <SelectItem value="month">Mes completo</SelectItem>
+                <SelectItem value="range">Rango de fechas</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
+          {mode === "month" ? (
+            <div className="space-y-2">
+              <Label>Mes a regularizar</Label>
+              <Select
+                value={`${selectedYear}-${selectedMonth}`}
+                onValueChange={(v) => {
+                  const [y, m] = v.split('-');
+                  setSelectedYear(y);
+                  setSelectedMonth(m);
+                  resetPreview();
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {monthOptions.map((opt) => (
+                    <SelectItem key={`${opt.year}-${opt.month}`} value={`${opt.year}-${opt.month}`}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="range-start">Desde</Label>
+                <Input id="range-start" type="date" value={rangeStart} onChange={(e) => { setRangeStart(e.target.value); resetPreview(); }} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="range-end">Hasta</Label>
+                <Input id="range-end" type="date" value={rangeEnd} onChange={(e) => { setRangeEnd(e.target.value); resetPreview(); }} />
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="weekly-target">Objetivo de horas semanales</Label>
+            <Input
+              id="weekly-target"
+              type="number"
+              min="1"
+              max="60"
+              step="0.5"
+              value={weeklyTarget}
+              onChange={(e) => { setWeeklyTarget(e.target.value); resetPreview(); }}
+            />
+            <p className="text-xs text-muted-foreground">Nunca se superará este total por semana (contando los fichajes que ya existan).</p>
+          </div>
+
           <Button
-            onClick={handleAutoRegularize}
+            onClick={buildPreview}
             disabled={loading || !selectedEmployee}
             className="w-full"
           >
-            {loading ? "Procesando..." : "Regularizar Automáticamente"}
+            {loading ? "Calculando..." : "Previsualizar regularización"}
           </Button>
         </CardContent>
       </Card>
+
+      {preview && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Fichajes a crear</CardTitle>
+            <CardDescription>
+              {preview.filter(p => p.selected).length} de {preview.length} seleccionados · {totalPreviewHours.toFixed(2)} h en total
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="max-h-80 space-y-2 overflow-y-auto">
+              {preview.map((row, idx) => (
+                <label
+                  key={row.key}
+                  className="flex items-center gap-3 rounded-md border border-border p-3 text-sm"
+                >
+                  <Checkbox
+                    checked={row.selected}
+                    onCheckedChange={(checked) => {
+                      setPreview(prev => prev!.map((p, i) => i === idx ? { ...p, selected: checked === true } : p));
+                    }}
+                  />
+                  <span className="font-medium">{row.date}</span>
+                  <span className="text-muted-foreground">
+                    {row.check_in_time.slice(11, 16)} – {row.check_out_time.slice(11, 16)}
+                  </span>
+                  <span className="ml-auto text-muted-foreground">{row.hours.toFixed(2)} h</span>
+                </label>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => setPreview(null)} disabled={loading}>
+                Cancelar
+              </Button>
+              <Button className="flex-1" onClick={confirmRegularization} disabled={loading}>
+                {loading ? "Creando..." : "Crear fichajes"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="border-primary/20 bg-primary/5">
         <CardHeader>
@@ -306,7 +445,7 @@ export function AdminRegularization() {
         <CardContent className="space-y-2 text-sm">
           <p className="flex items-start gap-2">
             <span className="text-primary font-bold">1.</span>
-            <span>Puedes regularizar el mes actual o cualquier mes anterior (hasta 24 meses atrás)</span>
+            <span>Puedes regularizar un mes completo (hasta 24 meses atrás) o un rango concreto de fechas</span>
           </p>
           <p className="flex items-start gap-2">
             <span className="text-primary font-bold">2.</span>
@@ -314,11 +453,15 @@ export function AdminRegularization() {
           </p>
           <p className="flex items-start gap-2">
             <span className="text-primary font-bold">3.</span>
-            <span>Crea fichajes completos solo en días laborables del horario, nunca en días libres ni días ya fichados</span>
+            <span>Solo crea fichajes en días laborables de su horario, nunca en días libres ni días ya fichados</span>
           </p>
           <p className="flex items-start gap-2">
             <span className="text-primary font-bold">4.</span>
-            <span>Los fichajes generados siempre coinciden con las horas de trabajo definidas — no se crean horarios fuera de su jornada</span>
+            <span>Respeta el objetivo semanal indicado, descontando las horas que el empleado ya tenga registradas esa semana</span>
+          </p>
+          <p className="flex items-start gap-2">
+            <span className="text-primary font-bold">5.</span>
+            <span>Antes de crear nada verás la lista completa y podrás desmarcar los días que no quieras</span>
           </p>
         </CardContent>
       </Card>
