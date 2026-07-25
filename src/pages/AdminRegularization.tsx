@@ -32,11 +32,6 @@ interface PreviewEntry {
   selected: boolean;
 }
 
-function parseTimeToHours(timeStr: string): number {
-  const [h, m] = timeStr.split(':').map(Number);
-  return h + (m || 0) / 60;
-}
-
 function localDateTime(dateStr: string, timeStr: string): Date {
   const [year, month, day] = dateStr.split('-').map(Number);
   const [hour, minute] = timeStr.split(':').map(Number);
@@ -53,6 +48,57 @@ function hoursBetween(start: Date, end: Date): number {
 
 function intervalsOverlap(aStart: Date, aEnd: Date, bStart: Date, bEnd: Date): boolean {
   return aStart < bEnd && bStart < aEnd;
+}
+
+function subtractCoveredIntervals(
+  baseStart: Date,
+  baseEnd: Date,
+  occupied: { start: Date; end: Date }[]
+): { start: Date; end: Date }[] {
+  const overlaps = occupied
+    .filter(entry => intervalsOverlap(baseStart, baseEnd, entry.start, entry.end))
+    .map(entry => ({
+      start: new Date(Math.max(baseStart.getTime(), entry.start.getTime())),
+      end: new Date(Math.min(baseEnd.getTime(), entry.end.getTime())),
+    }))
+    .filter(entry => entry.end > entry.start)
+    .sort((a, b) => a.start.getTime() - b.start.getTime());
+
+  const gaps: { start: Date; end: Date }[] = [];
+  let cursor = new Date(baseStart);
+
+  overlaps.forEach(entry => {
+    if (entry.start > cursor) {
+      gaps.push({ start: new Date(cursor), end: new Date(entry.start) });
+    }
+    if (entry.end > cursor) cursor = new Date(entry.end);
+  });
+
+  if (cursor < baseEnd) {
+    gaps.push({ start: new Date(cursor), end: new Date(baseEnd) });
+  }
+
+  return gaps;
+}
+
+function parseExistingHours(entry: { total_hours?: unknown; check_in_time?: string | null; check_out_time?: string | null }): number {
+  if (typeof entry.total_hours === 'string') {
+    const match = entry.total_hours.match(/(\d+):(\d+):(\d+)/);
+    if (match) return parseInt(match[1]) + parseInt(match[2]) / 60 + parseInt(match[3]) / 3600;
+  }
+
+  if (entry.check_in_time && entry.check_out_time) {
+    return Math.max(0, hoursBetween(new Date(entry.check_in_time), new Date(entry.check_out_time)));
+  }
+
+  return 0;
+}
+
+function formatHoursInterval(hours: number): string {
+  const totalMinutes = Math.round(hours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00`;
 }
 
 const MONTHS_ES = [
@@ -207,13 +253,11 @@ export function AdminRegularization() {
           });
         }
 
-        if (entry.total_hours) {
-          const match = entry.total_hours.toString().match(/(\d+):(\d+):(\d+)/);
-          if (match) {
-            const h = parseInt(match[1]) + parseInt(match[2]) / 60;
-            const [yy, mm, dd] = entry.date.split('-').map(Number);
-            hoursByWeek[weekKey(new Date(yy, mm - 1, dd))] = (hoursByWeek[weekKey(new Date(yy, mm - 1, dd))] || 0) + h;
-          }
+        const existingHours = parseExistingHours(entry);
+        if (existingHours > 0) {
+          const [yy, mm, dd] = entry.date.split('-').map(Number);
+          const k = weekKey(new Date(yy, mm - 1, dd));
+          hoursByWeek[k] = (hoursByWeek[k] || 0) + existingHours;
         }
       });
 
@@ -237,37 +281,38 @@ export function AdminRegularization() {
         ];
 
         for (const shift of scheduledShifts) {
-          const k = weekKey(cursor);
-          const used = hoursByWeek[k] || 0;
-          const remaining = target - used;
-          if (remaining <= 0.01) break;
-
           const scheduledStart = localDateTime(dateStr, shift.start);
           const scheduledEnd = localDateTime(dateStr, shift.end);
           const scheduledHours = hoursBetween(scheduledStart, scheduledEnd);
           if (scheduledHours <= 0) continue;
 
-          const overlapsExistingEntry = (entriesByDate[dateStr] || []).some(entry =>
-            intervalsOverlap(scheduledStart, scheduledEnd, entry.start, entry.end)
-          );
-          if (overlapsExistingEntry) continue;
+          const gaps = subtractCoveredIntervals(scheduledStart, scheduledEnd, entriesByDate[dateStr] || []);
+          for (const gap of gaps) {
+            const k = weekKey(cursor);
+            const used = hoursByWeek[k] || 0;
+            const remaining = target - used;
+            if (remaining <= 0.01) break;
 
-          const hoursToCreate = Math.min(scheduledHours, remaining);
-          if (hoursToCreate < 0.25) continue;
+            const gapHours = hoursBetween(gap.start, gap.end);
+            const hoursToCreate = Math.min(gapHours, remaining);
+            if (hoursToCreate < 0.25) continue;
 
-          const createdEnd = new Date(scheduledStart.getTime() + hoursToCreate * 3600000);
-          rows.push({
-            key: `${dateStr}-${shift.key}`,
-            date: dateStr,
-            check_in_time: scheduledStart.toISOString(),
-            check_out_time: createdEnd.toISOString(),
-            check_in_label: formatLocalTime(scheduledStart),
-            check_out_label: formatLocalTime(createdEnd),
-            hours: hoursToCreate,
-            selected: true,
-          });
+            const createdEnd = new Date(gap.start.getTime() + hoursToCreate * 3600000);
+            rows.push({
+              key: `${dateStr}-${shift.key}-${gap.start.getTime()}`,
+              date: dateStr,
+              check_in_time: gap.start.toISOString(),
+              check_out_time: createdEnd.toISOString(),
+              check_in_label: formatLocalTime(gap.start),
+              check_out_label: formatLocalTime(createdEnd),
+              hours: hoursToCreate,
+              selected: true,
+            });
 
-          hoursByWeek[k] = used + hoursToCreate;
+            if (!entriesByDate[dateStr]) entriesByDate[dateStr] = [];
+            entriesByDate[dateStr].push({ start: gap.start, end: createdEnd });
+            hoursByWeek[k] = used + hoursToCreate;
+          }
         }
 
         cursor.setDate(cursor.getDate() + 1);
@@ -303,6 +348,7 @@ export function AdminRegularization() {
           date: p.date,
           check_in_time: p.check_in_time,
           check_out_time: p.check_out_time,
+          total_hours: formatHoursInterval(p.hours),
           status: 'checked_out',
         }))
       );
