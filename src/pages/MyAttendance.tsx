@@ -11,7 +11,8 @@ import {
   Play,
   Square,
   MoreVertical,
-  Flag
+  Pencil,
+  Plus
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -21,6 +22,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTimeEntries } from "@/hooks/useTimeEntries";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
+import { EditTimeEntryDialog } from "@/components/attendance/EditTimeEntryDialog";
+import { AddManualEntryDialog } from "@/components/attendance/AddManualEntryDialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
 
@@ -28,8 +32,12 @@ export function MyAttendance() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
   const [elapsedTime, setElapsedTime] = useState<string>("00:00:00");
-  const { timeEntries, currentEntry, loading, isCheckedIn, checkIn, checkOut } = useTimeEntries();
+  const { timeEntries, currentEntry, loading, isCheckedIn, checkIn, checkOut, fetchTimeEntries } = useTimeEntries();
   const { toast } = useToast();
+  const { user, profile } = useAuth();
+  const [editingEntry, setEditingEntry] = useState<any | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+
 
   // Filter entries for selected date
   const selectedDateEntries = React.useMemo(() => {
@@ -177,10 +185,17 @@ export function MyAttendance() {
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground">Mis Fichajes</h2>
           <p className="text-sm sm:text-base text-muted-foreground">Consulta tu historial de fichajes</p>
         </div>
-        <Button variant="outline" className="flex items-center gap-2 w-full sm:w-auto">
-          <Download className="h-4 w-4" />
-          <span className="sm:inline">Exportar Datos</span>
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Button variant="default" onClick={() => setAddOpen(true)} className="flex items-center gap-2 w-full sm:w-auto">
+            <Plus className="h-4 w-4" />
+            <span>Añadir fichaje olvidado</span>
+          </Button>
+          <Button variant="outline" className="flex items-center gap-2 w-full sm:w-auto">
+            <Download className="h-4 w-4" />
+            <span className="sm:inline">Exportar Datos</span>
+          </Button>
+        </div>
+
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -334,17 +349,13 @@ export function MyAttendance() {
                                       </DropdownMenuTrigger>
                                       <DropdownMenuContent align="end" className="w-56">
                                         <DropdownMenuItem
-                                          onClick={() => {
-                                            toast({
-                                              title: "Solicitud enviada",
-                                              description: "El administrador revisará tu solicitud de cambio",
-                                            });
-                                          }}
+                                          onClick={() => setEditingEntry(entry)}
                                         >
-                                          <Flag className="mr-2 h-4 w-4" />
-                                          Solicitar cambio
+                                          <Pencil className="mr-2 h-4 w-4" />
+                                          Editar fichaje
                                         </DropdownMenuItem>
                                       </DropdownMenuContent>
+
                                     </DropdownMenu>
                                   </div>
                                 </div>
@@ -361,6 +372,25 @@ export function MyAttendance() {
           </CardContent>
         </Card>
       </div>
+
+      {editingEntry && (
+        <EditTimeEntryDialog
+          open={!!editingEntry}
+          onOpenChange={(o) => !o && setEditingEntry(null)}
+          entry={editingEntry}
+          onSuccess={fetchTimeEntries}
+        />
+      )}
+
+      {user && (
+        <AddManualEntryDialog
+          open={addOpen}
+          onOpenChange={setAddOpen}
+          employeeId={user.id}
+          employeeName={profile?.full_name || "Yo"}
+          onSuccess={fetchTimeEntries}
+        />
+      )}
     </div>
   );
 }
