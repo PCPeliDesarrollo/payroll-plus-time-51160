@@ -30,7 +30,7 @@ workflows:
           BUILD_GRADLE="$CM_BUILD_DIR/android/app/build.gradle"
           APP_NAME="RRHH PcPeli"
           PACKAGE_NAME="com.pcpeli.rrhh"
-          VERSION_NAME="1.2.9"
+          VERSION_NAME="1.3.0"
 
           LATEST_BUILD=$(google-play get-latest-build-number --package-name "$PACKAGE_NAME" --tracks=internal 2>/dev/null || true)
           LATEST_BUILD=$(echo "$LATEST_BUILD" | tr -dc '0-9')
@@ -147,16 +147,16 @@ workflows:
           
           # Method 1: PlistBuddy
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $NEW_BUILD" "$PLIST"
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.2.9" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.3.0" "$PLIST"
           
           # Method 2: sed on pbxproj - match any version format
           sed -i '' "s/CURRENT_PROJECT_VERSION = .*;/CURRENT_PROJECT_VERSION = $NEW_BUILD;/g" "$PBXPROJ"
-          sed -i '' "s/MARKETING_VERSION = .*;/MARKETING_VERSION = 1.2.9;/g" "$PBXPROJ"
+          sed -i '' "s/MARKETING_VERSION = .*;/MARKETING_VERSION = 1.3.0;/g" "$PBXPROJ"
           
           # Method 3: agvtool (most reliable for Xcode)
           cd "$CM_BUILD_DIR/ios/App"
           agvtool new-version -all $NEW_BUILD || true
-          agvtool new-marketing-version 1.2.9 || true
+          agvtool new-marketing-version 1.3.0 || true
           
           # Verify all changes
           echo "=== Info.plist CFBundleVersion ==="
