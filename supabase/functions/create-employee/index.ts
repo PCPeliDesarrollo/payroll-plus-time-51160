@@ -43,7 +43,7 @@ serve(async (req) => {
     
     // Validate password
     if (!password || password.length < 6) {
-      throw new Error('Password must be at least 6 characters long')
+      throw new Error('La contraseña debe tener al menos 6 caracteres')
     }
 
     // Create a Supabase Admin client to create the auth user
@@ -121,7 +121,7 @@ serve(async (req) => {
     )
   } catch (error) {
     console.error('Function error:', error)
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
     // IMPORTANTE: Devolver 200 con success: false para que el cliente pueda leer el error
     return new Response(
       JSON.stringify({ success: false, error: errorMessage }),
