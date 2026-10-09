@@ -171,7 +171,7 @@ export function CreateCompanyAdminDialog() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              El usuario deberá cambiar esta contraseña en su primer inicio de sesión.
+              Mínimo 6 caracteres. No puede ser una contraseña muy común (recomendamos mayúsculas, números y símbolos). El usuario deberá cambiarla en su primer inicio de sesión.
             </p>
           </div>
 
