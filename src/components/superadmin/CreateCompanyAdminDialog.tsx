@@ -8,6 +8,7 @@ import { UserPlus, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCompanies } from "@/hooks/useCompanies";
+import { translateAuthError } from "@/lib/authErrors";
 
 export function CreateCompanyAdminDialog() {
   const [open, setOpen] = useState(false);
@@ -78,7 +79,7 @@ export function CreateCompanyAdminDialog() {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error instanceof Error ? error.message : 'No se pudo crear el Admin',
+        description: translateAuthError(error instanceof Error ? error.message : 'No se pudo crear el Admin'),
       });
     } finally {
       setLoading(false);
