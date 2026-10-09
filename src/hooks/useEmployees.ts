@@ -76,7 +76,7 @@ export function useEmployees() {
       if (!data || data.success === false) {
         const errorMsg = data?.error || 'Error desconocido al crear el empleado';
         console.error('Error en la creación:', errorMsg);
-        
+
         // Manejar errores específicos
         if (errorMsg.includes('duplicate') || errorMsg.includes('already exists') || errorMsg.includes('ya existe')) {
           if (errorMsg.includes('employee_id') || errorMsg.includes('ID')) {
@@ -86,7 +86,7 @@ export function useEmployees() {
             throw new Error('El email ya está registrado. Usa un email diferente.');
           }
         }
-        throw new Error(errorMsg);
+        throw new Error(translateAuthError(errorMsg));
       }
 
       await fetchEmployees();

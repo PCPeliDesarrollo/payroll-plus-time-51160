@@ -102,7 +102,7 @@ export function CreateEmployeeDialog() {
       setSchedules({ ...DEFAULT_SCHEDULES });
     } catch (error) {
       console.error('Error creating employee:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      const errorMessage = error instanceof Error ? translateAuthError(error.message) : 'Error desconocido';
       toast({
         title: "Error al crear empleado",
         description: errorMessage,
