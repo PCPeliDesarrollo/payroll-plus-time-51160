@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Shield, Eye, EyeOff } from "lucide-react";
+import { translateAuthError } from "@/lib/authErrors";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -71,7 +72,7 @@ export function CreateSuperAdminDialog() {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error instanceof Error ? error.message : 'No se pudo crear el Super Admin',
+        description: translateAuthError(error instanceof Error ? error.message : 'No se pudo crear el Super Admin'),
       });
     } finally {
       setLoading(false);
@@ -143,7 +144,7 @@ export function CreateSuperAdminDialog() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              El usuario deberá cambiar esta contraseña en su primer inicio de sesión.
+              Mínimo 6 caracteres. No puede ser una contraseña muy común (recomendamos mayúsculas, números y símbolos). El usuario deberá cambiarla en su primer inicio de sesión.
             </p>
           </div>
 

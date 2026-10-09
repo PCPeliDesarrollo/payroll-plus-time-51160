@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ScheduleDayRow, DaySchedule, DAYS_OF_WEEK, DEFAULT_SCHEDULES } from "./ScheduleDayRow";
+import { translateAuthError } from "@/lib/authErrors";
 
 export function CreateEmployeeDialog() {
   const [open, setOpen] = useState(false);
@@ -101,7 +102,7 @@ export function CreateEmployeeDialog() {
       setSchedules({ ...DEFAULT_SCHEDULES });
     } catch (error) {
       console.error('Error creating employee:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      const errorMessage = error instanceof Error ? translateAuthError(error.message) : 'Error desconocido';
       toast({
         title: "Error al crear empleado",
         description: errorMessage,
