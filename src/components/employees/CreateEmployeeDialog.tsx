@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ScheduleDayRow, DaySchedule, DAYS_OF_WEEK, DEFAULT_SCHEDULES } from "./ScheduleDayRow";
+import { translateAuthError } from "@/lib/authErrors";
 
 export function CreateEmployeeDialog() {
   const [open, setOpen] = useState(false);
