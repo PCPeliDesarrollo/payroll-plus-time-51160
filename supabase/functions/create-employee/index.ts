@@ -71,7 +71,18 @@ serve(async (req) => {
 
     if (authError) {
       console.error('Auth error details:', authError)
-      throw new Error(`Error al crear usuario: ${authError.message}`)
+      const authMsg = authError.message || ''
+      let userMessage = `Error al crear usuario: ${authMsg}`
+      if (authMsg.toLowerCase().includes('weak_password') || authMsg.toLowerCase().includes('known to be weak') || authError.code === 'weak_password') {
+        userMessage = 'La contraseña es demasiado débil: es muy común o ha aparecido en filtraciones conocidas. Elige una de al menos 8 caracteres combinando mayúsculas, minúsculas, números y símbolos (ej. Peli#2026x).'
+      } else if (authMsg.toLowerCase().includes('already registered') || authMsg.toLowerCase().includes('already been registered')) {
+        userMessage = 'Este email ya está registrado. Usa otro email diferente.'
+      } else if (authMsg.toLowerCase().includes('at least 6 characters')) {
+        userMessage = 'La contraseña debe tener al menos 6 caracteres.'
+      } else if (authMsg.toLowerCase().includes('unable to validate email')) {
+        userMessage = 'El formato del email no es válido.'
+      }
+      throw new Error(userMessage)
     }
 
     if (!authData.user) {
