@@ -24,7 +24,7 @@ serve(async (req) => {
     const { data: { user } } = await supabaseClient.auth.getUser()
     
     if (!user) {
-      throw new Error('Not authenticated')
+      throw new Error('Tu sesión ha expirado. Vuelve a iniciar sesión.')
     }
 
     // Check if user is admin or super_admin
@@ -35,7 +35,7 @@ serve(async (req) => {
       .single()
 
     if (!profile || (profile.role !== 'admin' && profile.role !== 'super_admin')) {
-      throw new Error('Not authorized - admin role required')
+      throw new Error('No tienes permisos para crear usuarios')
     }
 
     // Get the employee data from the request
