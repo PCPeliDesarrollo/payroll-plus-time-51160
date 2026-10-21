@@ -197,7 +197,7 @@ export type Database = {
           company_id: string | null
           created_at: string
           date: string
-          granted_by: string
+          granted_by: string | null
           hours: number
           id: string
           reason: string
@@ -208,7 +208,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           date: string
-          granted_by: string
+          granted_by?: string | null
           hours: number
           id?: string
           reason: string
@@ -219,7 +219,7 @@ export type Database = {
           company_id?: string | null
           created_at?: string
           date?: string
-          granted_by?: string
+          granted_by?: string | null
           hours?: number
           id?: string
           reason?: string
