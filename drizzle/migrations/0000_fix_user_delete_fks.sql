@@ -1,0 +1,8 @@
+ALTER TABLE public.extra_hours ALTER COLUMN granted_by DROP NOT NULL;
+ALTER TABLE public.time_entries DROP CONSTRAINT time_entries_created_by_fkey, ADD CONSTRAINT time_entries_created_by_fkey FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL;
+ALTER TABLE public.payroll_records DROP CONSTRAINT payroll_records_created_by_fkey, ADD CONSTRAINT payroll_records_created_by_fkey FOREIGN KEY (created_by) REFERENCES public.profiles(id) ON DELETE SET NULL;
+ALTER TABLE public.vacation_requests DROP CONSTRAINT vacation_requests_approved_by_fkey, ADD CONSTRAINT vacation_requests_approved_by_fkey FOREIGN KEY (approved_by) REFERENCES public.profiles(id) ON DELETE SET NULL;
+ALTER TABLE public.schedule_changes DROP CONSTRAINT schedule_changes_approved_by_fkey, ADD CONSTRAINT schedule_changes_approved_by_fkey FOREIGN KEY (approved_by) REFERENCES auth.users(id) ON DELETE SET NULL;
+ALTER TABLE public.notifications DROP CONSTRAINT notifications_user_id_fkey, ADD CONSTRAINT notifications_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+ALTER TABLE public.extra_hours DROP CONSTRAINT extra_hours_granted_by_fkey, ADD CONSTRAINT extra_hours_granted_by_fkey FOREIGN KEY (granted_by) REFERENCES public.profiles(id) ON DELETE SET NULL;
+ALTER TABLE public.extra_hours_requests DROP CONSTRAINT extra_hours_requests_approved_by_fkey, ADD CONSTRAINT extra_hours_requests_approved_by_fkey FOREIGN KEY (approved_by) REFERENCES public.profiles(id) ON DELETE SET NULL;
