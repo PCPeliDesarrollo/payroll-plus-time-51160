@@ -159,6 +159,8 @@ export function useEmployees() {
       return data;
     } catch (error) {
       console.error('Error deleting employee:', error);
+      // Refresh the list so stale entries disappear
+      fetchEmployees();
       throw error;
     }
   };
