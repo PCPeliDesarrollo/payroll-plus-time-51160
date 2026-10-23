@@ -43,7 +43,7 @@ serve(async (req) => {
     )
 
     // Also ensure email is confirmed
-    const { error } = await supabaseAdmin.auth.admin.updateUser(user_id, {
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(user_id, {
       password: new_password,
       email_confirm: true,
     })
