@@ -154,9 +154,11 @@ All colors MUST be HSL.
   }
 
   .app-safe-dialog {
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
     top: calc(var(--app-top-clearance) + var(--app-viewport-height) / 2) !important;
     max-height: calc(var(--app-viewport-height) - 2rem) !important;
-    max-width: calc(100vw - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px) - 2rem);
+    width: calc(100vw - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px) - 2rem);
     overflow-y: auto;
   }
 }
