@@ -8,6 +8,13 @@
       "when": 1792584090684,
       "tag": "0000_fix_user_delete_fks",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792742344527,
+      "tag": "0001_allow_approver_null_on_delete",
+      "breakpoints": true
     }
   ]
 }
