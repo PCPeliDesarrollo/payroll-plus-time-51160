@@ -79,6 +79,18 @@ serve(async (req) => {
       await supabaseAdmin.from('time_entries').delete().eq('user_id', employee_id)
       console.log('Fichajes eliminados')
 
+      // Delete extra hours requests
+      await supabaseAdmin.from('extra_hours_requests').delete().eq('user_id', employee_id)
+      console.log('Solicitudes de horas extra eliminadas')
+
+      // Delete extra hours
+      await supabaseAdmin.from('extra_hours').delete().eq('user_id', employee_id)
+      console.log('Horas extra eliminadas')
+
+      // Delete employee schedules
+      await supabaseAdmin.from('employee_schedules').delete().eq('employee_id', employee_id)
+      console.log('Horarios eliminados')
+
       // Delete payroll records
       await supabaseAdmin.from('payroll_records').delete().eq('user_id', employee_id)
       console.log('Registros de nómina eliminados')
