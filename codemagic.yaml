@@ -78,6 +78,7 @@ workflows:
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
+        APP_STORE_APPLE_ID: "6758941657"
       node: 20
       xcode: latest
       cocoapods: default
@@ -122,7 +123,7 @@ workflows:
           pod install
       - name: Auto-increment build number
         script: |
-          LATEST_RAW=$(app-store-connect get-latest-testflight-build-number com.pcpeli.rrhh 2>/dev/null || true)
+          LATEST_RAW=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" --private-key "@env:APP_STORE_CONNECT_PRIVATE_KEY" --key-id "$APP_STORE_CONNECT_KEY_IDENTIFIER" --issuer-id "$APP_STORE_CONNECT_ISSUER_ID" 2>/dev/null || true)
           LATEST=$(echo "$LATEST_RAW" | tr -dc '0-9')
           echo "Latest TestFlight build (raw): $LATEST_RAW"
 
