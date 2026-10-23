@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound";
 // Using HashRouter for better compatibility with mobile apps
 const App = () => (
   <TooltipProvider>
+    <div aria-hidden="true" className="app-safe-strip fixed inset-x-0 top-0 z-[100] bg-card border-b border-border" />
     <Toaster />
     <Sonner />
     <HashRouter>

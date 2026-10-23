@@ -53,8 +53,8 @@ export function ScheduleDayRow({ dayValue, dayLabel, schedule, onUpdate }: Sched
 
   return (
     <div className="rounded-lg border border-border bg-card p-2.5 text-card-foreground space-y-2">
-      <div className="flex items-center gap-3">
-        <div className="w-28 shrink-0 font-semibold text-sm text-card-foreground">{dayLabel}</div>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="w-24 shrink-0 font-semibold text-sm text-card-foreground">{dayLabel}</div>
         <Switch
           checked={schedule.is_working_day}
           onCheckedChange={(checked) => onUpdate(dayValue, 'is_working_day', checked)}
@@ -64,19 +64,21 @@ export function ScheduleDayRow({ dayValue, dayLabel, schedule, onUpdate }: Sched
         </span>
         {schedule.is_working_day && (
           <>
+            <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
             <Input
               type="time"
               value={schedule.check_in_time}
               onChange={(e) => onUpdate(dayValue, 'check_in_time', e.target.value)}
-              className="w-28 h-8 text-sm"
+              className="min-w-0 w-0 flex-1 sm:w-28 sm:flex-none h-8 text-sm"
             />
             <span className="text-card-foreground text-sm">—</span>
             <Input
               type="time"
               value={schedule.check_out_time}
               onChange={(e) => onUpdate(dayValue, 'check_out_time', e.target.value)}
-              className="w-28 h-8 text-sm"
+              className="min-w-0 w-0 flex-1 sm:w-28 sm:flex-none h-8 text-sm"
             />
+            </div>
             {!hasAfternoon && (
               <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-xs text-primary" onClick={addAfternoon}>
                 <Plus className="h-3 w-3 mr-1" /> Tarde
@@ -86,24 +88,26 @@ export function ScheduleDayRow({ dayValue, dayLabel, schedule, onUpdate }: Sched
         )}
       </div>
       {schedule.is_working_day && hasAfternoon && (
-        <div className="flex items-center gap-3 pl-[calc(7rem+12px+3.5rem+24px)] text-card-foreground">
-          <span className="w-12 text-xs font-semibold text-card-foreground">Tarde:</span>
+        <div className="flex flex-wrap items-center gap-2 text-card-foreground">
+          <span className="w-full text-xs font-semibold text-card-foreground">Tarde:</span>
+          <div className="flex w-full min-w-0 items-center gap-2">
           <Input
             type="time"
             value={schedule.check_in_time_2}
             onChange={(e) => onUpdate(dayValue, 'check_in_time_2', e.target.value)}
-            className="w-28 h-8 text-sm"
+            className="min-w-0 w-0 flex-1 sm:w-28 sm:flex-none h-8 text-sm"
           />
           <span className="text-card-foreground text-sm">—</span>
           <Input
             type="time"
             value={schedule.check_out_time_2}
             onChange={(e) => onUpdate(dayValue, 'check_out_time_2', e.target.value)}
-            className="w-28 h-8 text-sm"
+            className="min-w-0 w-0 flex-1 sm:w-28 sm:flex-none h-8 text-sm"
           />
-          <Button type="button" variant="ghost" size="sm" className="h-7 px-2 text-destructive" onClick={removeAfternoon}>
+          <Button aria-label="Quitar turno de tarde" type="button" variant="ghost" size="sm" className="h-7 shrink-0 px-2 text-destructive" onClick={removeAfternoon}>
             <X className="h-3 w-3" />
           </Button>
+          </div>
         </div>
       )}
     </div>

@@ -56,6 +56,10 @@ All colors MUST be HSL.
 
     --radius: 0.75rem;
     --mobile-header-offset: 1rem;
+    --app-safe-top: env(safe-area-inset-top, 0px);
+    --app-safe-bottom: env(safe-area-inset-bottom, 0px);
+    --app-top-clearance: calc(var(--app-safe-top) + var(--mobile-header-offset));
+    --app-viewport-height: calc(100dvh - var(--app-top-clearance) - var(--app-safe-bottom));
 
     --sidebar-background: 0 0% 98%;
 
@@ -120,9 +124,47 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
-    padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
+  }
+}
+
+@layer components {
+  #root {
+    min-height: 100dvh;
+    padding-top: var(--app-top-clearance);
+    padding-bottom: var(--app-safe-bottom);
+  }
+
+  .app-safe-strip {
+    height: var(--app-top-clearance);
+  }
+
+  .app-viewport {
+    height: var(--app-viewport-height);
+  }
+
+  .app-login {
+    min-height: var(--app-viewport-height);
+  }
+
+  .app-menu-trigger {
+    top: calc(var(--app-top-clearance) + 1rem);
+    left: calc(env(safe-area-inset-left, 0px) + 1rem);
+  }
+
+  .app-safe-dialog {
+    min-width: 0;
+    grid-template-columns: minmax(0, 1fr);
+    top: calc(var(--app-top-clearance) + var(--app-viewport-height) / 2) !important;
+    max-height: calc(var(--app-viewport-height) - 2rem) !important;
+    width: calc(100vw - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px) - 2rem);
+    overflow-y: auto;
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --mobile-header-offset: 0rem;
   }
 }

@@ -22,16 +22,16 @@ export function AppLayout({
   children 
 }: AppLayoutProps) {
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="app-viewport flex bg-background overflow-hidden">
       <Sidebar
         userRole={user.role}
         currentPage={currentPage}
         onPageChange={onPageChange}
         onLogout={onLogout}
       />
-      <div className="flex-1 flex flex-col overflow-hidden w-full">
+      <div className="min-w-0 flex-1 flex flex-col overflow-hidden w-full">
         <Header user={user} onLogout={onLogout} onPageChange={onPageChange} />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
           {children}
         </main>
       </div>
