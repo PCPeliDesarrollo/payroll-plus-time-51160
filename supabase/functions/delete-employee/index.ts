@@ -116,7 +116,9 @@ serve(async (req) => {
     // Finally delete the auth user
     const { error: authError } = await supabaseAdmin.auth.admin.deleteUser(employee_id)
 
-    if (authError) {
+    // If the account no longer exists, the goal is already achieved
+    const alreadyGone = authError && (authError.status === 404 || /not found/i.test(authError.message))
+    if (authError && !alreadyGone) {
       console.error('Error eliminando usuario de auth:', authError)
       throw new Error(`Error al eliminar usuario: ${authError.message}`)
     }
