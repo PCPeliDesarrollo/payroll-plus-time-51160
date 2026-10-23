@@ -35,8 +35,7 @@ export function Header({ user, onLogout, onPageChange }: HeaderProps) {
   
   return (
     <header
-      className="sticky top-0 z-40 shrink-0 min-h-[calc(4rem+var(--mobile-header-offset))] bg-card border-b border-border flex items-center justify-between px-3 sm:px-4 md:px-6"
-      style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + var(--mobile-header-offset))' }}
+      className="sticky top-0 z-40 shrink-0 min-h-20 bg-card border-b border-border flex items-center justify-between px-3 sm:px-4 md:px-6"
     >
       <div className="flex items-center gap-2 md:gap-3 md:ml-0 ml-14">
         <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl p-2 backdrop-blur-sm border border-primary/20">

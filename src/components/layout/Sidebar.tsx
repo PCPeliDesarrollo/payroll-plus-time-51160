@@ -98,18 +98,18 @@ export function Sidebar({ userRole, currentPage, onPageChange, onLogout }: Sideb
   return (
     <>
       {/* Desktop Sidebar */}
-      <div className="hidden md:flex w-64 h-screen bg-card border-r border-border flex-col">
+      <div className="hidden md:flex w-64 h-full shrink-0 bg-card border-r border-border flex-col">
         <SidebarContent />
       </div>
 
       {/* Mobile Sidebar */}
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger asChild className="md:hidden fixed left-4 z-50" style={{ top: 'calc(env(safe-area-inset-top, 0px) + var(--mobile-header-offset))' }}>
-          <Button variant="outline" size="icon" className="bg-card shadow-lg border-primary/20">
+        <SheetTrigger asChild className="app-menu-trigger md:hidden fixed z-40">
+          <Button aria-label="Abrir menú" variant="outline" size="icon" className="bg-card shadow-lg border-primary/20">
             <Menu className="h-5 w-5 text-primary" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="p-0 w-64 bg-secondary/30">
+        <SheetContent side="left" className="p-0 w-64 bg-card flex flex-col min-h-0">
           <SidebarContent />
         </SheetContent>
       </Sheet>
