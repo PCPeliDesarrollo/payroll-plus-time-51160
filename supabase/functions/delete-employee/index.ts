@@ -100,7 +100,11 @@ serve(async (req) => {
       console.log('Roles de usuario eliminados')
 
       // Delete profile
-      await supabaseAdmin.from('profiles').delete().eq('id', employee_id)
+      const { error: profileError } = await supabaseAdmin.from('profiles').delete().eq('id', employee_id)
+      if (profileError) {
+        console.error('Error eliminando perfil:', profileError)
+        throw new Error(profileError.message)
+      }
       console.log('Perfil eliminado')
 
     } catch (deleteError) {
