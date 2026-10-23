@@ -104,7 +104,7 @@ export function Sidebar({ userRole, currentPage, onPageChange, onLogout }: Sideb
 
       {/* Mobile Sidebar */}
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger asChild className="app-menu-trigger md:hidden fixed z-40">
+        <SheetTrigger asChild className="app-menu-trigger md:hidden fixed z-[45]">
           <Button aria-label="Abrir menú" variant="outline" size="icon" className="bg-card shadow-lg border-primary/20">
             <Menu className="h-5 w-5 text-primary" />
           </Button>
