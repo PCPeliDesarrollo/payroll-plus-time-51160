@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
 import { useAuth } from './useAuth';
+import { currentVacationPeriodYear, findVacationBalanceForPeriod } from '@/lib/vacationBalancePeriod';
 
 type VacationRequest = Database['public']['Tables']['vacation_requests']['Row'];
 type VacationBalance = Database['public']['Tables']['vacation_balance']['Row'];
@@ -50,10 +51,10 @@ export function useVacations() {
         .from('vacation_balance')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .order('period_start', { ascending: false });
 
-      if (error && error.code !== 'PGRST116') throw error;
-      setVacationBalance(data);
+      if (error) throw error;
+      setVacationBalance(findVacationBalanceForPeriod(data || [], currentVacationPeriodYear()));
     } catch (error) {
       console.error('Error fetching vacation balance:', error);
     }
@@ -185,6 +186,7 @@ export function useVacations() {
         throw error;
       }
       await fetchVacationRequests();
+      await fetchVacationBalance();
       return data;
     } catch (error: any) {
       console.error('Error creating vacation request:', error);
@@ -232,6 +234,7 @@ export function useVacations() {
 
       if (error) throw error;
       await fetchVacationRequests();
+      await fetchVacationBalance();
     } catch (error) {
       console.error('Error deleting vacation request:', error);
       throw error;
@@ -258,10 +261,10 @@ export function useVacations() {
         .from('vacation_balance')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .order('period_start', { ascending: false });
 
-      if (error && error.code !== 'PGRST116') throw error;
-      return data;
+      if (error) throw error;
+      return findVacationBalanceForPeriod(data || [], currentVacationPeriodYear());
     } catch (error) {
       console.error('Error fetching vacation balance:', error);
       return null;
