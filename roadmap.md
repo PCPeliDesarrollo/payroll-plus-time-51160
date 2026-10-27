@@ -1,5 +1,7 @@
 # Tareas pendientes
 
+- [x] Unificar el saldo de vacaciones entre empleado y administrador por las fechas del periodo; comprobado como Gerencia: Cristina tiene 10 días totales, 5 usados y 5 restantes, sin modificar su saldo.
+
 - [x] Reservar una franja de protección superior y mantener los controles debajo en móviles.
 - [x] Comprobar cabecera y menú a 320, 360, 390, 844 y 1280 px; formulario de empleado abierto y cerrado con sesión real y márgenes de cámara simulados. Pendiente de validación física al distribuir las apps.
 
