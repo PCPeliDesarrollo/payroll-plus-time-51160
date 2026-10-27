@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useExtraHours } from "@/hooks/useExtraHours";
 import { useVacationPeriods } from "@/hooks/useVacationPeriods";
 import { useToast } from "@/hooks/use-toast";
+import { findVacationBalanceForPeriod } from "@/lib/vacationBalancePeriod";
 
 interface Employee {
   id: string;
@@ -96,13 +97,13 @@ export function EmployeeVacationDetail({
           .from('vacation_balance')
           .select('*')
           .eq('user_id', employee.id)
-          .eq('year', selectedPeriodYear)
-          .maybeSingle();
+          .order('period_start', { ascending: false });
 
         if (error) throw error;
-        
-        if (data) {
-          setVacationBalance(data);
+
+        const storedBalance = findVacationBalanceForPeriod(data || [], selectedPeriodYear);
+        if (storedBalance) {
+          setVacationBalance(storedBalance);
         } else {
           // Calculate balance from vacation requests for this period
           const selectedPeriod = periods.find(p => p.year === selectedPeriodYear);
