@@ -5,6 +5,7 @@ import { ArrowLeft, Calendar, Clock, CheckCircle, XCircle, Edit, Trash2 } from "
 import { VacationCalendar } from "./VacationCalendar";
 import { EditVacationRequestDialog } from "./EditVacationRequestDialog";
 import { VacationPeriodsCard } from "./VacationPeriodsCard";
+import { AssignVacationDialog } from "./AssignVacationDialog";
 import { ExtraHoursSection } from "@/components/extrahours/ExtraHoursSection";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -49,6 +50,7 @@ interface EmployeeVacationDetailProps {
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
   onDelete: (id: string) => void;
+  onRefresh?: () => void;
 }
 
 // Get current period year
@@ -64,7 +66,9 @@ export function EmployeeVacationDetail({
   onApprove,
   onReject,
   onDelete,
+  onRefresh,
 }: EmployeeVacationDetailProps) {
+  const [showAssign, setShowAssign] = useState(false);
   const [showEditVacation, setShowEditVacation] = useState(false);
   const [selectedVacation, setSelectedVacation] = useState<VacationRequest | null>(null);
   const [selectedPeriodYear, setSelectedPeriodYear] = useState<number>(getCurrentPeriodYear());
@@ -278,6 +282,17 @@ export function EmployeeVacationDetail({
         <ArrowLeft className="h-4 w-4 mr-2" />
         Volver a la lista
       </Button>
+      <Button onClick={() => setShowAssign(true)} className="mb-4 w-full sm:w-auto sm:ml-2">
+        <Calendar className="h-4 w-4 mr-2" />
+        Registrar vacaciones
+      </Button>
+      <AssignVacationDialog
+        open={showAssign}
+        onOpenChange={setShowAssign}
+        employeeId={employee.id}
+        employeeName={employee.full_name}
+        onDone={() => onRefresh?.()}
+      />
 
       {/* Vacation Period Selector */}
       <VacationPeriodsCard 

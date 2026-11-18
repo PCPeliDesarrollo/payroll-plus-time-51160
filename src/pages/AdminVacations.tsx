@@ -14,7 +14,7 @@ interface AdminVacationsProps {
 }
 
 export default function AdminVacations({ onBack }: AdminVacationsProps = {}) {
-  const { vacationRequests, approveVacationRequest, rejectVacationRequest, loading } = useVacations();
+  const { vacationRequests, approveVacationRequest, rejectVacationRequest, loading, fetchVacationRequests } = useVacations();
   const { employees } = useEmployees();
   const { toast } = useToast();
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null);
@@ -121,6 +121,7 @@ export default function AdminVacations({ onBack }: AdminVacationsProps = {}) {
           onApprove={handleApprove}
           onReject={handleReject}
           onDelete={handleDelete}
+          onRefresh={fetchVacationRequests}
         />
       </div>
     );
